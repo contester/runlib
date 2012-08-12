@@ -1,18 +1,19 @@
 package main
 
-/*
-#include <stdio.h>
-
-int f(int x) { printf("%d\n", x); return 1; }
-*/
-import "C"
-
 import (
   "fmt"
+  "runlib/sub32"
 )
 
 func main() {
-  fmt.Printf("palevo %d", int(C.f(100)))
 
-  
+  cmd := "C:\\WINDOWS\\System32\\cmd.exe"
+
+  env := sub32.GetEnvMap()
+  env["ZZZTEST"] = "VAVA"
+
+  r, e := sub32.CreateProcessWithLogonW("test", nil, "test321", 0, &cmd, &cmd, 0, sub32.EnvironmentMap(env), nil, nil)
+  // r, e := sub32.CreateProcessW(&cmd, &cmd, sub32.EnvironmentMap(env), nil, nil)
+
+  fmt.Printf("%s %d", r, e)
 }

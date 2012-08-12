@@ -20,6 +20,8 @@ const (
   CREATE_SUSPENDED = 0x00000004
 
   LOGON_WITH_PROFILE = 0x00000001
+
+  STARTF_FORCEOFFFEEDBACK = 0x00000080
 )
 
 func StringPtrToUTF16Ptr(src *string) (result *uint16) {

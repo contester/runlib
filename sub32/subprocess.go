@@ -38,7 +38,7 @@ type Subprocess struct {
   HardTimeLimit uint64
   MemoryLimit uint64
   HardMemoryLimit uint64
-  TimeQuantum uint64
+  TimeQuantum uint32
 
   hProcess syscall.Handle
   hThread syscall.Handle
@@ -165,15 +165,39 @@ func UpdateProcessTimes(process syscall.Handle, result *SubprocessResult, finish
   result.WallTime = uint64((end.Nanoseconds() / 1000) - (creation.Nanoseconds() / 1000))
   result.UserTime = uint64(user.Nanoseconds() / 1000)
   result.KernelTime = uint64(kernel.Nanoseconds() / 1000)
+
+  return nil
+}
+
+func GetProcessMemoryUsage(process syscall.Handle) uint32 {
+  pmc, err := GetProcessMemoryInfo(process)
+  if err != nil {
+    return 0
+  }
+
+  if pmc.PeakPagefileUsage > pmc.PrivateUsage {
+    return pmc.PeakPagefileUsage
+  }
+  return pmc.PrivateUsage
+}
+
+func UpdateProcessMemory(process syscall.Handle, result *SubprocessResult) {
+  result.PeakMemory = uint64(GetProcessMemoryUsage(process))
 }
 
 func (sub *Subprocess) BottomHalf(sig chan *SubprocessResult) {
   result := &SubprocessResult{}
-  waitResult := 0
+  var waitResult uint32
+  waitResult = syscall.WAIT_TIMEOUT
   var ttLast uint64
   ttLast = 0
 
-  for ; ;  {
+  for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
+    waitResult, _ = syscall.WaitForSingleObject(sub.hProcess, sub.TimeQuantum)
+    if waitResult != syscall.WAIT_TIMEOUT {
+      break
+    }
+
     _ = UpdateProcessTimes(sub.hProcess, result, false)
     ttLastNew := result.KernelTime + result.UserTime
 
@@ -190,8 +214,40 @@ func (sub *Subprocess) BottomHalf(sig chan *SubprocessResult) {
     }
 
     ttLast = ttLastNew
+
+    if (sub.MemoryLimit > 0) {
+      UpdateProcessMemory(sub.hProcess, result)
+      if result.PeakMemory > sub.MemoryLimit {
+        result.SuccessCode |= EF_MEMORY_LIMIT_HIT
+      }
+    }
   }
-  
+
+  switch waitResult {
+    case syscall.WAIT_OBJECT_0:
+      _ = syscall.GetExitCodeProcess(sub.hProcess, &result.ExitCode)
+
+    case syscall.WAIT_TIMEOUT:
+      for waitResult == syscall.WAIT_TIMEOUT {
+        syscall.TerminateProcess(sub.hProcess, 0)
+        waitResult, _ = syscall.WaitForSingleObject(sub.hProcess, 100)
+      }
+  }
+
+  _ = UpdateProcessTimes(sub.hProcess, result, true)
+  UpdateProcessMemory(sub.hProcess, result)
+
+  syscall.CloseHandle(sub.hProcess)
+
+  if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
+    result.SuccessCode |= EF_TIME_LIMIT_HIT_POST
+  }
+
+  if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
+    result.SuccessCode |= EF_MEMORY_LIMIT_HIT_POST
+  }
+
+  sig <- result
 }
 
 func (sub *Subprocess) Start() error {

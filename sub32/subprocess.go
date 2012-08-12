@@ -96,6 +96,13 @@ type SubprocessResult struct {
   TotalProcesses uint64
 }
 
+func SubprocessCreate() *Subprocess {
+  result := &Subprocess{}
+  result.TimeQuantum = 1000
+
+  return result
+}
+
 func (sub *Subprocess) Launch() (err error) {
   si := &syscall.StartupInfo{}
   si.Cb = uint32(unsafe.Sizeof(*si))
@@ -147,6 +154,10 @@ func (sub *Subprocess) Launch() (err error) {
   return nil
 }
 
+func FiletimeToUint64(ft *syscall.Filetime) uint64 {
+  return uint64(ft.HighDateTime)<<32 + uint64(ft.LowDateTime)
+}
+
 func UpdateProcessTimes(process syscall.Handle, result *SubprocessResult, finished bool) error {
   creation := &syscall.Filetime{}
   end := &syscall.Filetime{}
@@ -162,9 +173,9 @@ func UpdateProcessTimes(process syscall.Handle, result *SubprocessResult, finish
     syscall.GetSystemTimeAsFileTime(end)
   }
 
-  result.WallTime = uint64((end.Nanoseconds() / 1000) - (creation.Nanoseconds() / 1000))
-  result.UserTime = uint64(user.Nanoseconds() / 1000)
-  result.KernelTime = uint64(kernel.Nanoseconds() / 1000)
+  result.WallTime = (FiletimeToUint64(end) / 10) - (FiletimeToUint64(creation) / 10)
+  result.UserTime = FiletimeToUint64(user) / 10
+  result.KernelTime = FiletimeToUint64(kernel) / 10
 
   return nil
 }
@@ -250,14 +261,16 @@ func (sub *Subprocess) BottomHalf(sig chan *SubprocessResult) {
   sig <- result
 }
 
-func (sub *Subprocess) Start() error {
+func (sub *Subprocess) Start() (chan *SubprocessResult, error) {
   err := sub.Launch()
   if (err != nil) {
-    return err
+    return nil, err
   }
   
   ResumeThread(sub.hThread)
   syscall.CloseHandle(sub.hThread)
 
-  return nil
+  sig := make(chan *SubprocessResult)
+  go sub.BottomHalf(sig)
+  return sig, nil
 }

@@ -1,10 +1,7 @@
 package sub32
 
 import (
-  "fmt"
-  "strings"
   "syscall"
-  "unicode/utf16"
   "unsafe"
 )
 
@@ -25,46 +22,39 @@ const (
   LOGON_WITH_PROFILE = 0x00000001
 )
 
-type Environment interface {
-  ToBlock() []uint16
-}
-
-type StartupInfo interface {}
-type ProcessInformation interface {}
-
-func nilOrString(src *string) (result *uint16) {
+func StringPtrToUTF16Ptr(src *string) (result *uint16) {
   if src != nil {
     return syscall.StringToUTF16Ptr(*src)
   }
   return nil
 }
 
-type EnvironmentMap map[string] string
-
-func (env EnvironmentMap) ToBlock() (result []uint16) {
-  size := 1
-  for k, v := range env {
-    size += len(syscall.StringToUTF16(k + "=" + v))
+func ListToEnvironmentBlock(list *[]string) *uint16 {
+  if (list == nil) {
+    return nil
   }
 
-  fmt.Printf("size: %d\n", size)
+  size := 1
+  for _, v := range *list {
+    size += len(syscall.StringToUTF16(v))
+  }
 
-  result = make([]uint16, size)
+  result := make([]uint16, size)
 
   tail := 0
 
-  for k, v := range env {
-    uline := syscall.StringToUTF16(k + "=" + v)
+  for _, v := range *list {
+    uline := syscall.StringToUTF16(v)
     copy(result[tail:], uline)
     tail += len(uline)
   }
 
-  fmt.Printf("tail: %d\n", tail)
   result[tail] = 0
 
-  return
+  return &result[0]
 }
 
+/*
 func GetEnvMap() map[string] string {
   result := make(map[string] string)
 
@@ -77,21 +67,6 @@ func GetEnvMap() map[string] string {
   return result
 }
 
-func testBlock(s *uint16) {
-	r := make([]string, 0, 50) // Empty with room to grow.
-	for from, i, p := 0, 0, (*[1 << 24]uint16)(unsafe.Pointer(s)); true; i++ {
-		if p[i] == 0 {
-			// empty string marks the end
-			if i <= from {
-				break
-			}
-			r = append(r, string(utf16.Decode(p[from:i])))
-			fmt.Printf("t: %s\n", string(utf16.Decode(p[from:i])))
-			from = i + 1
-		}
-	}
-}
-
 func getEnvBlock(env Environment) *uint16 {
   if (env == nil) {
     return nil
@@ -99,8 +74,42 @@ func getEnvBlock(env Environment) *uint16 {
 
   return &env.ToBlock()[0]
 }
+*/
 
 func CreateProcessWithLogonW(
+    username *uint16,
+    domain *uint16,
+    password *uint16,
+    logonFlags uint32,
+    applicationName *uint16,
+    commandLine *uint16,
+    creationFlags uint32,
+    environment *uint16,
+    currentDirectory *uint16,
+    startupInfo *syscall.StartupInfo,
+    processInformation *syscall.ProcessInformation) (err error) {
+
+  r1, _, e1 := procCreateProcessWithLogonW.Call(
+    uintptr(unsafe.Pointer(username)),
+    uintptr(unsafe.Pointer(domain)),
+    uintptr(unsafe.Pointer(password)),
+    uintptr(logonFlags),
+    uintptr(unsafe.Pointer(applicationName)),
+    uintptr(unsafe.Pointer(commandLine)),
+    uintptr(creationFlags),
+    uintptr(unsafe.Pointer(environment)), // env
+    uintptr(unsafe.Pointer(currentDirectory)),
+    uintptr(unsafe.Pointer(startupInfo)),
+    uintptr(unsafe.Pointer(processInformation)))
+
+  if int(r1) == 0 {
+    return e1
+  }
+
+  return nil
+}
+/*
+func CreateProcessWithLogonWWWW(
     username string,
     domain *string,
     password string,
@@ -144,7 +153,7 @@ func CreateProcessWithLogonW(
   return nil, nil
 }
     
-func CreateProcessW(
+func CreateProcessWWWW(
     applicationName *string,
     commandLine *string,
     environment Environment,
@@ -179,3 +188,4 @@ func CreateProcessW(
   return nil, nil
 }    
     
+*/

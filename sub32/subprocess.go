@@ -1,6 +1,16 @@
 package sub32
 
+import (
+  "syscall"
+  "unsafe"
+)
+
 type Subprocess struct {
+  ApplicationName string
+  CommandLine string
+  CurrentDirectory string
+  Environment *[]string
+
   /*
   HANDLE hJob, hProcess, bhThread, hUser,
     hProfile, hWindowStation, hDesktop, hThread;
@@ -42,4 +52,28 @@ type Subprocess struct {
   void* (*reallocfunc)(void*, size_t);
   void (*freefunc)(void*);
   */
+}
+
+func (sub *Subprocess) LaunchProcess() (processInfo *syscall.ProcessInformation, err error) {
+  si := &syscall.StartupInfo{}
+  si.Cb = uint32(unsafe.Sizeof(*si))
+
+  pi := &syscall.ProcessInformation{}
+  
+  e := syscall.CreateProcess(
+      StringPtrToUTF16Ptr(&sub.ApplicationName),
+      StringPtrToUTF16Ptr(&sub.CommandLine),
+      nil,
+      nil,
+      true,
+      CREATE_NEW_PROCESS_GROUP | CREATE_NEW_CONSOLE | CREATE_SUSPENDED | syscall.CREATE_UNICODE_ENVIRONMENT | CREATE_BREAKAWAY_FROM_JOB,
+      ListToEnvironmentBlock(sub.Environment),
+      StringPtrToUTF16Ptr(&sub.CurrentDirectory),
+      si,
+      pi);
+  if (e != nil) {
+    return nil, e
+  }
+
+  return pi, nil
 }

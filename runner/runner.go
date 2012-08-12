@@ -18,7 +18,7 @@ func main() {
   sub.Username = sptr("test")
   sub.Password = sptr("test321")
   
-  pi, err := sub.Launch()
+  err := sub.Start()
 
   
   
@@ -28,5 +28,5 @@ func main() {
   // r, e := sub32.CreateProcessWithLogonW("test", nil, "test321", 0, &cmd, &cmd, 0, sub32.EnvironmentMap(env), nil, nil)
   // r, e := sub32.CreateProcessW(&cmd, &cmd, sub32.EnvironmentMap(env), nil, nil)
 
-  fmt.Printf("%s %s", pi, err)
+  fmt.Printf("%s", err)
 }

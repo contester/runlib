@@ -5,6 +5,21 @@ import (
   "unsafe"
 )
 
+const (
+  EF_INACTIVE = (1 << 0)
+  EF_TIME_LIMIT_HIT = (1 << 1)
+  EF_TIME_LIMIT_HARD = (1 << 2)
+  EF_MEMORY_LIMIT_HIT = (1 << 3)
+  EF_KILLED = (1 << 4)
+  EF_STDOUT_OVERFLOW = (1 << 5)
+  EF_STDERR_OVERFLOW = (1 << 6)
+  EF_STDPIPE_TIMEOUT = (1 << 7)
+  EF_TIME_LIMIT_HIT_POST = (1 << 8)
+  EF_MEMORY_LIMIT_HIT_POST = (1 << 9)
+  EF_PROCESS_LIMIT_HIT = (1 << 10)
+  EF_PROCESS_LIMIT_HIT_POST = (1 << 11)
+)
+
 type Subprocess struct {
   ApplicationName *string
   CommandLine *string
@@ -13,6 +28,20 @@ type Subprocess struct {
 
   Username *string
   Password *string
+
+  NoJob bool
+  RestrictUi bool
+  ProcessLimit uint32
+  CheckIdleness bool
+
+  TimeLimit uint64
+  HardTimeLimit uint64
+  MemoryLimit uint64
+  HardMemoryLimit uint64
+  TimeQuantum uint64
+
+  hProcess syscall.Handle
+  hThread syscall.Handle
 
   /*
   HANDLE hJob, hProcess, bhThread, hUser,
@@ -57,7 +86,17 @@ type Subprocess struct {
   */
 }
 
-func (sub *Subprocess) Launch() (processInfo *syscall.ProcessInformation, err error) {
+type SubprocessResult struct {
+  SuccessCode uint32
+  ExitCode uint32
+  UserTime uint64
+  KernelTime uint64
+  WallTime uint64
+  PeakMemory uint64
+  TotalProcesses uint64
+}
+
+func (sub *Subprocess) Launch() (err error) {
   si := &syscall.StartupInfo{}
   si.Cb = uint32(unsafe.Sizeof(*si))
   si.Flags = STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW;
@@ -99,8 +138,70 @@ func (sub *Subprocess) Launch() (processInfo *syscall.ProcessInformation, err er
   }
 
   if (e != nil) {
-    return nil, e
+    return e
   }
 
-  return pi, nil
+  sub.hProcess = pi.Process
+  sub.hThread = pi.Thread
+
+  return nil
+}
+
+func UpdateProcessTimes(process syscall.Handle, result *SubprocessResult, finished bool) error {
+  creation := &syscall.Filetime{}
+  end := &syscall.Filetime{}
+  user := &syscall.Filetime{}
+  kernel := &syscall.Filetime{}
+
+  err := syscall.GetProcessTimes(process, creation, end, kernel, user)
+  if err != nil {
+    return err
+  }
+
+  if !finished {
+    syscall.GetSystemTimeAsFileTime(end)
+  }
+
+  result.WallTime = uint64((end.Nanoseconds() / 1000) - (creation.Nanoseconds() / 1000))
+  result.UserTime = uint64(user.Nanoseconds() / 1000)
+  result.KernelTime = uint64(kernel.Nanoseconds() / 1000)
+}
+
+func (sub *Subprocess) BottomHalf(sig chan *SubprocessResult) {
+  result := &SubprocessResult{}
+  waitResult := 0
+  var ttLast uint64
+  ttLast = 0
+
+  for ; ;  {
+    _ = UpdateProcessTimes(sub.hProcess, result, false)
+    ttLastNew := result.KernelTime + result.UserTime
+
+    if sub.CheckIdleness && (ttLast == ttLastNew) {
+      result.SuccessCode |= EF_INACTIVE
+    }
+
+    if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
+      result.SuccessCode |= EF_TIME_LIMIT_HIT
+    }
+
+    if (sub.HardTimeLimit > 0) && (result.WallTime > sub.HardTimeLimit) {
+      result.SuccessCode |= EF_TIME_LIMIT_HARD
+    }
+
+    ttLast = ttLastNew
+  }
+  
+}
+
+func (sub *Subprocess) Start() error {
+  err := sub.Launch()
+  if (err != nil) {
+    return err
+  }
+  
+  ResumeThread(sub.hThread)
+  syscall.CloseHandle(sub.hThread)
+
+  return nil
 }

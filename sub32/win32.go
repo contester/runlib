@@ -8,9 +8,12 @@ import (
 var (
   advapi32 = syscall.NewLazyDLL("advapi32.dll")
   kernel32 = syscall.NewLazyDLL("kernel32.dll")
+  psapi = syscall.NewLazyDLL("psapi.dll")
 
   procCreateProcessWithLogonW = advapi32.NewProc("CreateProcessWithLogonW")
   procCreateProcessW = kernel32.NewProc("CreateProcessW")
+  procResumeThread = kernel32.NewProc("ResumeThread")
+  procGetProcessMemoryInfo = psapi.NewProc("GetProcessMemoryInfo")
 )
 
 const (
@@ -23,6 +26,20 @@ const (
 
   STARTF_FORCEOFFFEEDBACK = 0x00000080
 )
+
+type ProcessMemoryCountersEx struct {
+  Cb uint32
+  PageFaultCount uint32
+  PeakWorkingSetSize uint32
+  WorkingSetSize uint32
+  QuotaPeakPagedPoolUsage uint32
+  QuotaPagedPoolUsage uint32
+  QuotaPeakNonPagedPoolUsage uint32
+  QuotaNonPagedPoolUsage uint32
+  PagefileUsage uint32
+  PeakPagefileUsage uint32
+  PrivateUsage uint32
+}
 
 func StringPtrToUTF16Ptr(src *string) (result *uint16) {
   if src != nil {
@@ -110,6 +127,26 @@ func CreateProcessWithLogonW(
 
   return nil
 }
+
+func ResumeThread(thread syscall.Handle) (suspendCount int, err error) {
+  r1, _, e1 := procResumeThread.Call(uintptr(thread))
+  if int(r1) == -1 {
+    return -1, e1
+  }
+  return int(r1), nil
+}
+
+func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx, err error) {
+  pmc = &ProcessMemoryCountersEx{}
+  pmc.Cb = uint32(unsafe.Sizeof(*pmc))
+  r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(pmc)), uintptr(pmc.Cb))
+  if int(r1) == 0 {
+    return nil, e1
+  }
+  return pmc, nil
+}
+
+
 /*
 func CreateProcessWithLogonWWWW(
     username string,

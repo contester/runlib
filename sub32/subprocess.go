@@ -51,6 +51,7 @@ type Subprocess struct {
   TimeQuantum uint32
 
   StdOut *SubprocessOutputRedirect
+  StdErr *SubprocessOutputRedirect
 
   hProcess syscall.Handle
   hThread syscall.Handle
@@ -112,6 +113,7 @@ type SubprocessResult struct {
   TotalProcesses uint64
 
   Output *bytes.Buffer
+  Error *bytes.Buffer
 }
 
 func SubprocessCreate() *Subprocess {

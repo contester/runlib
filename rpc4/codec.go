@@ -65,7 +65,6 @@ func NewServerCodec(conn net.Conn) *ServerCodec {
 }
 
 func (s *ServerCodec) ReadRequestHeader(req *rpc.Request) error {
-	fmt.Printf("head\n")
 	var header Header
 	if err := ReadProto(s.r, &header); err != nil {
 		return err
@@ -79,13 +78,10 @@ func (s *ServerCodec) ReadRequestHeader(req *rpc.Request) error {
 
 	s.hasPayload = header.GetPayloadPresent()
 
-	fmt.Printf("%s\n", req)
-
 	return nil
 }
 
 func (s *ServerCodec) ReadRequestBody(pb interface{}) error {
-	fmt.Printf("body\n")
 	if s.hasPayload {
 		return ReadProto(s.r, pb)
 	}
@@ -114,8 +110,6 @@ func (s *ServerCodec) WriteResponse(resp *rpc.Response, pb interface{}) error {
 		return nil
 	}
 
-	fmt.Printf("w: %s\n", header)
-
 	if mt == Header_ERROR {
 		return WriteData(s.w, []byte(resp.Error))
 	}
@@ -138,6 +132,8 @@ func ConnectRpc4(addr string, s *rpc.Server) {
 
 		if err == nil {
 			s.ServeCodec(NewServerCodec(conn))
+		} else {
+ 		fmt.Printf("%s\n", err)
 		}
 	}
 }

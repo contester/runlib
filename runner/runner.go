@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-  c := &service.Contester{}
+  c := service.NewContester("server.ini")
 
   rpc.Register(c)
   rpc4.ConnectRpc4("localhost:9981", rpc.DefaultServer)

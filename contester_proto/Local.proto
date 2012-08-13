@@ -139,3 +139,16 @@ message StatResponse {
 
     repeated StatFile stats = 1;
 }
+
+message GlobRequest {
+    repeated string expression = 1;
+};
+
+message GlobResponse {
+    message SingleGlob {
+        optional string expression = 1;
+        repeated string results = 2;
+    };
+
+    repeated SingleGlob results = 1;
+};

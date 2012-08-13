@@ -640,6 +640,41 @@ func (this *StatResponse_StatFile) GetIsDirectory() bool {
 	return false
 }
 
+type GlobRequest struct {
+	Expression       []string `protobuf:"bytes,1,rep,name=expression" json:"expression,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
+}
+
+func (this *GlobRequest) Reset()         { *this = GlobRequest{} }
+func (this *GlobRequest) String() string { return proto.CompactTextString(this) }
+func (*GlobRequest) ProtoMessage()       {}
+
+type GlobResponse struct {
+	Results          []*GlobResponse_SingleGlob `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
+	XXX_unrecognized []byte                     `json:"-"`
+}
+
+func (this *GlobResponse) Reset()         { *this = GlobResponse{} }
+func (this *GlobResponse) String() string { return proto.CompactTextString(this) }
+func (*GlobResponse) ProtoMessage()       {}
+
+type GlobResponse_SingleGlob struct {
+	Expression       *string  `protobuf:"bytes,1,opt,name=expression" json:"expression,omitempty"`
+	Results          []string `protobuf:"bytes,2,rep,name=results" json:"results,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
+}
+
+func (this *GlobResponse_SingleGlob) Reset()         { *this = GlobResponse_SingleGlob{} }
+func (this *GlobResponse_SingleGlob) String() string { return proto.CompactTextString(this) }
+func (*GlobResponse_SingleGlob) ProtoMessage()       {}
+
+func (this *GlobResponse_SingleGlob) GetExpression() string {
+	if this != nil && this.Expression != nil {
+		return *this.Expression
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterEnum("contester.proto.BinaryTypeResponse_Win32BinaryType", BinaryTypeResponse_Win32BinaryType_name, BinaryTypeResponse_Win32BinaryType_value)
 }

@@ -9,6 +9,13 @@ func sptr(s string) *string {
   return &s
 }
 
+type foo1 int
+
+func (s *foo1) vava(f string) error {
+  fmt.Printf(f)
+  return nil
+}
+
 func main() {
 
   sub := sub32.SubprocessCreate()

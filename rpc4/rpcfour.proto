@@ -1,0 +1,15 @@
+package rpc4;
+
+message Header {
+    enum MessageType {
+        REQUEST = 1;
+        RESPONSE = 2;
+        ERROR = 3;
+        CANCEL = 4;
+    }
+
+    optional uint64 sequence = 1;
+    optional MessageType message_type = 2;
+    optional bool payload_present = 3;
+    optional string method = 4;
+}

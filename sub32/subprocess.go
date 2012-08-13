@@ -28,8 +28,6 @@ type SubprocessOutputRedirect struct {
   ToFile *string
 
   buffer *bytes.Buffer
-  reader *os.File
-  writer *os.File
 }
 
 type Subprocess struct {
@@ -59,6 +57,7 @@ type Subprocess struct {
 
   bufferFunctions []func() error
   bufferChan chan error
+  closeAfterStart []io.Closer
 
   /*
   HANDLE hJob, hProcess, bhThread, hUser,
@@ -123,16 +122,31 @@ func SubprocessCreate() *Subprocess {
 }
 
 func (sub *Subprocess) Launch() (err error) {
-  _ = sub.SetupRedirects()
-
   si := &syscall.StartupInfo{}
   si.Cb = uint32(unsafe.Sizeof(*si))
   si.Flags = STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW;
   si.ShowWindow = syscall.SW_SHOWMINNOACTIVE
-  if sub.StdOut != nil {
-    si.StdOutput = syscall.Handle(sub.StdOut.writer.Fd())
-  }
+  si.StdInput = syscall.InvalidHandle
+  si.StdOutput = syscall.InvalidHandle
+  si.StdErr = syscall.InvalidHandle
 
+  si.StdOutput, err = sub.SetupOutputRedirect(sub.StdOut)
+
+  if si.StdInput != syscall.InvalidHandle ||
+     si.StdOutput != syscall.InvalidHandle ||
+     si.StdErr != syscall.InvalidHandle {
+    si.Flags |= syscall.STARTF_USESTDHANDLES
+
+    if si.StdInput == syscall.InvalidHandle {
+      si.StdInput, _ = syscall.GetStdHandle(syscall.STD_INPUT_HANDLE)
+    }
+    if si.StdOutput == syscall.InvalidHandle {
+      si.StdOutput, _ = syscall.GetStdHandle(syscall.STD_OUTPUT_HANDLE)
+    }
+    if si.StdErr == syscall.InvalidHandle {
+      si.StdErr, _ = syscall.GetStdHandle(syscall.STD_ERROR_HANDLE)
+    }
+  }
 
   pi := &syscall.ProcessInformation{}
 
@@ -177,6 +191,8 @@ func (sub *Subprocess) Launch() (err error) {
   sub.hProcess = pi.Process
   sub.hThread = pi.Thread
 
+  closeDescriptors(sub.closeAfterStart)
+
   sub.bufferChan = make(chan error, len(sub.bufferFunctions))
 
   for _, fn := range sub.bufferFunctions {
@@ -186,6 +202,12 @@ func (sub *Subprocess) Launch() (err error) {
   }
 
   return nil
+}
+
+func closeDescriptors(closers []io.Closer) {
+  for _, fd := range closers {
+    fd.Close()
+  }
 }
 
 func FiletimeToUint64(ft *syscall.Filetime) uint64 {
@@ -230,20 +252,62 @@ func UpdateProcessMemory(process syscall.Handle, result *SubprocessResult) {
   result.PeakMemory = uint64(GetProcessMemoryUsage(process))
 }
 
-func (sub *Subprocess) SetupRedirects() error {
-  if sub.StdOut != nil {
-    sub.StdOut.buffer = &bytes.Buffer{}
-    var err error
-    sub.StdOut.reader, sub.StdOut.writer, err = os.Pipe()
-    if err != nil {
-      return err
+func OpenFileForOutputRedirect(name string) (*os.File, error) {
+  sa := &syscall.SecurityAttributes{}
+  sa.Length = uint32(unsafe.Sizeof(*sa))
+  sa.InheritHandle = 1
+
+  h, e := syscall.CreateFile(
+    syscall.StringToUTF16Ptr(name),
+    syscall.GENERIC_WRITE,
+    syscall.FILE_SHARE_READ | syscall.FILE_SHARE_WRITE,
+    sa,
+    syscall.CREATE_ALWAYS,
+    FILE_FLAG_SEQUENTIAL_SCAN,
+    0)
+
+  if (e != nil) {
+    return nil, e
+  }
+
+  return os.NewFile(uintptr(h), name), nil
+}
+
+func (sub *Subprocess) SetupOutputRedirect(w *SubprocessOutputRedirect) (fd syscall.Handle, err error) {
+  if w == nil {
+    return syscall.InvalidHandle, nil
+  }
+
+  if w.ToMemory {
+    w.buffer = &bytes.Buffer{}
+
+    reader, writer, e := os.Pipe()
+    if e != nil {
+      return syscall.InvalidHandle, e
     }
+
+    sub.closeAfterStart = append(sub.closeAfterStart, writer)
+
     sub.bufferFunctions = append(sub.bufferFunctions, func() error {
-        _, err := io.Copy(sub.StdOut.buffer, sub.StdOut.reader)
+        _, err := io.Copy(w.buffer, reader)
+        reader.Close()
         return err
       })
+
+    return syscall.Handle(writer.Fd()), nil
   }
-  return nil
+
+  if w.ToFile != nil {
+    f, e := OpenFileForOutputRedirect(*w.ToFile)
+    if e != nil {
+      return syscall.InvalidHandle, e
+    }
+
+    sub.closeAfterStart = append(sub.closeAfterStart, f)
+    return syscall.Handle(f.Fd()), nil
+  }
+
+  return syscall.InvalidHandle, nil
 }
 
 func (sub *Subprocess) BottomHalf(sig chan *SubprocessResult) {

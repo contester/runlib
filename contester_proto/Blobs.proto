@@ -1,0 +1,31 @@
+package contester.proto;
+
+option java_package = "org.stingray.contester.proto";
+
+message Blob {
+    message CompressionInfo {
+        enum CompressionType {
+            METHOD_NONE = 0;
+            METHOD_ZLIB = 1;
+        }
+
+        optional CompressionType method = 1;
+        optional uint32 original_size = 2;
+    }
+
+    optional bytes data = 1;
+    optional CompressionInfo compression = 2;
+    optional bytes sha1 = 3;
+};
+
+message File {
+    required string name = 1;
+    required Blob data = 2;
+    required string type = 3;
+};
+
+message Module {
+    optional string name = 3;
+    required Blob data = 2;
+    required string type = 1;
+};

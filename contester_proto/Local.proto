@@ -1,0 +1,148 @@
+import "Blobs.proto";
+import "Execution.proto";
+
+package contester.proto;
+option java_package = "org.stingray.contester.proto";
+
+message LocalEnvironment {
+    message Variable {
+        required string name = 1;
+        optional string value = 2;
+        optional bool expand = 3;
+    }
+
+    optional bool empty = 1;
+    repeated Variable variable = 2;
+};
+
+message LoginInformation {
+    optional string username = 1;
+    optional string password = 2;
+    optional string domain = 3;
+    optional uint32 uid = 4;
+};
+
+message LocalExecutionParameters {
+    optional string application_name = 1;
+    optional string command_line = 2;
+    optional string current_directory = 3;
+
+    optional uint64 time_limit_micros = 4;
+    optional uint64 memory_limit = 5;
+    optional bool check_idleness = 6;
+    optional LocalEnvironment environment = 7;
+    optional bool restrict_ui = 8;
+    optional bool no_job = 9;
+    optional uint32 process_limit = 10;
+    optional uint64 time_limit_hard_micros = 15;
+
+    optional LoginInformation login_information = 11;
+
+    optional RedirectParameters std_in = 12;
+    optional RedirectParameters std_out = 13;
+    optional RedirectParameters std_err = 14;
+
+    repeated string command_line_parameters = 16;
+};
+
+message LocalExecutionResult {
+    optional ExecutionResultFlags flags = 1;
+    optional ExecutionResultTime time = 2;
+    optional uint64 memory = 3;
+    optional uint32 return_code = 4;
+    optional Blob std_out = 5;
+    optional Blob std_err = 6;
+    optional uint64 total_processes = 7;
+    optional int32 kill_signal = 8;
+    optional int32 stop_signal = 9;
+};
+
+message LocalExecution {
+    required LocalExecutionParameters parameters = 1;
+    optional LocalExecutionResult result = 2;
+};
+
+message OwnerInfo {
+    optional uint32 uid = 1;
+    repeated string pathname = 2;
+};
+
+message BinaryTypeRequest {
+    optional string pathname = 1;
+};
+
+message BinaryTypeResponse {
+    enum Win32BinaryType {
+        SCS_32BIT_BINARY = 0;
+        SCS_DOS_BINARY = 1;
+        SCS_WOW_BINARY = 2;
+        SCS_PIF_BINARY = 3;
+        SCS_POSIX_BINARY = 4;
+        SCS_OS216_BINARY = 5;
+        SCS_64BIT_BINARY = 6;
+    };
+
+    optional bool failure = 1;
+    optional Win32BinaryType result = 2;
+};
+
+message PutRequest {
+    optional string prefix = 1;
+    repeated Module module = 2;
+};
+
+message GetRequest {
+    optional string prefix = 1;
+    repeated string filename = 2;
+};
+
+message GetResponse {
+    repeated Module module = 1;
+};
+
+message ClearRequest {
+    optional string prefix = 1;
+};
+
+message IdentifyRequest {
+    optional string contester_id = 1;
+};
+
+message IdentifyResponse {
+    message OneSandbox {
+        optional string path = 1;
+        optional string username = 2;
+        optional string password = 3;
+    };
+
+    message SandboxPair {
+        optional OneSandbox compile = 1;
+        optional OneSandbox run = 2;
+    };
+
+    optional string invoker_id = 1;
+    repeated SandboxPair sandbox = 2;
+};
+
+message ListRequest {
+    optional string prefix = 1;
+};
+
+message ListResponse {
+    message FileInfo {
+        optional string name = 1;
+        optional bool is_directory = 2;
+    }
+
+    repeated FileInfo info = 1;
+};
+
+message StatRequest {
+    optional string name = 1;
+};
+
+message StatResponse {
+    optional string name = 1;
+    optional bool exists = 2;
+    optional bool is_directory = 3;
+}

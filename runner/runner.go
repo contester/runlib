@@ -1,23 +1,25 @@
 package main
 
 import (
-  "fmt"
-  "runlib/sub32"
+//  "fmt"
+//  "runlib/sub32"
+  "runlib/service"
+  "net/rpc"
+  "runlib/rpc4"
 )
 
-func sptr(s string) *string {
-  return &s
-}
-
-type foo1 int
-
-func (s *foo1) vava(f string) error {
-  fmt.Printf(f)
-  return nil
-}
+//func sptr(s string) *string {
+//  return &s
+//}
 
 func main() {
 
+  c := &service.Contester{}
+
+  rpc.Register(c)
+  rpc4.ConnectRpc4("localhost:9981", rpc.DefaultServer)
+
+/*
   sub := sub32.SubprocessCreate()
   cmd := "C:\\WINDOWS\\System32\\cmd.exe"
   sub.ApplicationName = sptr(cmd)
@@ -40,4 +42,5 @@ func main() {
   fmt.Printf("%s %s\n", sig, err)
 
   fmt.Printf("%s\n", <-sig)
+*/
 }

@@ -1,13 +1,14 @@
 package service
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
-	//  "fmt"
 	"code.google.com/p/goconf/conf"
 	"code.google.com/p/goprotobuf/proto"
+	"fmt"
+	"os"
+	"path/filepath"
 	"runlib/contester_proto"
+	"strconv"
+	"strings"
 )
 
 type Sandbox struct {
@@ -61,13 +62,52 @@ func readConfigFile(configFile string) (*ContesterConfig, error) {
 func configureSandboxes(conf *ContesterConfig) ([]SandboxPair, error) {
 	result := make([]SandboxPair, len(conf.RestrictedPasswords))
 	for index, password := range conf.RestrictedPasswords {
-		localBase := filepath.Join(conf.BasePath, string(index))
+		localBase := filepath.Join(conf.BasePath, strconv.Itoa(index))
 		result[index].Compile.Path = filepath.Join(localBase, "C")
 		result[index].Run.Path = filepath.Join(localBase, "R")
-		result[index].Run.Username = proto.String("tester" + string(index))
+		result[index].Run.Username = proto.String("tester" + strconv.Itoa(index))
 		result[index].Run.Password = proto.String(password)
+
+		e := checkSandbox(&result[index].Compile)
+		if e != nil {
+			return nil, e
+		}
+		e = checkSandbox(&result[index].Run)
+		if e != nil {
+			return nil, e
+		}
 	}
 	return result, nil
+}
+
+func checkSandbox(s *Sandbox) error {
+	fmt.Printf("%s\n", s.Path)
+	return os.MkdirAll(s.Path, os.ModeDir)
+}
+
+func getSandboxById(s []SandboxPair, id string) (*Sandbox, error) {
+	parts := strings.Split(id, ".")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("Malformed sandbox ID %s", id)
+	}
+
+	index, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return nil, fmt.Errorf("Can't parse non-int sandbox index %s", parts[0])
+	}
+
+	if index < 0 || index >= len(s) {
+		return nil, fmt.Errorf("Sandbox index %d is out of range (max=%d)", index, len(s))
+	}
+
+	switch strings.ToUpper(parts[1]) {
+	case "C":
+		return &s[index].Compile, nil
+	case "R":
+		return &s[index].Run, nil
+	}
+	return nil, fmt.Errorf("Sandbox variant %s is unknown", parts[1])
+
 }
 
 func NewContester(configFile string) *Contester {

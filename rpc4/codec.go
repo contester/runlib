@@ -7,7 +7,7 @@ import (
 	"io"
 	"net"
 	"net/rpc"
-//	"reflect"
+	//	"reflect"
 
 	"code.google.com/p/goprotobuf/proto"
 )
@@ -49,7 +49,7 @@ func WriteData(w io.Writer, data []byte) error {
 		return err
 	}
 	return nil
-}	
+}
 
 func WriteProto(w io.Writer, pb interface{}) error {
 	// Marshal the protobuf
@@ -98,12 +98,11 @@ func (s *ServerCodec) WriteResponse(resp *rpc.Response, pb interface{}) error {
 		// hasPayload = false
 	}
 
-
 	// Write the header
 	header := Header{
-		Method:      &resp.ServiceMethod,
-		Sequence:    &resp.Seq,
-		MessageType: &mt,
+		Method:         &resp.ServiceMethod,
+		Sequence:       &resp.Seq,
+		MessageType:    &mt,
 		PayloadPresent: &hasPayload,
 	}
 	if err := WriteProto(s.w, &header); err != nil {
@@ -133,7 +132,7 @@ func ConnectRpc4(addr string, s *rpc.Server) {
 		if err == nil {
 			s.ServeCodec(NewServerCodec(conn))
 		} else {
- 		fmt.Printf("%s\n", err)
+			fmt.Printf("%s\n", err)
 		}
 	}
 }

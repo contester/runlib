@@ -486,7 +486,7 @@ func (this *GetResponse) String() string { return proto.CompactTextString(this) 
 func (*GetResponse) ProtoMessage()       {}
 
 type ClearRequest struct {
-	Prefix           *string `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Sandbox          *string `protobuf:"bytes,1,opt,name=sandbox" json:"sandbox,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
@@ -494,9 +494,9 @@ func (this *ClearRequest) Reset()         { *this = ClearRequest{} }
 func (this *ClearRequest) String() string { return proto.CompactTextString(this) }
 func (*ClearRequest) ProtoMessage()       {}
 
-func (this *ClearRequest) GetPrefix() string {
-	if this != nil && this.Prefix != nil {
-		return *this.Prefix
+func (this *ClearRequest) GetSandbox() string {
+	if this != nil && this.Sandbox != nil {
+		return *this.Sandbox
 	}
 	return ""
 }
@@ -518,9 +518,9 @@ func (this *IdentifyRequest) GetContesterId() string {
 }
 
 type IdentifyResponse struct {
-	InvokerId        *string                         `protobuf:"bytes,1,opt,name=invoker_id" json:"invoker_id,omitempty"`
-	Sandbox          []*IdentifyResponse_SandboxPair `protobuf:"bytes,2,rep,name=sandbox" json:"sandbox,omitempty"`
-	XXX_unrecognized []byte                          `json:"-"`
+	InvokerId        *string `protobuf:"bytes,1,opt,name=invoker_id" json:"invoker_id,omitempty"`
+	SandboxCapacity  *uint32 `protobuf:"varint,2,opt,name=sandbox_capacity" json:"sandbox_capacity,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (this *IdentifyResponse) Reset()         { *this = IdentifyResponse{} }
@@ -534,60 +534,11 @@ func (this *IdentifyResponse) GetInvokerId() string {
 	return ""
 }
 
-type IdentifyResponse_OneSandbox struct {
-	Path             *string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	Username         *string `protobuf:"bytes,2,opt,name=username" json:"username,omitempty"`
-	Password         *string `protobuf:"bytes,3,opt,name=password" json:"password,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
-}
-
-func (this *IdentifyResponse_OneSandbox) Reset()         { *this = IdentifyResponse_OneSandbox{} }
-func (this *IdentifyResponse_OneSandbox) String() string { return proto.CompactTextString(this) }
-func (*IdentifyResponse_OneSandbox) ProtoMessage()       {}
-
-func (this *IdentifyResponse_OneSandbox) GetPath() string {
-	if this != nil && this.Path != nil {
-		return *this.Path
+func (this *IdentifyResponse) GetSandboxCapacity() uint32 {
+	if this != nil && this.SandboxCapacity != nil {
+		return *this.SandboxCapacity
 	}
-	return ""
-}
-
-func (this *IdentifyResponse_OneSandbox) GetUsername() string {
-	if this != nil && this.Username != nil {
-		return *this.Username
-	}
-	return ""
-}
-
-func (this *IdentifyResponse_OneSandbox) GetPassword() string {
-	if this != nil && this.Password != nil {
-		return *this.Password
-	}
-	return ""
-}
-
-type IdentifyResponse_SandboxPair struct {
-	Compile          *IdentifyResponse_OneSandbox `protobuf:"bytes,1,opt,name=compile" json:"compile,omitempty"`
-	Run              *IdentifyResponse_OneSandbox `protobuf:"bytes,2,opt,name=run" json:"run,omitempty"`
-	XXX_unrecognized []byte                       `json:"-"`
-}
-
-func (this *IdentifyResponse_SandboxPair) Reset()         { *this = IdentifyResponse_SandboxPair{} }
-func (this *IdentifyResponse_SandboxPair) String() string { return proto.CompactTextString(this) }
-func (*IdentifyResponse_SandboxPair) ProtoMessage()       {}
-
-func (this *IdentifyResponse_SandboxPair) GetCompile() *IdentifyResponse_OneSandbox {
-	if this != nil {
-		return this.Compile
-	}
-	return nil
-}
-
-func (this *IdentifyResponse_SandboxPair) GetRun() *IdentifyResponse_OneSandbox {
-	if this != nil {
-		return this.Run
-	}
-	return nil
+	return 0
 }
 
 type ListRequest struct {
@@ -640,47 +591,49 @@ func (this *ListResponse_FileInfo) GetIsDirectory() bool {
 }
 
 type StatRequest struct {
-	Name             *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Name             []string `protobuf:"bytes,1,rep,name=name" json:"name,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
 func (this *StatRequest) Reset()         { *this = StatRequest{} }
 func (this *StatRequest) String() string { return proto.CompactTextString(this) }
 func (*StatRequest) ProtoMessage()       {}
 
-func (this *StatRequest) GetName() string {
-	if this != nil && this.Name != nil {
-		return *this.Name
-	}
-	return ""
-}
-
 type StatResponse struct {
-	Name             *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Exists           *bool   `protobuf:"varint,2,opt,name=exists" json:"exists,omitempty"`
-	IsDirectory      *bool   `protobuf:"varint,3,opt,name=is_directory" json:"is_directory,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Stats            []*StatResponse_StatFile `protobuf:"bytes,1,rep,name=stats" json:"stats,omitempty"`
+	XXX_unrecognized []byte                   `json:"-"`
 }
 
 func (this *StatResponse) Reset()         { *this = StatResponse{} }
 func (this *StatResponse) String() string { return proto.CompactTextString(this) }
 func (*StatResponse) ProtoMessage()       {}
 
-func (this *StatResponse) GetName() string {
+type StatResponse_StatFile struct {
+	Name             *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Exists           *bool   `protobuf:"varint,2,opt,name=exists" json:"exists,omitempty"`
+	IsDirectory      *bool   `protobuf:"varint,3,opt,name=is_directory" json:"is_directory,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (this *StatResponse_StatFile) Reset()         { *this = StatResponse_StatFile{} }
+func (this *StatResponse_StatFile) String() string { return proto.CompactTextString(this) }
+func (*StatResponse_StatFile) ProtoMessage()       {}
+
+func (this *StatResponse_StatFile) GetName() string {
 	if this != nil && this.Name != nil {
 		return *this.Name
 	}
 	return ""
 }
 
-func (this *StatResponse) GetExists() bool {
+func (this *StatResponse_StatFile) GetExists() bool {
 	if this != nil && this.Exists != nil {
 		return *this.Exists
 	}
 	return false
 }
 
-func (this *StatResponse) GetIsDirectory() bool {
+func (this *StatResponse_StatFile) GetIsDirectory() bool {
 	if this != nil && this.IsDirectory != nil {
 		return *this.IsDirectory
 	}

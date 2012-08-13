@@ -101,7 +101,7 @@ message GetResponse {
 };
 
 message ClearRequest {
-    optional string prefix = 1;
+    optional string sandbox = 1;
 };
 
 message IdentifyRequest {
@@ -109,19 +109,8 @@ message IdentifyRequest {
 };
 
 message IdentifyResponse {
-    message OneSandbox {
-        optional string path = 1;
-        optional string username = 2;
-        optional string password = 3;
-    };
-
-    message SandboxPair {
-        optional OneSandbox compile = 1;
-        optional OneSandbox run = 2;
-    };
-
     optional string invoker_id = 1;
-    repeated SandboxPair sandbox = 2;
+    optional uint32 sandbox_capacity = 2;
 };
 
 message ListRequest {
@@ -138,11 +127,15 @@ message ListResponse {
 };
 
 message StatRequest {
-    optional string name = 1;
+    repeated string name = 1;
 };
 
 message StatResponse {
-    optional string name = 1;
-    optional bool exists = 2;
-    optional bool is_directory = 3;
+    message StatFile {
+        optional string name = 1;
+        optional bool exists = 2;
+        optional bool is_directory = 3;
+    }
+
+    repeated StatFile stats = 1;
 }

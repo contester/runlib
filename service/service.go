@@ -135,17 +135,23 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	return nil
 }
 
-func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.StatResponse) error {
-	name := request.GetName()
-
-	response.Name = &name
+func statFile(name string) *contester_proto.StatResponse_StatFile {
+	f := &contester_proto.StatResponse_StatFile{}
+	f.Name = &name
 	info, err := os.Stat(name)
 	if err == nil {
-		response.Exists = proto.Bool(true)
+		f.Exists = proto.Bool(true)
 		if info.IsDir() {
-			response.IsDirectory = proto.Bool(true)
+			f.IsDirectory = proto.Bool(true)
 		}
 	}
+	return f
+}
 
+func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.StatResponse) error {
+	response.Stats = make([]*contester_proto.StatResponse_StatFile, len(request.Name))
+	for index, name := range request.Name {
+		response.Stats[index] = statFile(name)
+	}
 	return nil
 }

@@ -14,9 +14,11 @@ func main() {
   sub := sub32.SubprocessCreate()
   cmd := "C:\\WINDOWS\\System32\\cmd.exe"
   sub.ApplicationName = sptr(cmd)
-  sub.CommandLine = sptr(cmd)
+  sub.CommandLine = sptr(cmd + " /c dir")
   sub.Username = sptr("test")
   sub.Password = sptr("test321")
+  sub.StdOut = &sub32.SubprocessOutputRedirect{}
+  sub.StdOut.ToMemory = true
   
   sig, err := sub.Start()
 

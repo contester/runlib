@@ -1,6 +1,9 @@
 package sub32
 
 import (
+  "bytes"
+  "io"
+  "os"
   "syscall"
   "unsafe"
 )
@@ -19,6 +22,15 @@ const (
   EF_PROCESS_LIMIT_HIT = (1 << 10)
   EF_PROCESS_LIMIT_HIT_POST = (1 << 11)
 )
+
+type SubprocessOutputRedirect struct {
+  ToMemory bool
+  ToFile *string
+
+  buffer *bytes.Buffer
+  reader *os.File
+  writer *os.File
+}
 
 type Subprocess struct {
   ApplicationName *string
@@ -40,8 +52,13 @@ type Subprocess struct {
   HardMemoryLimit uint64
   TimeQuantum uint32
 
+  StdOut *SubprocessOutputRedirect
+
   hProcess syscall.Handle
   hThread syscall.Handle
+
+  bufferFunctions []func() error
+  bufferChan chan error
 
   /*
   HANDLE hJob, hProcess, bhThread, hUser,
@@ -94,6 +111,8 @@ type SubprocessResult struct {
   WallTime uint64
   PeakMemory uint64
   TotalProcesses uint64
+
+  Output *bytes.Buffer
 }
 
 func SubprocessCreate() *Subprocess {
@@ -104,10 +123,17 @@ func SubprocessCreate() *Subprocess {
 }
 
 func (sub *Subprocess) Launch() (err error) {
+  _ = sub.SetupRedirects()
+
   si := &syscall.StartupInfo{}
   si.Cb = uint32(unsafe.Sizeof(*si))
   si.Flags = STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW;
   si.ShowWindow = syscall.SW_SHOWMINNOACTIVE
+  if sub.StdOut != nil {
+    si.StdOutput = syscall.Handle(sub.StdOut.writer.Fd())
+  }
+
+
   pi := &syscall.ProcessInformation{}
 
   applicationName := StringPtrToUTF16Ptr(sub.ApplicationName)
@@ -150,6 +176,14 @@ func (sub *Subprocess) Launch() (err error) {
 
   sub.hProcess = pi.Process
   sub.hThread = pi.Thread
+
+  sub.bufferChan = make(chan error, len(sub.bufferFunctions))
+
+  for _, fn := range sub.bufferFunctions {
+    go func(fn func() error) {
+      sub.bufferChan <- fn()
+    }(fn)
+  }
 
   return nil
 }
@@ -194,6 +228,22 @@ func GetProcessMemoryUsage(process syscall.Handle) uint32 {
 
 func UpdateProcessMemory(process syscall.Handle, result *SubprocessResult) {
   result.PeakMemory = uint64(GetProcessMemoryUsage(process))
+}
+
+func (sub *Subprocess) SetupRedirects() error {
+  if sub.StdOut != nil {
+    sub.StdOut.buffer = &bytes.Buffer{}
+    var err error
+    sub.StdOut.reader, sub.StdOut.writer, err = os.Pipe()
+    if err != nil {
+      return err
+    }
+    sub.bufferFunctions = append(sub.bufferFunctions, func() error {
+        _, err := io.Copy(sub.StdOut.buffer, sub.StdOut.reader)
+        return err
+      })
+  }
+  return nil
 }
 
 func (sub *Subprocess) BottomHalf(sig chan *SubprocessResult) {
@@ -256,6 +306,14 @@ func (sub *Subprocess) BottomHalf(sig chan *SubprocessResult) {
 
   if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
     result.SuccessCode |= EF_MEMORY_LIMIT_HIT_POST
+  }
+
+  for _ = range sub.bufferFunctions {
+    <-sub.bufferChan
+  }
+
+  if sub.StdOut != nil {
+    result.Output = sub.StdOut.buffer
   }
 
   sig <- result

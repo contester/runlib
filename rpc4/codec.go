@@ -1,21 +1,21 @@
 package rpc4
 
 import (
-  "bufio"
-  "encoding/binary"
-  "fmt"
-  "io"
-  "net"
-  "net/rpc"
+	"bufio"
+	"encoding/binary"
+	"fmt"
+	"io"
+	"net"
+	"net/rpc"
 
-  "code.google.com/p/goprotobuf/proto"
+	"code.google.com/p/goprotobuf/proto"
 )
 
 type ServerCodec struct {
-  r *bufio.Reader
-  w io.WriteCloser
+	r *bufio.Reader
+	w io.WriteCloser
 
-  hasPayload bool
+	hasPayload bool
 }
 
 type ProtoReader interface {
@@ -24,7 +24,7 @@ type ProtoReader interface {
 }
 
 func ReadProto(r ProtoReader, pb interface{}) error {
-        var size uint32
+	var size uint32
 	err := binary.Read(r, binary.BigEndian, &size)
 	if err != nil {
 		return err
@@ -88,15 +88,15 @@ func (s *ServerCodec) ReadRequestBody(pb interface{}) error {
 func (s *ServerCodec) WriteResponse(resp *rpc.Response, pb interface{}) error {
 	mt := Header_RESPONSE
 	if resp.Error != "" {
-                mt = Header_ERROR
+		mt = Header_ERROR
 		// header.Error = &resp.Error
 	}
 
 	// Write the header
 	header := Header{
-		Method: &resp.ServiceMethod,
-		Sequence: &resp.Seq,
-                MessageType: &mt,
+		Method:      &resp.ServiceMethod,
+		Sequence:    &resp.Seq,
+		MessageType: &mt,
 	}
 	if err := WriteProto(s.w, &header); err != nil {
 		return nil

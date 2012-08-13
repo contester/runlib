@@ -1,17 +1,17 @@
 package service
 
 import (
-  "os"
-  "strings"
-  "path/filepath"
-//  "fmt"
-  "runlib/contester_proto"
-	"code.google.com/p/goprotobuf/proto"
+	"os"
+	"path/filepath"
+	"strings"
+	//  "fmt"
 	"code.google.com/p/goconf/conf"
+	"code.google.com/p/goprotobuf/proto"
+	"runlib/contester_proto"
 )
 
 type Sandbox struct {
-	Path string
+	Path               string
 	Username, Password *string
 }
 
@@ -25,7 +25,7 @@ type Contester struct {
 }
 
 type ContesterConfig struct {
-	BasePath string
+	BasePath            string
 	RestrictedPasswords []string
 }
 
@@ -38,36 +38,36 @@ func getHostname() string {
 }
 
 func readConfigFile(configFile string) (*ContesterConfig, error) {
-   c, err := conf.ReadConfigFile(configFile)
-  if err != nil {
-	return nil, err
-}
-  result := &ContesterConfig{}
-  result.BasePath, err = c.GetString("default", "path")
-  if err != nil {
-	return nil, err
-  }
+	c, err := conf.ReadConfigFile(configFile)
+	if err != nil {
+		return nil, err
+	}
+	result := &ContesterConfig{}
+	result.BasePath, err = c.GetString("default", "path")
+	if err != nil {
+		return nil, err
+	}
 
-  passwords, err := c.GetString("default", "passwords")
-  if err != nil {
-	return nil, err
-  }
+	passwords, err := c.GetString("default", "passwords")
+	if err != nil {
+		return nil, err
+	}
 
-  result.RestrictedPasswords = strings.Split(passwords, " ")
+	result.RestrictedPasswords = strings.Split(passwords, " ")
 
-  return result, nil
+	return result, nil
 }
 
 func configureSandboxes(conf *ContesterConfig) ([]SandboxPair, error) {
-  result := make([]SandboxPair, len(conf.RestrictedPasswords))
-  for index, password := range conf.RestrictedPasswords {
-    localBase := filepath.Join(conf.BasePath, string(index))
-    result[index].Compile.Path = filepath.Join(localBase, "C")
-    result[index].Run.Path = filepath.Join(localBase, "R")
-    result[index].Run.Username = proto.String("tester" + string(index))
-    result[index].Run.Password = proto.String(password)
-  }
-  return result, nil
+	result := make([]SandboxPair, len(conf.RestrictedPasswords))
+	for index, password := range conf.RestrictedPasswords {
+		localBase := filepath.Join(conf.BasePath, string(index))
+		result[index].Compile.Path = filepath.Join(localBase, "C")
+		result[index].Run.Path = filepath.Join(localBase, "R")
+		result[index].Run.Username = proto.String("tester" + string(index))
+		result[index].Run.Password = proto.String(password)
+	}
+	return result, nil
 }
 
 func NewContester(configFile string) *Contester {
@@ -90,22 +90,22 @@ func NewContester(configFile string) *Contester {
 }
 
 func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response *contester_proto.IdentifyResponse) error {
-  response.InvokerId = &s.InvokerId
+	response.InvokerId = &s.InvokerId
 
-  return nil
+	return nil
 }
 
 func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.StatResponse) error {
-  name := request.GetName()
-  
-  response.Name = &name
-  info, err := os.Stat(name)
-  if err == nil {
-	response.Exists = proto.Bool(true)
-    if info.IsDir() {
-      response.IsDirectory = proto.Bool(true)
-    }
-  }
+	name := request.GetName()
 
-  return nil
+	response.Name = &name
+	info, err := os.Stat(name)
+	if err == nil {
+		response.Exists = proto.Bool(true)
+		if info.IsDir() {
+			response.IsDirectory = proto.Bool(true)
+		}
+	}
+
+	return nil
 }

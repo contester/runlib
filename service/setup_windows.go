@@ -2,18 +2,18 @@ package service
 
 import (
 	"code.google.com/p/goconf/conf"
+	"code.google.com/p/goprotobuf/proto"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"code.google.com/p/goprotobuf/proto"
 )
 
 type ContesterConfig struct {
 	BasePath            string
 	RestrictedPasswords []string
-	Server	string
+	Server              string
 }
 
 func readConfigFile(configFile string) (*ContesterConfig, error) {
@@ -68,7 +68,7 @@ func checkSandbox(s *Sandbox) error {
 		return err
 	}
 	if s.Username != nil {
-		cmd := exec.Command("subinacl.exe", "/file", s.Path, "/grant=" + *s.Username + "=RWC")
+		cmd := exec.Command("subinacl.exe", "/file", s.Path, "/grant="+*s.Username+"=RWC")
 		cmd.Run()
 	}
 	return nil

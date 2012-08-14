@@ -112,46 +112,6 @@ func (this *LocalEnvironment_Variable) GetExpand() bool {
 	return false
 }
 
-type LoginInformation struct {
-	Username         *string `protobuf:"bytes,1,opt,name=username" json:"username,omitempty"`
-	Password         *string `protobuf:"bytes,2,opt,name=password" json:"password,omitempty"`
-	Domain           *string `protobuf:"bytes,3,opt,name=domain" json:"domain,omitempty"`
-	Uid              *uint32 `protobuf:"varint,4,opt,name=uid" json:"uid,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
-}
-
-func (this *LoginInformation) Reset()         { *this = LoginInformation{} }
-func (this *LoginInformation) String() string { return proto.CompactTextString(this) }
-func (*LoginInformation) ProtoMessage()       {}
-
-func (this *LoginInformation) GetUsername() string {
-	if this != nil && this.Username != nil {
-		return *this.Username
-	}
-	return ""
-}
-
-func (this *LoginInformation) GetPassword() string {
-	if this != nil && this.Password != nil {
-		return *this.Password
-	}
-	return ""
-}
-
-func (this *LoginInformation) GetDomain() string {
-	if this != nil && this.Domain != nil {
-		return *this.Domain
-	}
-	return ""
-}
-
-func (this *LoginInformation) GetUid() uint32 {
-	if this != nil && this.Uid != nil {
-		return *this.Uid
-	}
-	return 0
-}
-
 type LocalExecutionParameters struct {
 	ApplicationName       *string             `protobuf:"bytes,1,opt,name=application_name" json:"application_name,omitempty"`
 	CommandLine           *string             `protobuf:"bytes,2,opt,name=command_line" json:"command_line,omitempty"`
@@ -164,11 +124,11 @@ type LocalExecutionParameters struct {
 	NoJob                 *bool               `protobuf:"varint,9,opt,name=no_job" json:"no_job,omitempty"`
 	ProcessLimit          *uint32             `protobuf:"varint,10,opt,name=process_limit" json:"process_limit,omitempty"`
 	TimeLimitHardMicros   *uint64             `protobuf:"varint,15,opt,name=time_limit_hard_micros" json:"time_limit_hard_micros,omitempty"`
-	LoginInformation      *LoginInformation   `protobuf:"bytes,11,opt,name=login_information" json:"login_information,omitempty"`
 	StdIn                 *RedirectParameters `protobuf:"bytes,12,opt,name=std_in" json:"std_in,omitempty"`
 	StdOut                *RedirectParameters `protobuf:"bytes,13,opt,name=std_out" json:"std_out,omitempty"`
 	StdErr                *RedirectParameters `protobuf:"bytes,14,opt,name=std_err" json:"std_err,omitempty"`
 	CommandLineParameters []string            `protobuf:"bytes,16,rep,name=command_line_parameters" json:"command_line_parameters,omitempty"`
+	SandboxId             *string             `protobuf:"bytes,17,opt,name=sandbox_id" json:"sandbox_id,omitempty"`
 	XXX_unrecognized      []byte              `json:"-"`
 }
 
@@ -253,13 +213,6 @@ func (this *LocalExecutionParameters) GetTimeLimitHardMicros() uint64 {
 	return 0
 }
 
-func (this *LocalExecutionParameters) GetLoginInformation() *LoginInformation {
-	if this != nil {
-		return this.LoginInformation
-	}
-	return nil
-}
-
 func (this *LocalExecutionParameters) GetStdIn() *RedirectParameters {
 	if this != nil {
 		return this.StdIn
@@ -279,6 +232,13 @@ func (this *LocalExecutionParameters) GetStdErr() *RedirectParameters {
 		return this.StdErr
 	}
 	return nil
+}
+
+func (this *LocalExecutionParameters) GetSandboxId() string {
+	if this != nil && this.SandboxId != nil {
+		return *this.SandboxId
+	}
+	return ""
 }
 
 type LocalExecutionResult struct {

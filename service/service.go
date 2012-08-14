@@ -1,31 +1,20 @@
 package service
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	"bytes"
+	"code.google.com/p/goprotobuf/proto"
 	"compress/zlib"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runlib/contester_proto"
-	"strconv"
 	"strings"
 )
 
-type Sandbox struct {
-	Path               string
-	Username, Password *string
-}
-
-type SandboxPair struct {
-	Compile, Run Sandbox
-}
-
 type Contester struct {
-	InvokerId string
-	Sandboxes []SandboxPair
-	Env []*contester_proto.LocalEnvironment_Variable
+	InvokerId     string
+	Sandboxes     []SandboxPair
+	Env           []*contester_proto.LocalEnvironment_Variable
 	ServerAddress string
 }
 
@@ -37,38 +26,13 @@ func getHostname() string {
 	return result
 }
 
-func getSandboxById(s []SandboxPair, id string) (*Sandbox, error) {
-	parts := strings.Split(id, ".")
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("Malformed sandbox ID %s", id)
-	}
-
-	index, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return nil, fmt.Errorf("Can't parse non-int sandbox index %s", parts[0])
-	}
-
-	if index < 0 || index >= len(s) {
-		return nil, fmt.Errorf("Sandbox index %d is out of range (max=%d)", index, len(s))
-	}
-
-	switch strings.ToUpper(parts[1]) {
-	case "C":
-		return &s[index].Compile, nil
-	case "R":
-		return &s[index].Run, nil
-	}
-	return nil, fmt.Errorf("Sandbox variant %s is unknown", parts[1])
-
-}
-
 func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {
 	list := os.Environ()
 	result := make([]*contester_proto.LocalEnvironment_Variable, len(list))
 	for i, v := range list {
 		s := strings.SplitN(v, "=", 2)
 		result[i] = &contester_proto.LocalEnvironment_Variable{
-			Name: proto.String(s[0]),
+			Name:  proto.String(s[0]),
 			Value: proto.String(s[1])}
 	}
 	return result
@@ -86,9 +50,9 @@ func NewContester(configFile string) *Contester {
 	}
 
 	result := &Contester{
-		InvokerId: getHostname(),
-		Sandboxes: sandboxes,
-		Env: getLocalEnvironment(),
+		InvokerId:     getHostname(),
+		Sandboxes:     sandboxes,
+		Env:           getLocalEnvironment(),
 		ServerAddress: conf.Server,
 	}
 
@@ -103,7 +67,7 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	for i, p := range s.Sandboxes {
 		response.Sandboxes[i] = &contester_proto.SandboxLocations{
 			Compile: proto.String(p.Compile.Path),
-			Run: proto.String(p.Run.Path)}
+			Run:     proto.String(p.Run.Path)}
 	}
 
 	return nil

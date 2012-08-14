@@ -51,6 +51,25 @@ func parseSuccessCode(succ uint32) *contester_proto.ExecutionResultFlags {
 	return result
 }
 
+func parseTime(r *sub32.SubprocessResult) *contester_proto.ExecutionResultTime {
+	if r.UserTime == 0 && r.KernelTime == 0 && r.WallTime == 0 {
+		return nil
+	}
+
+	result := &contester_proto.ExecutionResultTime{}
+
+	if r.UserTime != 0 {
+		result.UserTimeMicros = proto.Uint64(r.UserTime)
+	}
+	if r.KernelTime != 0 {
+		result.KernelTimeMicros = proto.Uint64(r.KernelTime)
+	}
+	if r.WallTime != 0 {
+		result.WallTimeMicros = proto.Uint64(r.WallTime)
+	}
+	return result
+}
+
 func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
 	sub := sub32.SubprocessCreate()
 
@@ -97,6 +116,8 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 	response.ReturnCode = proto.Uint32(result.ExitCode)
 	response.Flags = parseSuccessCode(result.SuccessCode)
+	response.Time = parseTime(result)
+	response.Memory = proto.Uint64(result.PeakMemory)
 
 	return nil
 }

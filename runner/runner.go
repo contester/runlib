@@ -17,7 +17,7 @@ func main() {
 	c := service.NewContester("server.ini")
 
 	rpc.Register(c)
-	rpc4.ConnectRpc4("localhost:9981", rpc.DefaultServer)
+	rpc4.ConnectRpc4(c.ServerAddress, rpc.DefaultServer)
 
 	/*
 	  sub := sub32.SubprocessCreate()

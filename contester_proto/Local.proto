@@ -87,8 +87,12 @@ message BinaryTypeResponse {
 };
 
 message PutRequest {
-    optional string prefix = 1;
+    optional string sandbox = 1;
     repeated Module module = 2;
+};
+
+message PutResponse {
+
 };
 
 message GetRequest {
@@ -108,9 +112,15 @@ message IdentifyRequest {
     optional string contester_id = 1;
 };
 
+message SandboxLocations {
+    optional string compile = 1;
+    optional string run = 2;
+}
+
 message IdentifyResponse {
     optional string invoker_id = 1;
-    optional uint32 sandbox_capacity = 2;
+    repeated SandboxLocations sandboxes = 2;
+    optional LocalEnvironment environment = 3;
 };
 
 message ListRequest {
@@ -152,3 +162,5 @@ message GlobResponse {
 
     repeated SingleGlob results = 1;
 };
+
+message EmptyMessage {};

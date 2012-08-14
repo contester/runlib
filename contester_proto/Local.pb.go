@@ -443,7 +443,7 @@ func (this *BinaryTypeResponse) GetResult() BinaryTypeResponse_Win32BinaryType {
 }
 
 type PutRequest struct {
-	Prefix           *string   `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Sandbox          *string   `protobuf:"bytes,1,opt,name=sandbox" json:"sandbox,omitempty"`
 	Module           []*Module `protobuf:"bytes,2,rep,name=module" json:"module,omitempty"`
 	XXX_unrecognized []byte    `json:"-"`
 }
@@ -452,12 +452,20 @@ func (this *PutRequest) Reset()         { *this = PutRequest{} }
 func (this *PutRequest) String() string { return proto.CompactTextString(this) }
 func (*PutRequest) ProtoMessage()       {}
 
-func (this *PutRequest) GetPrefix() string {
-	if this != nil && this.Prefix != nil {
-		return *this.Prefix
+func (this *PutRequest) GetSandbox() string {
+	if this != nil && this.Sandbox != nil {
+		return *this.Sandbox
 	}
 	return ""
 }
+
+type PutResponse struct {
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (this *PutResponse) Reset()         { *this = PutResponse{} }
+func (this *PutResponse) String() string { return proto.CompactTextString(this) }
+func (*PutResponse) ProtoMessage()       {}
 
 type GetRequest struct {
 	Prefix           *string  `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
@@ -517,10 +525,35 @@ func (this *IdentifyRequest) GetContesterId() string {
 	return ""
 }
 
-type IdentifyResponse struct {
-	InvokerId        *string `protobuf:"bytes,1,opt,name=invoker_id" json:"invoker_id,omitempty"`
-	SandboxCapacity  *uint32 `protobuf:"varint,2,opt,name=sandbox_capacity" json:"sandbox_capacity,omitempty"`
+type SandboxLocations struct {
+	Compile          *string `protobuf:"bytes,1,opt,name=compile" json:"compile,omitempty"`
+	Run              *string `protobuf:"bytes,2,opt,name=run" json:"run,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (this *SandboxLocations) Reset()         { *this = SandboxLocations{} }
+func (this *SandboxLocations) String() string { return proto.CompactTextString(this) }
+func (*SandboxLocations) ProtoMessage()       {}
+
+func (this *SandboxLocations) GetCompile() string {
+	if this != nil && this.Compile != nil {
+		return *this.Compile
+	}
+	return ""
+}
+
+func (this *SandboxLocations) GetRun() string {
+	if this != nil && this.Run != nil {
+		return *this.Run
+	}
+	return ""
+}
+
+type IdentifyResponse struct {
+	InvokerId        *string             `protobuf:"bytes,1,opt,name=invoker_id" json:"invoker_id,omitempty"`
+	Sandboxes        []*SandboxLocations `protobuf:"bytes,2,rep,name=sandboxes" json:"sandboxes,omitempty"`
+	Environment      *LocalEnvironment   `protobuf:"bytes,3,opt,name=environment" json:"environment,omitempty"`
+	XXX_unrecognized []byte              `json:"-"`
 }
 
 func (this *IdentifyResponse) Reset()         { *this = IdentifyResponse{} }
@@ -534,11 +567,11 @@ func (this *IdentifyResponse) GetInvokerId() string {
 	return ""
 }
 
-func (this *IdentifyResponse) GetSandboxCapacity() uint32 {
-	if this != nil && this.SandboxCapacity != nil {
-		return *this.SandboxCapacity
+func (this *IdentifyResponse) GetEnvironment() *LocalEnvironment {
+	if this != nil {
+		return this.Environment
 	}
-	return 0
+	return nil
 }
 
 type ListRequest struct {
@@ -674,6 +707,14 @@ func (this *GlobResponse_SingleGlob) GetExpression() string {
 	}
 	return ""
 }
+
+type EmptyMessage struct {
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (this *EmptyMessage) Reset()         { *this = EmptyMessage{} }
+func (this *EmptyMessage) String() string { return proto.CompactTextString(this) }
+func (*EmptyMessage) ProtoMessage()       {}
 
 func init() {
 	proto.RegisterEnum("contester.proto.BinaryTypeResponse_Win32BinaryType", BinaryTypeResponse_Win32BinaryType_name, BinaryTypeResponse_Win32BinaryType_value)

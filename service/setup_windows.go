@@ -13,6 +13,7 @@ import (
 type ContesterConfig struct {
 	BasePath            string
 	RestrictedPasswords []string
+	Server	string
 }
 
 func readConfigFile(configFile string) (*ContesterConfig, error) {
@@ -32,6 +33,10 @@ func readConfigFile(configFile string) (*ContesterConfig, error) {
 	}
 
 	result.RestrictedPasswords = strings.Split(passwords, " ")
+
+	if result.Server, err = c.GetString("default", "server"); err != nil {
+		return nil, err
+	}
 
 	return result, nil
 }

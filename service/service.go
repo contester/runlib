@@ -24,11 +24,6 @@ type Contester struct {
 	Sandboxes []SandboxPair
 }
 
-type ContesterConfig struct {
-	BasePath            string
-	RestrictedPasswords []string
-}
-
 func getHostname() string {
 	result, err := os.Hostname()
 	if err != nil {

@@ -17,7 +17,10 @@ type SandboxPair struct {
 }
 
 func getSandboxById(s []SandboxPair, id string) (*Sandbox, error) {
-	parts := strings.Split(id, ".")
+	if len(id) < 4 || id[0] != '%' {
+		return nil, fmt.Errorf("Malformed sandbox ID %s", id)
+	}
+	parts := strings.Split(id[1:], ".")
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("Malformed sandbox ID %s", id)
 	}

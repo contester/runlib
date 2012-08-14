@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"runlib/contester_proto"
 	"strings"
+	"io/ioutil"
+	"path"
 )
 
 type Contester struct {
@@ -126,6 +128,23 @@ func BlobReader(blob *contester_proto.Blob) (io.Reader, error) {
 	return bytes.NewBuffer(blob.Data), nil
 }
 
+func Blob(data []byte) *contester_proto.Blob {
+	var b bytes.Buffer
+	w := zlib.NewWriter(&b)
+	io.Copy(w, bytes.NewBuffer(data))
+	w.Close()
+	
+	z := contester_proto.Blob_CompressionInfo_METHOD_ZLIB
+	result := &contester_proto.Blob{
+		Compression: &contester_proto.Blob_CompressionInfo{
+			Method: &z,
+			OriginalSize: proto.Uint32(uint32(len(data))),
+		},
+		Data: b.Bytes(),
+	}
+	return result
+}
+
 func (s *Contester) Put(request *contester_proto.PutRequest, response *contester_proto.PutResponse) error {
 	sandbox, err := getSandboxById(s.Sandboxes, request.GetSandbox())
 	if err != nil {
@@ -144,6 +163,59 @@ func (s *Contester) Put(request *contester_proto.PutRequest, response *contester
 		}
 		io.Copy(f, r)
 		f.Close()
+	}
+	return nil
+}
+
+func (s *Contester) Clear(request *contester_proto.ClearRequest, response *contester_proto.EmptyMessage) error {
+	sandbox, err := getSandboxById(s.Sandboxes, request.GetSandbox())
+	if err != nil {
+		return err
+	}
+
+	path := sandbox.Path
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, info := range files {
+		if info.Name() == "." || info.Name() == ".." {
+			continue
+		}
+		fullpath := filepath.Join(path, info.Name())
+		err = os.RemoveAll(fullpath)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Contester) Get(request *contester_proto.GetRequest, response *contester_proto.GetResponse) error {
+	sandbox, err := getSandboxById(s.Sandboxes, request.GetPrefix())
+
+	if err != nil {
+		return err
+	}
+
+	response.Module = make([]*contester_proto.Module, 0, len(request.Filename))
+
+	basepath := sandbox.Path
+	for _, name := range request.Filename {
+		fullpath := filepath.Join(basepath, name)
+		data, err := ioutil.ReadFile(fullpath)
+		if err != nil {
+			continue
+		}
+		blob := Blob(data)
+		module := &contester_proto.Module{
+			Data: blob,
+			Name: proto.String(name),
+			Type: proto.String(path.Ext(name)[1:]),
+		}
+		response.Module = response.Module[:len(response.Module) + 1]
+		response.Module[len(response.Module) - 1] = module
 	}
 	return nil
 }

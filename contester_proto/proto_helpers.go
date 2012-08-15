@@ -1,11 +1,11 @@
 package contester_proto
 
 import (
+	"bytes"
 	"code.google.com/p/goprotobuf/proto"
-"io"
-"compress/zlib"
-"bytes"
-"crypto/sha1"
+	"compress/zlib"
+	"crypto/sha1"
+	"io"
 )
 
 func (blob *Blob) Reader() (io.Reader, error) {
@@ -21,7 +21,7 @@ func (blob *Blob) Reader() (io.Reader, error) {
 }
 
 func (blob *Blob) Bytes() ([]byte, error) {
-	reader, err := blob.Reader() 
+	reader, err := blob.Reader()
 	if err != nil {
 		return nil, err
 	}
@@ -66,10 +66,10 @@ func NewBlob(data []byte) (*Blob, error) {
 		Sha1: sha1sum,
 	}
 
-	if len(compressed) < len(data) - 8 {
+	if len(compressed) < len(data)-8 {
 		method := Blob_CompressionInfo_METHOD_ZLIB
 		result.Compression = &Blob_CompressionInfo{
-			Method: &method,
+			Method:       &method,
 			OriginalSize: proto.Uint32(uint32(len(data))),
 		}
 		result.Data = compressed

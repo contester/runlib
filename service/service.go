@@ -4,7 +4,6 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"runlib/contester_proto"
 	"strings"
@@ -85,27 +84,25 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	return nil
 }
 
-func (s *Contester) Put(request *contester_proto.PutRequest, response *contester_proto.PutResponse) error {
-	sandbox, err := getSandboxById(s.Sandboxes, request.GetSandbox())
-	if err != nil {
-		return err
-	}
-
-	for _, module := range request.Module {
-		destPath := filepath.Join(sandbox.Path, module.GetName())
-		destFile, err := os.Create(destPath)
+func (s *Contester) Put(request *contester_proto.PutRequest, response *contester_proto.EmptyMessage) error {
+	for _, item := range request.Files {
+		resolved, err := resolvePath(s.Sandboxes, *item.Name, true)
 		if err != nil {
 			return err
 		}
-		data, err := module.Data.Bytes()
+		dest, err := os.Create(resolved)
 		if err != nil {
 			return err
 		}
-		_, err = destFile.Write(data)
+		data, err := item.Data.Bytes()
 		if err != nil {
 			return err
 		}
-		destFile.Close()
+		_, err = dest.Write(data)
+		if err != nil {
+			return err
+		}
+		dest.Close()
 	}
 	return nil
 }
@@ -135,31 +132,50 @@ func (s *Contester) Clear(request *contester_proto.ClearRequest, response *conte
 	return nil
 }
 
-func (s *Contester) Get(request *contester_proto.GetRequest, response *contester_proto.GetResponse) error {
-	sandbox, err := getSandboxById(s.Sandboxes, request.GetPrefix())
-
+func getSingleFile(name string) (*contester_proto.File, error) {
+	data, err := ioutil.ReadFile(name)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	blob, _ := contester_proto.NewBlob(data)
+
+	return &contester_proto.File{
+		Data: blob,
+		Name: proto.String(name),
+	}, nil
+}
+
+func (s *Contester) getSingleName(name string) (*contester_proto.FileContents, error) {
+	stats, err := s.singleGlob(name)
+	if err != nil || stats == nil {
+		return nil, err
 	}
 
-	response.Module = make([]*contester_proto.Module, 0, len(request.Filename))
+	files := make([]*contester_proto.File, 0, len(stats.Results))
 
-	basepath := sandbox.Path
-	for _, name := range request.Filename {
-		fullpath := filepath.Join(basepath, name)
-		data, err := ioutil.ReadFile(fullpath)
-		if err != nil {
-			continue
+	for _, st := range stats.Results {
+		if !*st.IsDirectory {
+			f, err := getSingleFile(*st.Name)
+			if err == nil && f != nil {
+				files = append(files, f)
+			}
 		}
-		blob, _ := contester_proto.NewBlob(data)
+	}
 
-		module := &contester_proto.Module{
-			Data: blob,
-			Name: proto.String(name),
-			Type: proto.String(path.Ext(name)[1:]),
+	if len(files) > 0 {
+		return &contester_proto.FileContents{Name: &name, Files: files}, nil
+	}
+	return nil, nil
+}
+
+func (s *Contester) Get(request *contester_proto.NameList, response *contester_proto.FileContentsList) error {
+	response.Results = make([]*contester_proto.FileContents, 0, len(request.Name))
+
+	for _, name := range request.Name {
+		item, err := s.getSingleName(name)
+		if err == nil && item != nil {
+			response.Results = append(response.Results, item)
 		}
-		response.Module = response.Module[:len(response.Module)+1]
-		response.Module[len(response.Module)-1] = module
 	}
 	return nil
 }

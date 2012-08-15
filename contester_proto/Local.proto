@@ -79,24 +79,6 @@ message BinaryTypeResponse {
     optional Win32BinaryType result = 2;
 };
 
-message PutRequest {
-    optional string sandbox = 1;
-    repeated Module module = 2;
-};
-
-message PutResponse {
-
-};
-
-message GetRequest {
-    optional string prefix = 1;
-    repeated string filename = 2;
-};
-
-message GetResponse {
-    repeated Module module = 1;
-};
-
 message ClearRequest {
     optional string sandbox = 1;
 };
@@ -137,6 +119,19 @@ message FileStats {
 
 message FileStatsList {
 	repeated FileStats results = 1;
+};
+
+message PutRequest {
+    repeated File files = 1;
+};
+
+message FileContents {
+    required string name = 1;
+    repeated File files = 2;
+};
+
+message FileContentsList {
+    repeated FileContents results = 1;
 };
 
 message EmptyMessage {};

@@ -18,14 +18,13 @@ message Blob {
     optional bytes sha1 = 3;
 };
 
-message File {
-    required string name = 1;
-    required Blob data = 2;
-    required string type = 3;
-};
-
 message Module {
     optional string name = 3;
     required Blob data = 2;
     required string type = 1;
+};
+
+message File {
+    required string name = 1;
+    optional Blob data = 2;
 };

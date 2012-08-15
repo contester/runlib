@@ -104,38 +104,6 @@ func (this *Blob_CompressionInfo) GetOriginalSize() uint32 {
 	return 0
 }
 
-type File struct {
-	Name             *string `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
-	Data             *Blob   `protobuf:"bytes,2,req,name=data" json:"data,omitempty"`
-	Type             *string `protobuf:"bytes,3,req,name=type" json:"type,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
-}
-
-func (this *File) Reset()         { *this = File{} }
-func (this *File) String() string { return proto.CompactTextString(this) }
-func (*File) ProtoMessage()       {}
-
-func (this *File) GetName() string {
-	if this != nil && this.Name != nil {
-		return *this.Name
-	}
-	return ""
-}
-
-func (this *File) GetData() *Blob {
-	if this != nil {
-		return this.Data
-	}
-	return nil
-}
-
-func (this *File) GetType() string {
-	if this != nil && this.Type != nil {
-		return *this.Type
-	}
-	return ""
-}
-
 type Module struct {
 	Name             *string `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
 	Data             *Blob   `protobuf:"bytes,2,req,name=data" json:"data,omitempty"`
@@ -166,6 +134,30 @@ func (this *Module) GetType() string {
 		return *this.Type
 	}
 	return ""
+}
+
+type File struct {
+	Name             *string `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
+	Data             *Blob   `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (this *File) Reset()         { *this = File{} }
+func (this *File) String() string { return proto.CompactTextString(this) }
+func (*File) ProtoMessage()       {}
+
+func (this *File) GetName() string {
+	if this != nil && this.Name != nil {
+		return *this.Name
+	}
+	return ""
+}
+
+func (this *File) GetData() *Blob {
+	if this != nil {
+		return this.Data
+	}
+	return nil
 }
 
 func init() {

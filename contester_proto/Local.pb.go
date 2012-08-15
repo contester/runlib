@@ -402,57 +402,6 @@ func (this *BinaryTypeResponse) GetResult() BinaryTypeResponse_Win32BinaryType {
 	return 0
 }
 
-type PutRequest struct {
-	Sandbox          *string   `protobuf:"bytes,1,opt,name=sandbox" json:"sandbox,omitempty"`
-	Module           []*Module `protobuf:"bytes,2,rep,name=module" json:"module,omitempty"`
-	XXX_unrecognized []byte    `json:"-"`
-}
-
-func (this *PutRequest) Reset()         { *this = PutRequest{} }
-func (this *PutRequest) String() string { return proto.CompactTextString(this) }
-func (*PutRequest) ProtoMessage()       {}
-
-func (this *PutRequest) GetSandbox() string {
-	if this != nil && this.Sandbox != nil {
-		return *this.Sandbox
-	}
-	return ""
-}
-
-type PutResponse struct {
-	XXX_unrecognized []byte `json:"-"`
-}
-
-func (this *PutResponse) Reset()         { *this = PutResponse{} }
-func (this *PutResponse) String() string { return proto.CompactTextString(this) }
-func (*PutResponse) ProtoMessage()       {}
-
-type GetRequest struct {
-	Prefix           *string  `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
-	Filename         []string `protobuf:"bytes,2,rep,name=filename" json:"filename,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
-}
-
-func (this *GetRequest) Reset()         { *this = GetRequest{} }
-func (this *GetRequest) String() string { return proto.CompactTextString(this) }
-func (*GetRequest) ProtoMessage()       {}
-
-func (this *GetRequest) GetPrefix() string {
-	if this != nil && this.Prefix != nil {
-		return *this.Prefix
-	}
-	return ""
-}
-
-type GetResponse struct {
-	Module           []*Module `protobuf:"bytes,1,rep,name=module" json:"module,omitempty"`
-	XXX_unrecognized []byte    `json:"-"`
-}
-
-func (this *GetResponse) Reset()         { *this = GetResponse{} }
-func (this *GetResponse) String() string { return proto.CompactTextString(this) }
-func (*GetResponse) ProtoMessage()       {}
-
 type ClearRequest struct {
 	Sandbox          *string `protobuf:"bytes,1,opt,name=sandbox" json:"sandbox,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
@@ -618,6 +567,41 @@ type FileStatsList struct {
 func (this *FileStatsList) Reset()         { *this = FileStatsList{} }
 func (this *FileStatsList) String() string { return proto.CompactTextString(this) }
 func (*FileStatsList) ProtoMessage()       {}
+
+type PutRequest struct {
+	Files            []*File `protobuf:"bytes,1,rep,name=files" json:"files,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (this *PutRequest) Reset()         { *this = PutRequest{} }
+func (this *PutRequest) String() string { return proto.CompactTextString(this) }
+func (*PutRequest) ProtoMessage()       {}
+
+type FileContents struct {
+	Name             *string `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
+	Files            []*File `protobuf:"bytes,2,rep,name=files" json:"files,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (this *FileContents) Reset()         { *this = FileContents{} }
+func (this *FileContents) String() string { return proto.CompactTextString(this) }
+func (*FileContents) ProtoMessage()       {}
+
+func (this *FileContents) GetName() string {
+	if this != nil && this.Name != nil {
+		return *this.Name
+	}
+	return ""
+}
+
+type FileContentsList struct {
+	Results          []*FileContents `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
+	XXX_unrecognized []byte          `json:"-"`
+}
+
+func (this *FileContentsList) Reset()         { *this = FileContentsList{} }
+func (this *FileContentsList) String() string { return proto.CompactTextString(this) }
+func (*FileContentsList) ProtoMessage()       {}
 
 type EmptyMessage struct {
 	XXX_unrecognized []byte `json:"-"`

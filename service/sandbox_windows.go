@@ -57,7 +57,7 @@ func getSandboxByPath(s []SandboxPair, id string) (*Sandbox, error) {
 	return nil, fmt.Errorf("No sandbox corresponds to path %s", cleanid)
 }
 
-func resolvePath(s []SandboxPair, source string) (string, error) {
+func resolvePath(s []SandboxPair, source string, restricted bool) (string, error) {
 	if len(source) < 1 {
 		return source, fmt.Errorf("Invalid path %s", source)
 	}
@@ -76,6 +76,13 @@ func resolvePath(s []SandboxPair, source string) (string, error) {
 
 	if !filepath.IsAbs(source) {
 		return source, fmt.Errorf("Relative path %s", source)
+	}
+
+	if restricted {
+		_, err := getSandboxByPath(s, source)
+		if err != nil {
+			return source, err
+		}
 	}
 
 	return source, nil

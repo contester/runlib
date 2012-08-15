@@ -50,7 +50,7 @@ func statFilesAs(givenName string, names []string) (*contester_proto.FileStats, 
 func (s *Contester) Stat(request *contester_proto.NameList, response *contester_proto.FileStatsList) error {
 	response.Results = make([]*contester_proto.FileStats, 0, len(request.Name))
 	for _, name := range request.Name {
-		resolved, err := resolvePath(s.Sandboxes, name)
+		resolved, err := resolvePath(s.Sandboxes, name, false)
 		if err != nil {
 			continue
 		}
@@ -63,7 +63,7 @@ func (s *Contester) Stat(request *contester_proto.NameList, response *contester_
 }
 
 func (s *Contester) singleGlob(expression string) (*contester_proto.FileStats, error) {
-	resolved, err := resolvePath(s.Sandboxes, expression)
+	resolved, err := resolvePath(s.Sandboxes, expression, false)
 	if err != nil {
 		return nil, err
 	}

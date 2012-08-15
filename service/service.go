@@ -1,10 +1,7 @@
 package service
 
 import (
-	"bytes"
 	"code.google.com/p/goprotobuf/proto"
-	"compress/zlib"
-	"io"
 	"os"
 	"path/filepath"
 	"runlib/contester_proto"
@@ -75,36 +72,6 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	return nil
 }
 
-
-func BlobReader(blob *contester_proto.Blob) (io.Reader, error) {
-	if blob.Compression != nil && blob.Compression.GetMethod() == contester_proto.Blob_CompressionInfo_METHOD_ZLIB {
-		buf := bytes.NewBuffer(blob.Data)
-		r, err := zlib.NewReader(buf)
-		if err != nil {
-			return nil, err
-		}
-		return r, nil
-	}
-	return bytes.NewBuffer(blob.Data), nil
-}
-
-func Blob(data []byte) *contester_proto.Blob {
-	var b bytes.Buffer
-	w := zlib.NewWriter(&b)
-	io.Copy(w, bytes.NewBuffer(data))
-	w.Close()
-	
-	z := contester_proto.Blob_CompressionInfo_METHOD_ZLIB
-	result := &contester_proto.Blob{
-		Compression: &contester_proto.Blob_CompressionInfo{
-			Method: &z,
-			OriginalSize: proto.Uint32(uint32(len(data))),
-		},
-		Data: b.Bytes(),
-	}
-	return result
-}
-
 func (s *Contester) Put(request *contester_proto.PutRequest, response *contester_proto.PutResponse) error {
 	sandbox, err := getSandboxById(s.Sandboxes, request.GetSandbox())
 	if err != nil {
@@ -113,16 +80,19 @@ func (s *Contester) Put(request *contester_proto.PutRequest, response *contester
 
 	for _, module := range request.Module {
 		destPath := filepath.Join(sandbox.Path, module.GetName())
-		f, err := os.Create(destPath)
+		destFile, err := os.Create(destPath)
 		if err != nil {
 			return err
 		}
-		r, err := BlobReader(module.Data)
+		data, err := module.Data.Bytes()
 		if err != nil {
 			return err
 		}
-		io.Copy(f, r)
-		f.Close()
+		_, err = destFile.Write(data)
+		if err != nil {
+			return err
+		}
+		destFile.Close()
 	}
 	return nil
 }
@@ -168,7 +138,8 @@ func (s *Contester) Get(request *contester_proto.GetRequest, response *contester
 		if err != nil {
 			continue
 		}
-		blob := Blob(data)
+		blob, _ := contester_proto.NewBlob(data)
+		
 		module := &contester_proto.Module{
 			Data: blob,
 			Name: proto.String(name),

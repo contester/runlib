@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"path/filepath"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -54,4 +55,28 @@ func getSandboxByPath(s []SandboxPair, id string) (*Sandbox, error) {
 		}
 	}
 	return nil, fmt.Errorf("No sandbox corresponds to path %s", cleanid)
+}
+
+func resolvePath(s []SandboxPair, source string) (string, error) {
+	if len(source) < 1 {
+		return source, fmt.Errorf("Invalid path %s", source)
+	}
+
+	if source[0] == '%' {
+		parts := strings.SplitN(source, string(os.PathSeparator), 2)
+		sandbox, err := getSandboxById(s, parts[0])
+		if err != nil {
+			return source, err
+		}
+		if len(parts) == 2 {
+			return filepath.Join(sandbox.Path, parts[1]), nil
+		}
+		return sandbox.Path, nil
+	}
+
+	if !filepath.IsAbs(source) {
+		return source, fmt.Errorf("Relative path %s", source)
+	}
+
+	return source, nil
 }

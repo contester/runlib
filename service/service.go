@@ -77,6 +77,10 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 			Compile: proto.String(p.Compile.Path),
 			Run:     proto.String(p.Run.Path)}
 	}
+	response.Platform = &s.Platform
+	response.PathSeparator = &s.PathSeparator
+	response.Disks = s.Disks
+	response.ProgramFiles = s.ProgramFiles
 
 	return nil
 }

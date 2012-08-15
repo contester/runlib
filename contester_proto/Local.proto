@@ -114,7 +114,7 @@ message IdentifyResponse {
     optional string invoker_id = 1;
     repeated SandboxLocations sandboxes = 2;
     optional LocalEnvironment environment = 3;
-    optional string platform_id = 4;
+    optional string platform = 4;
     optional string path_separator = 5;
     repeated string disks = 6;
     repeated string programFiles = 7;

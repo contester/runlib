@@ -7,7 +7,6 @@ import (
 	"runlib/contester_proto"
 )
 
-
 func statFile(name string) *contester_proto.StatResponse_StatFile {
 	f := &contester_proto.StatResponse_StatFile{}
 	f.Name = &name

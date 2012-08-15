@@ -513,6 +513,10 @@ type IdentifyResponse struct {
 	InvokerId        *string             `protobuf:"bytes,1,opt,name=invoker_id" json:"invoker_id,omitempty"`
 	Sandboxes        []*SandboxLocations `protobuf:"bytes,2,rep,name=sandboxes" json:"sandboxes,omitempty"`
 	Environment      *LocalEnvironment   `protobuf:"bytes,3,opt,name=environment" json:"environment,omitempty"`
+	PlatformId       *string             `protobuf:"bytes,4,opt,name=platform_id" json:"platform_id,omitempty"`
+	PathSeparator    *string             `protobuf:"bytes,5,opt,name=path_separator" json:"path_separator,omitempty"`
+	Disks            []string            `protobuf:"bytes,6,rep,name=disks" json:"disks,omitempty"`
+	ProgramFiles     []string            `protobuf:"bytes,7,rep,name=programFiles" json:"programFiles,omitempty"`
 	XXX_unrecognized []byte              `json:"-"`
 }
 
@@ -532,6 +536,20 @@ func (this *IdentifyResponse) GetEnvironment() *LocalEnvironment {
 		return this.Environment
 	}
 	return nil
+}
+
+func (this *IdentifyResponse) GetPlatformId() string {
+	if this != nil && this.PlatformId != nil {
+		return *this.PlatformId
+	}
+	return ""
+}
+
+func (this *IdentifyResponse) GetPathSeparator() string {
+	if this != nil && this.PathSeparator != nil {
+		return *this.PathSeparator
+	}
+	return ""
 }
 
 type ListRequest struct {

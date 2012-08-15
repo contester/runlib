@@ -2,12 +2,12 @@ package service
 
 import (
 	"code.google.com/p/goprotobuf/proto"
+	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"runlib/contester_proto"
 	"strings"
-	"io/ioutil"
-	"path"
 )
 
 type Contester struct {
@@ -15,6 +15,11 @@ type Contester struct {
 	Sandboxes     []SandboxPair
 	Env           []*contester_proto.LocalEnvironment_Variable
 	ServerAddress string
+
+	Platform      string
+	PathSeparator string
+	Disks         []string
+	ProgramFiles  []string
 }
 
 func getHostname() string {
@@ -53,6 +58,10 @@ func NewContester(configFile string) *Contester {
 		Sandboxes:     sandboxes,
 		Env:           getLocalEnvironment(),
 		ServerAddress: conf.Server,
+		Platform:      "win32",
+		PathSeparator: string(os.PathSeparator),
+		Disks:         []string{"C:\\"},
+		ProgramFiles:  []string{"C:\\Program Files", "C:\\Program Files (x86)"},
 	}
 
 	return result
@@ -139,14 +148,14 @@ func (s *Contester) Get(request *contester_proto.GetRequest, response *contester
 			continue
 		}
 		blob, _ := contester_proto.NewBlob(data)
-		
+
 		module := &contester_proto.Module{
 			Data: blob,
 			Name: proto.String(name),
 			Type: proto.String(path.Ext(name)[1:]),
 		}
-		response.Module = response.Module[:len(response.Module) + 1]
-		response.Module[len(response.Module) - 1] = module
+		response.Module = response.Module[:len(response.Module)+1]
+		response.Module[len(response.Module)-1] = module
 	}
 	return nil
 }

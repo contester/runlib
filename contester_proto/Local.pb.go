@@ -552,139 +552,72 @@ func (this *IdentifyResponse) GetPathSeparator() string {
 	return ""
 }
 
-type ListRequest struct {
-	Prefix           *string `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
-}
-
-func (this *ListRequest) Reset()         { *this = ListRequest{} }
-func (this *ListRequest) String() string { return proto.CompactTextString(this) }
-func (*ListRequest) ProtoMessage()       {}
-
-func (this *ListRequest) GetPrefix() string {
-	if this != nil && this.Prefix != nil {
-		return *this.Prefix
-	}
-	return ""
-}
-
-type ListResponse struct {
-	Info             []*ListResponse_FileInfo `protobuf:"bytes,1,rep,name=info" json:"info,omitempty"`
-	XXX_unrecognized []byte                   `json:"-"`
-}
-
-func (this *ListResponse) Reset()         { *this = ListResponse{} }
-func (this *ListResponse) String() string { return proto.CompactTextString(this) }
-func (*ListResponse) ProtoMessage()       {}
-
-type ListResponse_FileInfo struct {
+type FileStat struct {
 	Name             *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	IsDirectory      *bool   `protobuf:"varint,2,opt,name=is_directory" json:"is_directory,omitempty"`
+	Size             *uint64 `protobuf:"varint,3,opt,name=size" json:"size,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *ListResponse_FileInfo) Reset()         { *this = ListResponse_FileInfo{} }
-func (this *ListResponse_FileInfo) String() string { return proto.CompactTextString(this) }
-func (*ListResponse_FileInfo) ProtoMessage()       {}
+func (this *FileStat) Reset()         { *this = FileStat{} }
+func (this *FileStat) String() string { return proto.CompactTextString(this) }
+func (*FileStat) ProtoMessage()       {}
 
-func (this *ListResponse_FileInfo) GetName() string {
+func (this *FileStat) GetName() string {
 	if this != nil && this.Name != nil {
 		return *this.Name
 	}
 	return ""
 }
 
-func (this *ListResponse_FileInfo) GetIsDirectory() bool {
+func (this *FileStat) GetIsDirectory() bool {
 	if this != nil && this.IsDirectory != nil {
 		return *this.IsDirectory
 	}
 	return false
 }
 
-type StatRequest struct {
+func (this *FileStat) GetSize() uint64 {
+	if this != nil && this.Size != nil {
+		return *this.Size
+	}
+	return 0
+}
+
+type NameList struct {
 	Name             []string `protobuf:"bytes,1,rep,name=name" json:"name,omitempty"`
 	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (this *StatRequest) Reset()         { *this = StatRequest{} }
-func (this *StatRequest) String() string { return proto.CompactTextString(this) }
-func (*StatRequest) ProtoMessage()       {}
+func (this *NameList) Reset()         { *this = NameList{} }
+func (this *NameList) String() string { return proto.CompactTextString(this) }
+func (*NameList) ProtoMessage()       {}
 
-type StatResponse struct {
-	Stats            []*StatResponse_StatFile `protobuf:"bytes,1,rep,name=stats" json:"stats,omitempty"`
-	XXX_unrecognized []byte                   `json:"-"`
+type FileStats struct {
+	Name             *string     `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Results          []*FileStat `protobuf:"bytes,2,rep,name=results" json:"results,omitempty"`
+	XXX_unrecognized []byte      `json:"-"`
 }
 
-func (this *StatResponse) Reset()         { *this = StatResponse{} }
-func (this *StatResponse) String() string { return proto.CompactTextString(this) }
-func (*StatResponse) ProtoMessage()       {}
+func (this *FileStats) Reset()         { *this = FileStats{} }
+func (this *FileStats) String() string { return proto.CompactTextString(this) }
+func (*FileStats) ProtoMessage()       {}
 
-type StatResponse_StatFile struct {
-	Name             *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Exists           *bool   `protobuf:"varint,2,opt,name=exists" json:"exists,omitempty"`
-	IsDirectory      *bool   `protobuf:"varint,3,opt,name=is_directory" json:"is_directory,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
-}
-
-func (this *StatResponse_StatFile) Reset()         { *this = StatResponse_StatFile{} }
-func (this *StatResponse_StatFile) String() string { return proto.CompactTextString(this) }
-func (*StatResponse_StatFile) ProtoMessage()       {}
-
-func (this *StatResponse_StatFile) GetName() string {
+func (this *FileStats) GetName() string {
 	if this != nil && this.Name != nil {
 		return *this.Name
 	}
 	return ""
 }
 
-func (this *StatResponse_StatFile) GetExists() bool {
-	if this != nil && this.Exists != nil {
-		return *this.Exists
-	}
-	return false
+type FileStatsList struct {
+	Results          []*FileStats `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
+	XXX_unrecognized []byte       `json:"-"`
 }
 
-func (this *StatResponse_StatFile) GetIsDirectory() bool {
-	if this != nil && this.IsDirectory != nil {
-		return *this.IsDirectory
-	}
-	return false
-}
-
-type GlobRequest struct {
-	Expression       []string `protobuf:"bytes,1,rep,name=expression" json:"expression,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
-}
-
-func (this *GlobRequest) Reset()         { *this = GlobRequest{} }
-func (this *GlobRequest) String() string { return proto.CompactTextString(this) }
-func (*GlobRequest) ProtoMessage()       {}
-
-type GlobResponse struct {
-	Results          []*GlobResponse_SingleGlob `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
-	XXX_unrecognized []byte                     `json:"-"`
-}
-
-func (this *GlobResponse) Reset()         { *this = GlobResponse{} }
-func (this *GlobResponse) String() string { return proto.CompactTextString(this) }
-func (*GlobResponse) ProtoMessage()       {}
-
-type GlobResponse_SingleGlob struct {
-	Expression       *string  `protobuf:"bytes,1,opt,name=expression" json:"expression,omitempty"`
-	Results          []string `protobuf:"bytes,2,rep,name=results" json:"results,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
-}
-
-func (this *GlobResponse_SingleGlob) Reset()         { *this = GlobResponse_SingleGlob{} }
-func (this *GlobResponse_SingleGlob) String() string { return proto.CompactTextString(this) }
-func (*GlobResponse_SingleGlob) ProtoMessage()       {}
-
-func (this *GlobResponse_SingleGlob) GetExpression() string {
-	if this != nil && this.Expression != nil {
-		return *this.Expression
-	}
-	return ""
-}
+func (this *FileStatsList) Reset()         { *this = FileStatsList{} }
+func (this *FileStatsList) String() string { return proto.CompactTextString(this) }
+func (*FileStatsList) ProtoMessage()       {}
 
 type EmptyMessage struct {
 	XXX_unrecognized []byte `json:"-"`

@@ -1,4 +1,6 @@
-package sub32
+package win32
+
+// +build windows,386
 
 import (
 	"syscall"
@@ -74,28 +76,6 @@ func ListToEnvironmentBlock(list *[]string) *uint16 {
 
 	return &result[0]
 }
-
-/*
-func GetEnvMap() map[string] string {
-  result := make(map[string] string)
-
-  for _, line := range syscall.Environ() {
-    s := strings.SplitN(line, "=", 2)
-    if len(s) == 2 {
-      result[s[0]] = s[1]
-    }
-  }
-  return result
-}
-
-func getEnvBlock(env Environment) *uint16 {
-  if (env == nil) {
-    return nil
-  }
-
-  return &env.ToBlock()[0]
-}
-*/
 
 func CreateProcessWithLogonW(
 	username *uint16,

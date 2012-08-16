@@ -59,9 +59,9 @@ type Subprocess struct {
 	HardMemoryLimit uint64
 	TimeQuantum     uint32
 
-	Cmd CommandLine
-	Login LoginInfo
-	StdIn, StdOut, StdErr Redirect
+	Cmd *CommandLine
+	Login *LoginInfo
+	StdIn, StdOut, StdErr *Redirect
 }
 
 func SubprocessCreate() *Subprocess {

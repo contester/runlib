@@ -50,13 +50,13 @@ func (d *subprocessData) wInputRedirect(w *Redirect) (syscall.Handle, error) {
 
 func (d *subprocessData) wAllRedirects(s *Subprocess, si *syscall.StartupInfo) error {
 	var err error
-	if si.StdInput, err = d.wInputRedirect(&s.StdIn); err != nil {
+	if si.StdInput, err = d.wInputRedirect(s.StdIn); err != nil {
 		return err
 	}
-	if si.StdOutput, err = d.wOutputRedirect(&s.StdOut, &d.stdOut); err != nil {
+	if si.StdOutput, err = d.wOutputRedirect(s.StdOut, &d.stdOut); err != nil {
 		return err
 	}
-	if si.StdErr, err = d.wOutputRedirect(&s.StdErr, &d.stdErr); err != nil {
+	if si.StdErr, err = d.wOutputRedirect(s.StdErr, &d.stdErr); err != nil {
 		return err
 	}
 	if si.StdInput != syscall.InvalidHandle ||

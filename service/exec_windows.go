@@ -3,7 +3,7 @@ package service
 import (
 	"code.google.com/p/goprotobuf/proto"
 	"runlib/contester_proto"
-	"runlib/sub32"
+	"runlib/subprocess"
 )
 
 func fillEnv(src *contester_proto.LocalEnvironment) *[]string {
@@ -23,35 +23,35 @@ func parseSuccessCode(succ uint32) *contester_proto.ExecutionResultFlags {
 		return nil
 	}
 	result := &contester_proto.ExecutionResultFlags{}
-	if succ&sub32.EF_KILLED != 0 {
+	if succ&subprocess.EF_KILLED != 0 {
 		result.Killed = proto.Bool(true)
 	}
-	if succ&sub32.EF_TIME_LIMIT_HIT != 0 {
+	if succ&subprocess.EF_TIME_LIMIT_HIT != 0 {
 		result.TimeLimitHit = proto.Bool(true)
 	}
-	if succ&sub32.EF_MEMORY_LIMIT_HIT != 0 {
+	if succ&subprocess.EF_MEMORY_LIMIT_HIT != 0 {
 		result.MemoryLimitHit = proto.Bool(true)
 	}
-	if succ&sub32.EF_INACTIVE != 0 {
+	if succ&subprocess.EF_INACTIVE != 0 {
 		result.Inactive = proto.Bool(true)
 	}
-	if succ&sub32.EF_TIME_LIMIT_HARD != 0 {
+	if succ&subprocess.EF_TIME_LIMIT_HARD != 0 {
 		result.TimeLimitHard = proto.Bool(true)
 	}
-	if succ&sub32.EF_TIME_LIMIT_HIT_POST != 0 {
+	if succ&subprocess.EF_TIME_LIMIT_HIT_POST != 0 {
 		result.TimeLimitHitPost = proto.Bool(true)
 	}
-	if succ&sub32.EF_MEMORY_LIMIT_HIT_POST != 0 {
+	if succ&subprocess.EF_MEMORY_LIMIT_HIT_POST != 0 {
 		result.MemoryLimitHitPost = proto.Bool(true)
 	}
-	if succ&sub32.EF_PROCESS_LIMIT_HIT != 0 {
+	if succ&subprocess.EF_PROCESS_LIMIT_HIT != 0 {
 		result.ProcessLimitHit = proto.Bool(true)
 	}
 
 	return result
 }
 
-func parseTime(r *sub32.SubprocessResult) *contester_proto.ExecutionResultTime {
+func parseTime(r *subprocess.SubprocessResult) *contester_proto.ExecutionResultTime {
 	if r.UserTime == 0 && r.KernelTime == 0 && r.WallTime == 0 {
 		return nil
 	}
@@ -71,10 +71,14 @@ func parseTime(r *sub32.SubprocessResult) *contester_proto.ExecutionResultTime {
 }
 
 func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
-	sub := sub32.SubprocessCreate()
+	sub := subprocess.SubprocessCreate()
 
-	sub.ApplicationName = request.ApplicationName
-	sub.CommandLine = request.CommandLine
+	sub.Cmd = &subprocess.CommandLine{
+		ApplicationName: request.ApplicationName,
+		CommandLine: request.CommandLine,
+		Parameters: request.CommandLineParameters,
+	}
+
 	sub.CurrentDirectory = request.CurrentDirectory
 
 	sub.TimeLimit = request.GetTimeLimitMicros()
@@ -102,17 +106,16 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	}
 
 	if sandbox.Username != nil {
-		sub.Username = sandbox.Username
-		sub.Password = sandbox.Password
+		sub.Login  = &subprocess.LoginInfo{
+			Username: sandbox.Username,
+			Password: sandbox.Password}
 	}
 
-	sig, err := sub.Start()
+	result, err := sub.Execute()
 
 	if err != nil {
 		return err
 	}
-
-	result := <-sig
 
 	response.ReturnCode = proto.Uint32(result.ExitCode)
 	response.Flags = parseSuccessCode(result.SuccessCode)

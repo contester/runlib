@@ -52,6 +52,9 @@ func calcSha1(data []byte) ([]byte, error) {
 }
 
 func NewBlob(data []byte) (*Blob, error) {
+	if data == nil {
+		return nil, nil
+	}
 	sha1sum, err := calcSha1(data)
 	if err != nil {
 		return nil, err

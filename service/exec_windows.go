@@ -75,8 +75,8 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 	sub.Cmd = &subprocess.CommandLine{
 		ApplicationName: request.ApplicationName,
-		CommandLine: request.CommandLine,
-		Parameters: request.CommandLineParameters,
+		CommandLine:     request.CommandLine,
+		Parameters:      request.CommandLineParameters,
 	}
 
 	sub.CurrentDirectory = request.CurrentDirectory
@@ -106,7 +106,7 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	}
 
 	if sandbox.Username != nil {
-		sub.Login  = &subprocess.LoginInfo{
+		sub.Login = &subprocess.LoginInfo{
 			Username: sandbox.Username,
 			Password: sandbox.Password}
 	}
@@ -121,6 +121,8 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	response.Flags = parseSuccessCode(result.SuccessCode)
 	response.Time = parseTime(result)
 	response.Memory = proto.Uint64(result.PeakMemory)
+	response.StdOut, _ = contester_proto.NewBlob(result.Output)
+	response.StdErr, _ = contester_proto.NewBlob(result.Error)
 
 	return nil
 }

@@ -569,8 +569,8 @@ func (this *FileStatsList) String() string { return proto.CompactTextString(this
 func (*FileStatsList) ProtoMessage()       {}
 
 type PutRequest struct {
-	Files            []*File `protobuf:"bytes,1,rep,name=files" json:"files,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Files            []*FileBlob `protobuf:"bytes,1,rep,name=files" json:"files,omitempty"`
+	XXX_unrecognized []byte      `json:"-"`
 }
 
 func (this *PutRequest) Reset()         { *this = PutRequest{} }
@@ -578,9 +578,9 @@ func (this *PutRequest) String() string { return proto.CompactTextString(this) }
 func (*PutRequest) ProtoMessage()       {}
 
 type FileContents struct {
-	Name             *string `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
-	Files            []*File `protobuf:"bytes,2,rep,name=files" json:"files,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Name             *string     `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
+	Files            []*FileBlob `protobuf:"bytes,2,rep,name=files" json:"files,omitempty"`
+	XXX_unrecognized []byte      `json:"-"`
 }
 
 func (this *FileContents) Reset()         { *this = FileContents{} }

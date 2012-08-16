@@ -122,12 +122,12 @@ message FileStatsList {
 };
 
 message PutRequest {
-    repeated File files = 1;
+    repeated FileBlob files = 1;
 };
 
 message FileContents {
     required string name = 1;
-    repeated File files = 2;
+    repeated FileBlob files = 2;
 };
 
 message FileContentsList {

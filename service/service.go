@@ -132,14 +132,14 @@ func (s *Contester) Clear(request *contester_proto.ClearRequest, response *conte
 	return nil
 }
 
-func getSingleFile(name string) (*contester_proto.File, error) {
+func getSingleFile(name string) (*contester_proto.FileBlob, error) {
 	data, err := ioutil.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}
 	blob, _ := contester_proto.NewBlob(data)
 
-	return &contester_proto.File{
+	return &contester_proto.FileBlob{
 		Data: blob,
 		Name: proto.String(name),
 	}, nil
@@ -151,7 +151,7 @@ func (s *Contester) getSingleName(name string) (*contester_proto.FileContents, e
 		return nil, err
 	}
 
-	files := make([]*contester_proto.File, 0, len(stats.Results))
+	files := make([]*contester_proto.FileBlob, 0, len(stats.Results))
 
 	for _, st := range stats.Results {
 		if !*st.IsDirectory {

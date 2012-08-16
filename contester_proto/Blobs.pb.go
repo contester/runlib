@@ -136,24 +136,24 @@ func (this *Module) GetType() string {
 	return ""
 }
 
-type File struct {
+type FileBlob struct {
 	Name             *string `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
 	Data             *Blob   `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *File) Reset()         { *this = File{} }
-func (this *File) String() string { return proto.CompactTextString(this) }
-func (*File) ProtoMessage()       {}
+func (this *FileBlob) Reset()         { *this = FileBlob{} }
+func (this *FileBlob) String() string { return proto.CompactTextString(this) }
+func (*FileBlob) ProtoMessage()       {}
 
-func (this *File) GetName() string {
+func (this *FileBlob) GetName() string {
 	if this != nil && this.Name != nil {
 		return *this.Name
 	}
 	return ""
 }
 
-func (this *File) GetData() *Blob {
+func (this *FileBlob) GetData() *Blob {
 	if this != nil {
 		return this.Data
 	}

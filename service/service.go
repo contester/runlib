@@ -156,7 +156,7 @@ func (s *Contester) getSingleName(name string) (*contester_proto.FileContents, e
 	files := make([]*contester_proto.FileBlob, 0, len(stats.Results))
 
 	for _, st := range stats.Results {
-		if st != nil && st.IsDirectory != nil && !*st.IsDirectory {
+		if st != nil && (st.IsDirectory == nil || !*st.IsDirectory) {
 			f, err := getSingleFile(*st.Name)
 			if err == nil && f != nil {
 				files = append(files, f)

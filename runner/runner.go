@@ -6,6 +6,7 @@ import (
 	"net/rpc"
 	"runlib/rpc4"
 	"runlib/service"
+	"runtime"
 )
 
 //func sptr(s string) *string {
@@ -13,6 +14,7 @@ import (
 //}
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	c := service.NewContester("server.ini")
 

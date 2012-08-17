@@ -2,12 +2,13 @@ package rpc4
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
 	"net/rpc"
-	//	"reflect"
+//"log"
 
 	"code.google.com/p/goprotobuf/proto"
 )
@@ -42,10 +43,16 @@ func ReadProto(r ProtoReader, pb interface{}) error {
 
 func WriteData(w io.Writer, data []byte) error {
 	size := uint32(len(data))
-	if err := binary.Write(w, binary.BigEndian, &size); err != nil {
+	var buf bytes.Buffer
+	fmt.Println("size: ", size)
+
+	if err := binary.Write(&buf, binary.BigEndian, &size); err != nil {
 		return err
 	}
-	if _, err := w.Write(data); err != nil {
+	if _, err := buf.Write(data); err != nil {
+		return err
+	}
+	if _, err := w.Write(buf.Bytes()); err != nil {
 		return err
 	}
 	return nil
@@ -53,6 +60,7 @@ func WriteData(w io.Writer, data []byte) error {
 
 func WriteProto(w io.Writer, pb interface{}) error {
 	// Marshal the protobuf
+	fmt.Println(pb)
 	data, err := proto.Marshal(pb.(proto.Message))
 	if err != nil {
 		return err

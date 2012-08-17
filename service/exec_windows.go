@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"runlib/contester_proto"
 	"runlib/subprocess"
+	"fmt"
 )
 
 func fillEnv(src *contester_proto.LocalEnvironment) *[]string {
@@ -73,6 +74,8 @@ func parseTime(r *subprocess.SubprocessResult) *contester_proto.ExecutionResultT
 func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
 	sub := subprocess.SubprocessCreate()
 
+	fmt.Println(request)
+
 	sub.Cmd = &subprocess.CommandLine{
 		ApplicationName: request.ApplicationName,
 		CommandLine:     request.CommandLine,
@@ -113,6 +116,7 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 	result, err := sub.Execute()
 
+	fmt.Println(result, err)
 	if err != nil {
 		return err
 	}

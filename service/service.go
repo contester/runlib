@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runlib/contester_proto"
 	"strings"
+"fmt"
 )
 
 type Contester struct {
@@ -124,6 +125,7 @@ func (s *Contester) Clear(request *contester_proto.ClearRequest, response *conte
 			continue
 		}
 		fullpath := filepath.Join(path, info.Name())
+		fmt.Println("Will delete", fullpath)
 		err = os.RemoveAll(fullpath)
 		if err != nil {
 			return err
@@ -154,7 +156,7 @@ func (s *Contester) getSingleName(name string) (*contester_proto.FileContents, e
 	files := make([]*contester_proto.FileBlob, 0, len(stats.Results))
 
 	for _, st := range stats.Results {
-		if !*st.IsDirectory {
+		if st != nil && st.IsDirectory != nil && !*st.IsDirectory {
 			f, err := getSingleFile(*st.Name)
 			if err == nil && f != nil {
 				files = append(files, f)

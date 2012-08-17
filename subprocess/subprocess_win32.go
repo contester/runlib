@@ -96,7 +96,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 
 	var e error
 
-	if sub.Login.Username != nil {
+	if sub.Login != nil && sub.Login.Username != nil {
 		e = win32.CreateProcessWithLogonW(
 			win32.StringPtrToUTF16Ptr(sub.Login.Username),
 			syscall.StringToUTF16Ptr("."),

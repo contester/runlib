@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/rpc"
+//	"os"
 //"log"
 
 	"code.google.com/p/goprotobuf/proto"
@@ -44,7 +45,6 @@ func ReadProto(r ProtoReader, pb interface{}) error {
 func WriteData(w io.Writer, data []byte) error {
 	size := uint32(len(data))
 	var buf bytes.Buffer
-	fmt.Println("size: ", size)
 
 	if err := binary.Write(&buf, binary.BigEndian, &size); err != nil {
 		return err
@@ -60,7 +60,6 @@ func WriteData(w io.Writer, data []byte) error {
 
 func WriteProto(w io.Writer, pb interface{}) error {
 	// Marshal the protobuf
-	fmt.Println(pb)
 	data, err := proto.Marshal(pb.(proto.Message))
 	if err != nil {
 		return err
@@ -69,7 +68,7 @@ func WriteProto(w io.Writer, pb interface{}) error {
 }
 
 func NewServerCodec(conn net.Conn) *ServerCodec {
-	return &ServerCodec{bufio.NewReader(conn), conn, false}
+	return &ServerCodec{r: bufio.NewReader(conn), w: conn, hasPayload:false}
 }
 
 func (s *ServerCodec) ReadRequestHeader(req *rpc.Request) error {

@@ -135,12 +135,15 @@ func (s *Contester) Clear(request *contester_proto.ClearRequest, response *conte
 }
 
 func getSingleFile(name string) (*contester_proto.FileBlob, error) {
-	data, err := ioutil.ReadFile(name)
+	r, err := os.Open(name)
 	if err != nil {
 		return nil, err
 	}
-	blob, _ := contester_proto.NewBlob(data)
-
+	blob, err := contester_proto.BlobFromStream(r)
+	r.Close()
+	if err != nil {
+		return nil, err
+	}
 	return &contester_proto.FileBlob{
 		Data: blob,
 		Name: proto.String(name),

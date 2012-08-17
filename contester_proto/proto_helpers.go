@@ -82,3 +82,27 @@ func NewBlob(data []byte) (*Blob, error) {
 	}
 	return result, nil
 }
+
+func BlobFromStream(r io.Reader) (*Blob, error) {
+	var compressed bytes.Buffer
+	compressor := zlib.NewWriter(&compressed)
+	shaCalculator := sha1.New()
+	writer := io.MultiWriter(compressor, shaCalculator)
+
+	size, err := io.Copy(writer, r)
+	if err != nil {
+		return nil, err
+	}
+	compressor.Close()
+	method := Blob_CompressionInfo_METHOD_ZLIB
+	return &Blob{
+		Sha1: shaCalculator.Sum(nil),
+		Data: compressed.Bytes(),
+		Compression: &Blob_CompressionInfo{
+			Method: &method,
+			OriginalSize: proto.Uint32(uint32(size)),
+		},
+	}, nil
+}
+		
+

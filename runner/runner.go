@@ -9,6 +9,7 @@ import (
 	"runlib/service"
 	"runtime"
 	"time"
+	"log"
 	l4g "code.google.com/p/log4go"
 )
 
@@ -33,7 +34,17 @@ func LogMemLoop() {
 	}
 }
 
+type lwrapper struct {}
+
+func (lw *lwrapper) Write(p []byte) (n int, err error) {
+	l4g.Log(l4g.ERROR, "compat", string(p))
+	return n, nil
+}
+
 func main() {
+	lw := &lwrapper{}
+	log.SetOutput(lw)
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	go LogMemLoop()
 

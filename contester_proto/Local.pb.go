@@ -402,16 +402,16 @@ func (this *BinaryTypeResponse) GetResult() BinaryTypeResponse_Win32BinaryType {
 	return 0
 }
 
-type ClearRequest struct {
+type ClearSandboxRequest struct {
 	Sandbox          *string `protobuf:"bytes,1,opt,name=sandbox" json:"sandbox,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *ClearRequest) Reset()         { *this = ClearRequest{} }
-func (this *ClearRequest) String() string { return proto.CompactTextString(this) }
-func (*ClearRequest) ProtoMessage()       {}
+func (this *ClearSandboxRequest) Reset()         { *this = ClearSandboxRequest{} }
+func (this *ClearSandboxRequest) String() string { return proto.CompactTextString(this) }
+func (*ClearSandboxRequest) ProtoMessage()       {}
 
-func (this *ClearRequest) GetSandbox() string {
+func (this *ClearSandboxRequest) GetSandbox() string {
 	if this != nil && this.Sandbox != nil {
 		return *this.Sandbox
 	}
@@ -420,6 +420,8 @@ func (this *ClearRequest) GetSandbox() string {
 
 type IdentifyRequest struct {
 	ContesterId      *string `protobuf:"bytes,1,opt,name=contester_id" json:"contester_id,omitempty"`
+	MongoHost        *string `protobuf:"bytes,2,opt,name=mongo_host" json:"mongo_host,omitempty"`
+	MongoDb          *string `protobuf:"bytes,3,opt,name=mongo_db" json:"mongo_db,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
@@ -430,6 +432,20 @@ func (*IdentifyRequest) ProtoMessage()       {}
 func (this *IdentifyRequest) GetContesterId() string {
 	if this != nil && this.ContesterId != nil {
 		return *this.ContesterId
+	}
+	return ""
+}
+
+func (this *IdentifyRequest) GetMongoHost() string {
+	if this != nil && this.MongoHost != nil {
+		return *this.MongoHost
+	}
+	return ""
+}
+
+func (this *IdentifyRequest) GetMongoDb() string {
+	if this != nil && this.MongoDb != nil {
+		return *this.MongoDb
 	}
 	return ""
 }

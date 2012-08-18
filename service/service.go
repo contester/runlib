@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runlib/contester_proto"
 	"strings"
+	"labix.org/v2/mgo"
 )
 
 type Contester struct {
@@ -19,6 +20,11 @@ type Contester struct {
 	PathSeparator string
 	Disks         []string
 	ProgramFiles  []string
+
+	Msession	*mgo.Session
+	Mlocation string
+	Mdb	*mgo.Database
+	Mfs	*mgo.GridFS
 }
 
 func getHostname() string {
@@ -67,6 +73,17 @@ func NewContester(configFile string) *Contester {
 }
 
 func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response *contester_proto.IdentifyResponse) error {
+	mLocation := *request.MongoHost
+	if mLocation != s.Mlocation {
+		var err error
+		s.Msession, err = mgo.Dial(*request.MongoHost)
+		if err != nil {
+			return err
+		}
+	}
+	s.Mdb = s.Msession.DB(*request.MongoDb)
+	s.Mfs = s.Mdb.GridFS("fs")
+
 	response.InvokerId = &s.InvokerId
 	response.Environment = &contester_proto.LocalEnvironment{
 		Variable: s.Env[:]}
@@ -113,7 +130,7 @@ func (s *Contester) Put(request *contester_proto.PutRequest, response *contester
 	return nil
 }
 
-func (s *Contester) Clear(request *contester_proto.ClearRequest, response *contester_proto.EmptyMessage) error {
+func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response *contester_proto.EmptyMessage) error {
 	sandbox, err := getSandboxById(s.Sandboxes, request.GetSandbox())
 	if err != nil {
 		return err

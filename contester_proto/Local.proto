@@ -79,12 +79,14 @@ message BinaryTypeResponse {
     optional Win32BinaryType result = 2;
 };
 
-message ClearRequest {
+message ClearSandboxRequest {
     optional string sandbox = 1;
 };
 
 message IdentifyRequest {
     optional string contester_id = 1;
+    optional string mongo_host = 2;
+    optional string mongo_db = 3;
 };
 
 message SandboxLocations {
@@ -103,22 +105,22 @@ message IdentifyResponse {
 };
 
 message FileStat {
-	optional string name = 1;
-	optional bool is_directory = 2;
-	optional uint64 size = 3;
+    optional string name = 1;
+    optional bool is_directory = 2;
+    optional uint64 size = 3;
 };
 
 message NameList {
-	repeated string name = 1;
+    repeated string name = 1;
 };
 
 message FileStats {
-	optional string name = 1;
-	repeated FileStat results = 2;
+    optional string name = 1;
+    repeated FileStat results = 2;
 };
 
 message FileStatsList {
-	repeated FileStats results = 1;
+    repeated FileStats results = 1;
 };
 
 message PutRequest {

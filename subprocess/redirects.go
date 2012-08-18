@@ -7,6 +7,7 @@ import (
 	"runlib/win32"
 	"syscall"
 	"unsafe"
+	"log"
 )
 
 type Redirect struct {
@@ -22,9 +23,21 @@ func (d *subprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 		return nil, e
 	}
 
+	e = syscall.SetHandleInformation(syscall.Handle(reader.Fd()), syscall.HANDLE_FLAG_INHERIT, 0)
+	if e != nil {
+		return nil, e
+	}
+
+
+	e = syscall.SetHandleInformation(syscall.Handle(writer.Fd()), syscall.HANDLE_FLAG_INHERIT, syscall.HANDLE_FLAG_INHERIT)
+	if e != nil {
+		return nil, e
+	}
+
 	d.closeAfterStart = append(d.closeAfterStart, writer)
 
 	d.startAfterStart = append(d.startAfterStart, func() error {
+		log.Println(unsafe.Pointer(b))
 		_, err := io.Copy(b, reader)
 		reader.Close()
 		return err

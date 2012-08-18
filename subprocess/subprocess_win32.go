@@ -8,6 +8,7 @@ import (
 	"runlib/win32"
 	"syscall"
 	"unsafe"
+	"log"
 )
 
 type subprocessData struct {
@@ -50,6 +51,7 @@ func (d *subprocessData) wInputRedirect(w *Redirect) (syscall.Handle, error) {
 
 func (d *subprocessData) wAllRedirects(s *Subprocess, si *syscall.StartupInfo) error {
 	var err error
+
 	if si.StdInput, err = d.wInputRedirect(s.StdIn); err != nil {
 		return err
 	}
@@ -260,9 +262,12 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 	if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
 		result.SuccessCode |= EF_MEMORY_LIMIT_HIT_POST
 	}
-
+	// log.Println("Must collect", len(d.startAfterStart), "redirects")
 	for _ = range d.startAfterStart {
-		<-d.bufferChan // todo
+		err := <-d.bufferChan
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	if d.stdOut.Len() > 0 {

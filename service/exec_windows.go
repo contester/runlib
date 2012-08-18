@@ -71,6 +71,24 @@ func parseTime(r *subprocess.SubprocessResult) *contester_proto.ExecutionResultT
 	return result
 }
 
+func fillRedirect(r *contester_proto.RedirectParameters) *subprocess.Redirect {
+	if r == nil {
+		return nil
+	}
+
+	result := &subprocess.Redirect{}
+	if r.Filename != nil {
+		result.Filename = r.Filename
+		result.Mode = subprocess.REDIRECT_FILE
+	} else if r.Memory != nil && *r.Memory {
+		result.Mode = subprocess.REDIRECT_MEMORY
+		if r.Buffer != nil {
+			result.Data, _ = r.Buffer.Bytes()
+		}
+	}
+	return result
+}
+
 func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
 	sub := subprocess.SubprocessCreate()
 
@@ -90,6 +108,10 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	sub.NoJob = request.GetNoJob()
 
 	sub.Environment = fillEnv(request.Environment)
+
+	sub.StdIn = fillRedirect(request.StdIn)
+	sub.StdOut = fillRedirect(request.StdOut)
+	sub.StdErr = fillRedirect(request.StdErr)
 
 	var sandbox *Sandbox
 	if request.SandboxId != nil {

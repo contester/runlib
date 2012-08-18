@@ -137,3 +137,16 @@ message FileContentsList {
 };
 
 message EmptyMessage {};
+
+message NamePair {
+    required string source = 1;
+    required string destination = 2;
+};
+
+message RepeatedNamePairEntries {
+    repeated NamePair entries = 1;
+};
+
+message RepeatedStringEntries {
+    repeated string entries = 1;
+};

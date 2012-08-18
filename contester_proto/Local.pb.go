@@ -627,6 +627,48 @@ func (this *EmptyMessage) Reset()         { *this = EmptyMessage{} }
 func (this *EmptyMessage) String() string { return proto.CompactTextString(this) }
 func (*EmptyMessage) ProtoMessage()       {}
 
+type NamePair struct {
+	Source           *string `protobuf:"bytes,1,req,name=source" json:"source,omitempty"`
+	Destination      *string `protobuf:"bytes,2,req,name=destination" json:"destination,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (this *NamePair) Reset()         { *this = NamePair{} }
+func (this *NamePair) String() string { return proto.CompactTextString(this) }
+func (*NamePair) ProtoMessage()       {}
+
+func (this *NamePair) GetSource() string {
+	if this != nil && this.Source != nil {
+		return *this.Source
+	}
+	return ""
+}
+
+func (this *NamePair) GetDestination() string {
+	if this != nil && this.Destination != nil {
+		return *this.Destination
+	}
+	return ""
+}
+
+type RepeatedNamePairEntries struct {
+	Entries          []*NamePair `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
+	XXX_unrecognized []byte      `json:"-"`
+}
+
+func (this *RepeatedNamePairEntries) Reset()         { *this = RepeatedNamePairEntries{} }
+func (this *RepeatedNamePairEntries) String() string { return proto.CompactTextString(this) }
+func (*RepeatedNamePairEntries) ProtoMessage()       {}
+
+type RepeatedStringEntries struct {
+	Entries          []string `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
+}
+
+func (this *RepeatedStringEntries) Reset()         { *this = RepeatedStringEntries{} }
+func (this *RepeatedStringEntries) String() string { return proto.CompactTextString(this) }
+func (*RepeatedStringEntries) ProtoMessage()       {}
+
 func init() {
 	proto.RegisterEnum("contester.proto.BinaryTypeResponse_Win32BinaryType", BinaryTypeResponse_Win32BinaryType_name, BinaryTypeResponse_Win32BinaryType_value)
 }

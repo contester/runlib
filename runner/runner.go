@@ -3,18 +3,39 @@ package main
 import (
 	//  "fmt"
 	//  "runlib/sub32"
+	"log"
 	"net/rpc"
+	"runlib/contester_proto"
 	"runlib/rpc4"
 	"runlib/service"
 	"runtime"
+	"time"
 )
 
 //func sptr(s string) *string {
 //  return &s
 //}
 
+func LogMem() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	log.Printf("Alloc: %d, Sys: %d, HeapAlloc: %d, HeapIdle: %d, NextGC: %d, LastGC: %s, NumGC: %d, Blobs: %d\n",
+		m.Alloc, m.Sys, m.HeapAlloc, m.HeapIdle, m.NextGC, time.Now().Sub(time.Unix(0, int64(m.LastGC))), m.NumGC, contester_proto.BlobCount())
+}
+
+func LogMemLoop() {
+	for {
+		LogMem()
+		runtime.GC()
+		runtime.Gosched()
+		runtime.GC()
+		time.Sleep(time.Second * 15)
+	}
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	go LogMemLoop()
 
 	c := service.NewContester("server.ini")
 

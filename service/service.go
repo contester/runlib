@@ -3,11 +3,9 @@ package service
 import (
 	"code.google.com/p/goprotobuf/proto"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"runlib/contester_proto"
-	"runtime"
 	"strings"
 )
 
@@ -88,6 +86,12 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 
 func (s *Contester) Put(request *contester_proto.PutRequest, response *contester_proto.EmptyMessage) error {
 	for _, item := range request.Files {
+		if item.Data != nil {
+			contester_proto.AddBlob(item.Data)
+		}
+	}
+
+	for _, item := range request.Files {
 		resolved, err := resolvePath(s.Sandboxes, *item.Name, true)
 		if err != nil {
 			return err
@@ -126,7 +130,6 @@ func (s *Contester) Clear(request *contester_proto.ClearRequest, response *conte
 			continue
 		}
 		fullpath := filepath.Join(path, info.Name())
-		log.Println("Will delete", fullpath)
 		err = os.RemoveAll(fullpath)
 		if err != nil {
 			return err
@@ -174,14 +177,9 @@ func (s *Contester) getSingleName(name string) (*contester_proto.FileContents, e
 	return nil, nil
 }
 
-func fnc(x *contester_proto.FileContentsList) {
-	log.Println("Finalizer called for FCL")
-}
+
 
 func (s *Contester) Get(request *contester_proto.NameList, response *contester_proto.FileContentsList) error {
-	log.Println("New FCL in the works")
-	runtime.SetFinalizer(response, fnc)
-
 	response.Results = make([]*contester_proto.FileContents, 0, len(request.Name))
 
 	for _, name := range request.Name {

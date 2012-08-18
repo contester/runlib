@@ -74,7 +74,6 @@ func NewBlob(data []byte) (*Blob, error) {
 	}
 	AddBlob(result)
 	if len(compressed) < len(data)-8 {
-		// log.Println("Using compression: ", len(compressed), " vs ", len(data))
 		method := Blob_CompressionInfo_METHOD_ZLIB
 		result.Compression = &Blob_CompressionInfo{
 			Method:       &method,

@@ -7,8 +7,6 @@ import (
 	"io"
 	"net"
 	"net/rpc"
-	//	"os"
-	//"log"
 
 	"code.google.com/p/goprotobuf/proto"
 )

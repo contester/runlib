@@ -8,7 +8,7 @@ import (
 	"runlib/win32"
 	"syscall"
 	"unsafe"
-	"log"
+	l4g "code.google.com/p/log4go"
 )
 
 type subprocessData struct {
@@ -266,7 +266,7 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 	for _ = range d.startAfterStart {
 		err := <-d.bufferChan
 		if err != nil {
-			log.Println(err)
+			l4g.Error(err)
 		}
 	}
 

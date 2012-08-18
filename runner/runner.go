@@ -3,13 +3,13 @@ package main
 import (
 	//  "fmt"
 	//  "runlib/sub32"
-	"log"
 	"net/rpc"
 	"runlib/contester_proto"
 	"runlib/rpc4"
 	"runlib/service"
 	"runtime"
 	"time"
+	l4g "code.google.com/p/log4go"
 )
 
 //func sptr(s string) *string {
@@ -19,7 +19,7 @@ import (
 func LogMem() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	log.Printf("Alloc: %d, Sys: %d, HeapAlloc: %d, HeapIdle: %d, NextGC: %d, LastGC: %s, NumGC: %d, Blobs: %d\n",
+	l4g.Logf(l4g.INFO, "Alloc: %d, Sys: %d, HeapAlloc: %d, HeapIdle: %d, NextGC: %d, LastGC: %s, NumGC: %d, Blobs: %d",
 		m.Alloc, m.Sys, m.HeapAlloc, m.HeapIdle, m.NextGC, time.Now().Sub(time.Unix(0, int64(m.LastGC))), m.NumGC, contester_proto.BlobCount())
 }
 

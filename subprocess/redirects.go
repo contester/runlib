@@ -7,7 +7,6 @@ import (
 	"runlib/win32"
 	"syscall"
 	"unsafe"
-	"log"
 )
 
 type Redirect struct {
@@ -37,7 +36,6 @@ func (d *subprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	d.closeAfterStart = append(d.closeAfterStart, writer)
 
 	d.startAfterStart = append(d.startAfterStart, func() error {
-		log.Println(unsafe.Pointer(b))
 		_, err := io.Copy(b, reader)
 		reader.Close()
 		return err

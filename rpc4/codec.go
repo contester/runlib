@@ -19,7 +19,8 @@ type ServerCodec struct {
 
 	hasPayload bool
 
-	headerBuf, dataBuf *proto.Buffer
+	headerBuf proto.Buffer
+	dataBlock []byte
 }
 
 type ProtoReader interface {
@@ -41,7 +42,7 @@ func ReadProto(r ProtoReader, pb interface{}) error {
 		var dbuf proto.Buffer
 		dbuf.SetBuf(buf)
 		err := dbuf.Unmarshal(pb.(proto.Message))
-		dbuf.Reset()
+		dbuf.SetBuf(nil)
 		return err
 	}
 	return nil
@@ -73,7 +74,7 @@ func WriteProto(w io.Writer, pb interface{}, ebuf *proto.Buffer) error {
 }
 
 func NewServerCodec(conn net.Conn) *ServerCodec {
-	return &ServerCodec{r: bufio.NewReader(conn), w: conn, hasPayload: false, headerBuf: proto.NewBuffer(nil), dataBuf: proto.NewBuffer(nil)}
+	return &ServerCodec{r: bufio.NewReader(conn), w: conn, hasPayload: false, dataBlock: make([]byte, 16*1024*1024)}
 }
 
 func (s *ServerCodec) ReadRequestHeader(req *rpc.Request) error {
@@ -110,14 +111,17 @@ func (s *ServerCodec) WriteResponse(resp *rpc.Response, pb interface{}) error {
 		mt = Header_ERROR
 		data = []byte(resp.Error)
 	} else {
-		s.dataBuf.Reset()
-		err = s.dataBuf.Marshal(pb.(proto.Message))
+		var dataBuf proto.Buffer
+		dataBuf.SetBuf(s.dataBlock)
+		dataBuf.Reset()
+
+		err = dataBuf.Marshal(pb.(proto.Message))
 		pb.(proto.Message).Reset()
 		if err != nil {
 			mt = Header_ERROR
 			data = []byte(err.Error())
 		} else {
-			data = s.dataBuf.Bytes()
+			data = dataBuf.Bytes()
 		}
 	}
 
@@ -132,7 +136,7 @@ func (s *ServerCodec) WriteResponse(resp *rpc.Response, pb interface{}) error {
 		MessageType:    &mt,
 		PayloadPresent: &hasPayload,
 	}
-	if err = WriteProto(s.w, &header, s.headerBuf); err != nil {
+	if err = WriteProto(s.w, &header, &s.headerBuf); err != nil {
 		return err
 	}
 

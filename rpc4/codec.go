@@ -19,7 +19,7 @@ type ServerCodec struct {
 
 	hasPayload bool
 
-	decodeBuf, headerBuf, dataBuf *proto.Buffer
+	headerBuf, dataBuf *proto.Buffer
 }
 
 type ProtoReader interface {
@@ -27,7 +27,7 @@ type ProtoReader interface {
 	io.ByteReader
 }
 
-func ReadProto(r ProtoReader, pb interface{}, dbuf *proto.Buffer) error {
+func ReadProto(r ProtoReader, pb interface{}) error {
 	var size uint32
 	err := binary.Read(r, binary.BigEndian, &size)
 	if err != nil {
@@ -38,6 +38,7 @@ func ReadProto(r ProtoReader, pb interface{}, dbuf *proto.Buffer) error {
 		return err
 	}
 	if pb != nil {
+		var dbuf proto.Buffer
 		dbuf.SetBuf(buf)
 		err := dbuf.Unmarshal(pb.(proto.Message))
 		dbuf.Reset()
@@ -72,12 +73,12 @@ func WriteProto(w io.Writer, pb interface{}, ebuf *proto.Buffer) error {
 }
 
 func NewServerCodec(conn net.Conn) *ServerCodec {
-	return &ServerCodec{r: bufio.NewReader(conn), w: conn, hasPayload: false, headerBuf: proto.NewBuffer(nil), dataBuf: proto.NewBuffer(nil), decodeBuf: proto.NewBuffer(nil)}
+	return &ServerCodec{r: bufio.NewReader(conn), w: conn, hasPayload: false, headerBuf: proto.NewBuffer(nil), dataBuf: proto.NewBuffer(nil)}
 }
 
 func (s *ServerCodec) ReadRequestHeader(req *rpc.Request) error {
 	var header Header
-	if err := ReadProto(s.r, &header, s.decodeBuf); err != nil {
+	if err := ReadProto(s.r, &header); err != nil {
 		return err
 	}
 	if header.GetMethod() == "" {
@@ -94,7 +95,7 @@ func (s *ServerCodec) ReadRequestHeader(req *rpc.Request) error {
 
 func (s *ServerCodec) ReadRequestBody(pb interface{}) error {
 	if s.hasPayload {
-		return ReadProto(s.r, pb, s.decodeBuf)
+		return ReadProto(s.r, pb)
 	}
 	return nil
 }

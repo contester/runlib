@@ -99,10 +99,8 @@ func BlobFromStream(r io.Reader) (*Blob, error) {
 		Sha1: shaCalculator.Sum(nil),
 		Data: compressed.Bytes(),
 		Compression: &Blob_CompressionInfo{
-			Method: &method,
+			Method:       &method,
 			OriginalSize: proto.Uint32(uint32(size)),
 		},
 	}, nil
 }
-		
-

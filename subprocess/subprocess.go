@@ -14,9 +14,9 @@ const (
 	EF_PROCESS_LIMIT_HIT      = (1 << 10)
 	EF_PROCESS_LIMIT_HIT_POST = (1 << 11)
 
-	REDIRECT_NONE	= 0
+	REDIRECT_NONE   = 0
 	REDIRECT_MEMORY = 1
-	REDIRECT_FILE = 2
+	REDIRECT_FILE   = 2
 	REDIRECT_HANDLE = 3
 )
 
@@ -33,15 +33,14 @@ type SubprocessResult struct {
 	Error  []byte
 }
 
-
 type CommandLine struct {
 	ApplicationName, CommandLine *string
-	Parameters []string
+	Parameters                   []string
 }
 
 type LoginInfo struct {
 	Username, Password *string
-	Uid int
+	Uid                int
 }
 
 type Subprocess struct {
@@ -59,8 +58,8 @@ type Subprocess struct {
 	HardMemoryLimit uint64
 	TimeQuantum     uint32
 
-	Cmd *CommandLine
-	Login *LoginInfo
+	Cmd                   *CommandLine
+	Login                 *LoginInfo
 	StdIn, StdOut, StdErr *Redirect
 }
 

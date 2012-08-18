@@ -7,8 +7,8 @@ import (
 	"io"
 	"net"
 	"net/rpc"
-//	"os"
-//"log"
+	//	"os"
+	//"log"
 
 	"code.google.com/p/goprotobuf/proto"
 )
@@ -72,7 +72,7 @@ func WriteProto(w io.Writer, pb interface{}, ebuf *proto.Buffer) error {
 }
 
 func NewServerCodec(conn net.Conn) *ServerCodec {
-	return &ServerCodec{r: bufio.NewReader(conn), w: conn, hasPayload:false, headerBuf: proto.NewBuffer(nil), dataBuf: proto.NewBuffer(nil), decodeBuf: proto.NewBuffer(nil) }
+	return &ServerCodec{r: bufio.NewReader(conn), w: conn, hasPayload: false, headerBuf: proto.NewBuffer(nil), dataBuf: proto.NewBuffer(nil), decodeBuf: proto.NewBuffer(nil)}
 }
 
 func (s *ServerCodec) ReadRequestHeader(req *rpc.Request) error {
@@ -111,6 +111,7 @@ func (s *ServerCodec) WriteResponse(resp *rpc.Response, pb interface{}) error {
 	} else {
 		s.dataBuf.Reset()
 		err = s.dataBuf.Marshal(pb.(proto.Message))
+		pb.(proto.Message).Reset()
 		if err != nil {
 			mt = Header_ERROR
 			data = []byte(err.Error())

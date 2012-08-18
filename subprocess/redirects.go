@@ -2,11 +2,11 @@ package subprocess
 
 import (
 	"bytes"
-	"os"
 	"io"
+	"os"
+	"runlib/win32"
 	"syscall"
 	"unsafe"
-	"runlib/win32"
 )
 
 type Redirect struct {

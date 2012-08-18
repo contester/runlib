@@ -5,15 +5,15 @@ package subprocess
 import (
 	"bytes"
 	"io"
+	"runlib/win32"
 	"syscall"
 	"unsafe"
-	"runlib/win32"
 )
 
 type subprocessData struct {
-	bufferChan      chan error // receives buffer errors
+	bufferChan      chan error     // receives buffer errors
 	startAfterStart []func() error // buffer functions, launch after createFrozen
-	closeAfterStart []io.Closer // close after createFrozen
+	closeAfterStart []io.Closer    // close after createFrozen
 
 	stdOut bytes.Buffer
 	stdErr bytes.Buffer
@@ -133,8 +133,8 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	return d, e
 }
 
-func (d * subprocessData) SetupOnFrozen() error {
-// portable
+func (d *subprocessData) SetupOnFrozen() error {
+	// portable
 	closeDescriptors(d.closeAfterStart)
 
 	d.bufferChan = make(chan error, len(d.startAfterStart))
@@ -148,7 +148,7 @@ func (d * subprocessData) SetupOnFrozen() error {
 	return nil
 }
 
-func (d* subprocessData) Unfreeze() error {
+func (d *subprocessData) Unfreeze() error {
 	// platform
 	hThread := d.platformData.(*subdataWin32).hThread
 	win32.ResumeThread(hThread)

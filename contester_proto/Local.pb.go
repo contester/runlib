@@ -549,18 +549,33 @@ func (this *FileStat) GetSize() uint64 {
 	return 0
 }
 
-type NameList struct {
+type StatRequest struct {
 	Name             []string `protobuf:"bytes,1,rep,name=name" json:"name,omitempty"`
+	SandboxId        *string  `protobuf:"bytes,2,opt,name=sandbox_id" json:"sandbox_id,omitempty"`
+	Expand           *bool    `protobuf:"varint,3,opt,name=expand" json:"expand,omitempty"`
 	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (this *NameList) Reset()         { *this = NameList{} }
-func (this *NameList) String() string { return proto.CompactTextString(this) }
-func (*NameList) ProtoMessage()       {}
+func (this *StatRequest) Reset()         { *this = StatRequest{} }
+func (this *StatRequest) String() string { return proto.CompactTextString(this) }
+func (*StatRequest) ProtoMessage()       {}
+
+func (this *StatRequest) GetSandboxId() string {
+	if this != nil && this.SandboxId != nil {
+		return *this.SandboxId
+	}
+	return ""
+}
+
+func (this *StatRequest) GetExpand() bool {
+	if this != nil && this.Expand != nil {
+		return *this.Expand
+	}
+	return false
+}
 
 type FileStats struct {
-	Name             *string     `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Results          []*FileStat `protobuf:"bytes,2,rep,name=results" json:"results,omitempty"`
+	Stats            []*FileStat `protobuf:"bytes,1,rep,name=stats" json:"stats,omitempty"`
 	XXX_unrecognized []byte      `json:"-"`
 }
 
@@ -568,56 +583,21 @@ func (this *FileStats) Reset()         { *this = FileStats{} }
 func (this *FileStats) String() string { return proto.CompactTextString(this) }
 func (*FileStats) ProtoMessage()       {}
 
-func (this *FileStats) GetName() string {
+type GetRequest struct {
+	Name             *string `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (this *GetRequest) Reset()         { *this = GetRequest{} }
+func (this *GetRequest) String() string { return proto.CompactTextString(this) }
+func (*GetRequest) ProtoMessage()       {}
+
+func (this *GetRequest) GetName() string {
 	if this != nil && this.Name != nil {
 		return *this.Name
 	}
 	return ""
 }
-
-type FileStatsList struct {
-	Results          []*FileStats `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
-	XXX_unrecognized []byte       `json:"-"`
-}
-
-func (this *FileStatsList) Reset()         { *this = FileStatsList{} }
-func (this *FileStatsList) String() string { return proto.CompactTextString(this) }
-func (*FileStatsList) ProtoMessage()       {}
-
-type PutRequest struct {
-	Files            []*FileBlob `protobuf:"bytes,1,rep,name=files" json:"files,omitempty"`
-	XXX_unrecognized []byte      `json:"-"`
-}
-
-func (this *PutRequest) Reset()         { *this = PutRequest{} }
-func (this *PutRequest) String() string { return proto.CompactTextString(this) }
-func (*PutRequest) ProtoMessage()       {}
-
-type FileContents struct {
-	Name             *string     `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
-	Files            []*FileBlob `protobuf:"bytes,2,rep,name=files" json:"files,omitempty"`
-	XXX_unrecognized []byte      `json:"-"`
-}
-
-func (this *FileContents) Reset()         { *this = FileContents{} }
-func (this *FileContents) String() string { return proto.CompactTextString(this) }
-func (*FileContents) ProtoMessage()       {}
-
-func (this *FileContents) GetName() string {
-	if this != nil && this.Name != nil {
-		return *this.Name
-	}
-	return ""
-}
-
-type FileContentsList struct {
-	Results          []*FileContents `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
-	XXX_unrecognized []byte          `json:"-"`
-}
-
-func (this *FileContentsList) Reset()         { *this = FileContentsList{} }
-func (this *FileContentsList) String() string { return proto.CompactTextString(this) }
-func (*FileContentsList) ProtoMessage()       {}
 
 type EmptyMessage struct {
 	XXX_unrecognized []byte `json:"-"`
@@ -653,12 +633,20 @@ func (this *NamePair) GetDestination() string {
 
 type RepeatedNamePairEntries struct {
 	Entries          []*NamePair `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
+	SandboxId        *string     `protobuf:"bytes,2,opt,name=sandbox_id" json:"sandbox_id,omitempty"`
 	XXX_unrecognized []byte      `json:"-"`
 }
 
 func (this *RepeatedNamePairEntries) Reset()         { *this = RepeatedNamePairEntries{} }
 func (this *RepeatedNamePairEntries) String() string { return proto.CompactTextString(this) }
 func (*RepeatedNamePairEntries) ProtoMessage()       {}
+
+func (this *RepeatedNamePairEntries) GetSandboxId() string {
+	if this != nil && this.SandboxId != nil {
+		return *this.SandboxId
+	}
+	return ""
+}
 
 type RepeatedStringEntries struct {
 	Entries          []string `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`

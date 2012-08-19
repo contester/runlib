@@ -2,12 +2,10 @@ package service
 
 import (
 	"code.google.com/p/goprotobuf/proto"
-	"io/ioutil"
+	"labix.org/v2/mgo"
 	"os"
-	"path/filepath"
 	"runlib/contester_proto"
 	"strings"
-	"labix.org/v2/mgo"
 )
 
 type Contester struct {
@@ -21,10 +19,10 @@ type Contester struct {
 	Disks         []string
 	ProgramFiles  []string
 
-	Msession	*mgo.Session
+	Msession  *mgo.Session
 	Mlocation string
-	Mdb	*mgo.Database
-	Mfs	*mgo.GridFS
+	Mdb       *mgo.Database
+	Mfs       *mgo.GridFS
 }
 
 func getHostname() string {
@@ -98,131 +96,5 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	response.Disks = s.Disks
 	response.ProgramFiles = s.ProgramFiles
 
-	return nil
-}
-
-func (s *Contester) Put(request *contester_proto.PutRequest, response *contester_proto.EmptyMessage) error {
-	if request.SandboxId != nil {
-		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
-		if err != nil {
-			return err
-		}
-		sandbox.Mutex.Lock()
-		defer sandbox.Mutex.Unlock()
-	}
-	for _, item := range request.Files {
-		if item.Data != nil {
-			contester_proto.AddBlob(item.Data)
-		}
-	}
-
-	for _, item := range request.Files {
-		resolved, err := resolvePath(s.Sandboxes, *item.Name, true)
-		if err != nil {
-			return err
-		}
-		dest, err := os.Create(resolved)
-		if err != nil {
-			return err
-		}
-		data, err := item.Data.Bytes()
-		if err != nil {
-			return err
-		}
-		_, err = dest.Write(data)
-		if err != nil {
-			return err
-		}
-		dest.Close()
-	}
-	return nil
-}
-
-func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response *contester_proto.EmptyMessage) error {
-	sandbox, err := getSandboxById(s.Sandboxes, request.GetSandbox())
-	if err != nil {
-		return err
-	}
-
-	sandbox.Mutex.Lock()
-	defer sandbox.Mutex.Unlock()
-
-	path := sandbox.Path
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		return err
-	}
-
-	for _, info := range files {
-		if info.Name() == "." || info.Name() == ".." {
-			continue
-		}
-		fullpath := filepath.Join(path, info.Name())
-		err = os.RemoveAll(fullpath)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func getSingleFile(name string) (*contester_proto.FileBlob, error) {
-	r, err := os.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	blob, err := contester_proto.BlobFromStream(r)
-	r.Close()
-	if err != nil {
-		return nil, err
-	}
-	return &contester_proto.FileBlob{
-		Data: blob,
-		Name: proto.String(name),
-	}, nil
-}
-
-func (s *Contester) getSingleName(name string) (*contester_proto.FileContents, error) {
-	stats, err := s.singleGlob(name)
-	if err != nil || stats == nil {
-		return nil, err
-	}
-
-	files := make([]*contester_proto.FileBlob, 0, len(stats.Results))
-
-	for _, st := range stats.Results {
-		if st != nil && (st.IsDirectory == nil || !*st.IsDirectory) {
-			f, err := getSingleFile(*st.Name)
-			if err == nil && f != nil {
-				files = append(files, f)
-			}
-		}
-	}
-
-	if len(files) > 0 {
-		return &contester_proto.FileContents{Name: &name, Files: files}, nil
-	}
-	return nil, nil
-}
-
-
-
-func (s *Contester) Get(request *contester_proto.NameList, response *contester_proto.FileContentsList) error {
-	if request.SandboxId != nil {
-		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
-		if err != nil {
-			return err
-		}
-		sandbox.Mutex.RLock()
-		defer sandbox.Mutex.RUnlock()
-	}
-	response.Results = make([]*contester_proto.FileContents, 0, len(request.Name))
-
-	for _, name := range request.Name {
-		item, err := s.getSingleName(name)
-		if err == nil && item != nil {
-			response.Results = append(response.Results, item)
-		}
-	}
 	return nil
 }

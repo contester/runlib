@@ -12,7 +12,7 @@ import (
 type Sandbox struct {
 	Path               string
 	Username, Password *string
-	Mutex sync.Mutex
+	Mutex              sync.RWMutex
 }
 
 type SandboxPair struct {
@@ -59,33 +59,34 @@ func getSandboxByPath(s []SandboxPair, id string) (*Sandbox, error) {
 	return nil, fmt.Errorf("No sandbox corresponds to path %s", cleanid)
 }
 
-func resolvePath(s []SandboxPair, source string, restricted bool) (string, error) {
+func resolvePath(s []SandboxPair, source string, restricted bool) (string, *Sandbox, error) {
 	if len(source) < 1 {
-		return source, fmt.Errorf("Invalid path %s", source)
+		return source, nil, fmt.Errorf("Invalid path %s", source)
 	}
 
 	if source[0] == '%' {
 		parts := strings.SplitN(source, string(os.PathSeparator), 2)
 		sandbox, err := getSandboxById(s, parts[0])
 		if err != nil {
-			return source, err
+			return source, nil, err
 		}
 		if len(parts) == 2 {
-			return filepath.Join(sandbox.Path, parts[1]), nil
+			return filepath.Join(sandbox.Path, parts[1]), sandbox, nil
 		}
-		return sandbox.Path, nil
+		return sandbox.Path, sandbox, nil
 	}
 
 	if !filepath.IsAbs(source) {
-		return source, fmt.Errorf("Relative path %s", source)
+		return source, nil, fmt.Errorf("Relative path %s", source)
 	}
 
 	if restricted {
-		_, err := getSandboxByPath(s, source)
+		sandbox, err := getSandboxByPath(s, source)
 		if err != nil {
-			return source, err
+			return source, nil, err
 		}
+		return source, sandbox, err
 	}
 
-	return source, nil
+	return source, nil, nil
 }

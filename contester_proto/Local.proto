@@ -104,39 +104,37 @@ message IdentifyResponse {
     repeated string programFiles = 7;
 };
 
+// Glob and Stat
+
 message FileStat {
     optional string name = 1;
     optional bool is_directory = 2;
     optional uint64 size = 3;
 };
 
-message NameList {
+message StatRequest {
     repeated string name = 1;
+    optional string sandbox_id = 2;
+    optional bool expand = 3;
 };
 
 message FileStats {
-    optional string name = 1;
-    repeated FileStat results = 2;
+    repeated FileStat stats = 1;
 };
 
-message FileStatsList {
-    repeated FileStats results = 1;
-};
+// Direct put
+// Use FileBlob
 
-message PutRequest {
-    repeated FileBlob files = 1;
-};
+// Direct get
 
-message FileContents {
+message GetRequest {
     required string name = 1;
-    repeated FileBlob files = 2;
 };
-
-message FileContentsList {
-    repeated FileContents results = 1;
-};
+// returns FileBlob
 
 message EmptyMessage {};
+
+// Gridfs foo
 
 message NamePair {
     required string source = 1;
@@ -145,6 +143,7 @@ message NamePair {
 
 message RepeatedNamePairEntries {
     repeated NamePair entries = 1;
+    optional string sandbox_id = 2;
 };
 
 message RepeatedStringEntries {

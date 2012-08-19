@@ -42,6 +42,8 @@ func (lw *lwrapper) Write(p []byte) (n int, err error) {
 }
 
 func main() {
+	l4g.Global.AddFilter("log", l4g.FINE, l4g.NewFileLogWriter("server.log", true))
+
 	lw := &lwrapper{}
 	log.SetOutput(lw)
 

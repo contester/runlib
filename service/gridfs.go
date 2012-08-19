@@ -2,9 +2,9 @@ package service
 
 import (
 	"io"
+	"labix.org/v2/mgo"
 	"os"
 	"runlib/contester_proto"
-	"labix.org/v2/mgo"
 )
 
 func gridfsCopy(srcname, dstname string, mfs *mgo.GridFS, toGridfs bool) error {
@@ -65,7 +65,7 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 		if item.Source == nil || item.Destination == nil {
 			continue
 		}
-		resolved, err := resolvePath(s.Sandboxes, *item.Source, false)
+		resolved, _, err := resolvePath(s.Sandboxes, *item.Source, false)
 		if err != nil {
 			continue
 		}
@@ -93,7 +93,7 @@ func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, 
 		if item.Source == nil || item.Destination == nil {
 			continue
 		}
-		resolved, err := resolvePath(s.Sandboxes, *item.Destination, true)
+		resolved, _, err := resolvePath(s.Sandboxes, *item.Destination, true)
 		if err != nil {
 			return err
 		}

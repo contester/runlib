@@ -27,6 +27,7 @@ func (s *Contester) Stat(request *contester_proto.StatRequest, response *contest
 	if request.SandboxId != nil {
 		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {
+			l4g.Error(err)
 			return err
 		}
 		sandbox.Mutex.RLock()
@@ -37,6 +38,7 @@ func (s *Contester) Stat(request *contester_proto.StatRequest, response *contest
 	for _, name := range request.Name {
 		resolved, _, err := resolvePath(s.Sandboxes, name, false)
 		if err != nil {
+			l4g.Error(err)
 			continue
 		}
 		var expanded []string

@@ -64,7 +64,7 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 		if err != nil {
 			continue
 		}
-		response.Entries = append(response.Entries, *item.Source)
+		response.Entries = append(response.Entries, *item.Destination)
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, 
 		if err != nil {
 			return err
 		}
-		response.Entries = append(response.Entries, resolved)
+		response.Entries = append(response.Entries, *item.Source)
 	}
 	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"runlib/contester_proto"
 	"runlib/subprocess"
-	"runtime"
 )
 
 func fillEnv(src *contester_proto.LocalEnvironment) *[]string {
@@ -90,6 +89,24 @@ func fillRedirect(r *contester_proto.RedirectParameters) *subprocess.Redirect {
 }
 
 func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
+	var sandbox *Sandbox
+	if request.SandboxId != nil {
+		var err error
+		sandbox, err = getSandboxById(s.Sandboxes, request.GetSandboxId())
+		if err != nil {
+			return err
+		}
+	} else {
+		var err error
+		sandbox, err = getSandboxByPath(s.Sandboxes, request.GetCurrentDirectory())
+		if err != nil {
+			return err
+		}
+	}
+
+	sandbox.Mutex.Lock()
+	defer sandbox.Mutex.Unlock()
+
 	sub := subprocess.SubprocessCreate()
 
 	sub.Cmd = &subprocess.CommandLine{
@@ -113,20 +130,6 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	sub.StdOut = fillRedirect(request.StdOut)
 	sub.StdErr = fillRedirect(request.StdErr)
 
-	var sandbox *Sandbox
-	if request.SandboxId != nil {
-		var err error
-		sandbox, err = getSandboxById(s.Sandboxes, request.GetSandboxId())
-		if err != nil {
-			return err
-		}
-	} else {
-		var err error
-		sandbox, err = getSandboxByPath(s.Sandboxes, request.GetCurrentDirectory())
-		if err != nil {
-			return err
-		}
-	}
 
 	if sandbox.Username != nil {
 		sub.Login = &subprocess.LoginInfo{
@@ -139,8 +142,6 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	if err != nil {
 		return err
 	}
-
-	runtime.GC()
 
 	response.ReturnCode = proto.Uint32(result.ExitCode)
 	response.Flags = parseSuccessCode(result.SuccessCode)

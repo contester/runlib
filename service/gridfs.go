@@ -50,6 +50,15 @@ func gridfsCopy(srcname, dstname string, mfs *mgo.GridFS, toGridfs bool) error {
 }
 
 func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, response *contester_proto.RepeatedStringEntries) error {
+	if request.SandboxId != nil {
+		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
+		if err != nil {
+			return err
+		}
+		sandbox.Mutex.RLock()
+		defer sandbox.Mutex.RUnlock()
+	}
+
 	response.Entries = make([]string, 0, len(request.Entries))
 
 	for _, item := range request.Entries {
@@ -70,6 +79,15 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 }
 
 func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, response *contester_proto.RepeatedStringEntries) error {
+	if request.SandboxId != nil {
+		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
+		if err != nil {
+			return err
+		}
+		sandbox.Mutex.Lock()
+		defer sandbox.Mutex.Unlock()
+	}
+
 	response.Entries = make([]string, 0, len(request.Entries))
 	for _, item := range request.Entries {
 		if item.Source == nil || item.Destination == nil {

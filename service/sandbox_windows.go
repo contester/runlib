@@ -6,11 +6,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Sandbox struct {
 	Path               string
 	Username, Password *string
+	Mutex sync.Mutex
 }
 
 type SandboxPair struct {

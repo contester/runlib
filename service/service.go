@@ -102,6 +102,14 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 }
 
 func (s *Contester) Put(request *contester_proto.PutRequest, response *contester_proto.EmptyMessage) error {
+	if request.SandboxId != nil {
+		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
+		if err != nil {
+			return err
+		}
+		sandbox.Mutex.Lock()
+		defer sandbox.Mutex.Unlock()
+	}
 	for _, item := range request.Files {
 		if item.Data != nil {
 			contester_proto.AddBlob(item.Data)
@@ -135,6 +143,9 @@ func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response
 	if err != nil {
 		return err
 	}
+
+	sandbox.Mutex.Lock()
+	defer sandbox.Mutex.Unlock()
 
 	path := sandbox.Path
 	files, err := ioutil.ReadDir(path)
@@ -197,6 +208,14 @@ func (s *Contester) getSingleName(name string) (*contester_proto.FileContents, e
 
 
 func (s *Contester) Get(request *contester_proto.NameList, response *contester_proto.FileContentsList) error {
+	if request.SandboxId != nil {
+		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
+		if err != nil {
+			return err
+		}
+		sandbox.Mutex.RLock()
+		defer sandbox.Mutex.RUnlock()
+	}
 	response.Results = make([]*contester_proto.FileContents, 0, len(request.Name))
 
 	for _, name := range request.Name {

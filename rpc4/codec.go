@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/rpc"
+	l4g "code.google.com/p/log4go"
 
 	"code.google.com/p/goprotobuf/proto"
 )
@@ -159,7 +160,7 @@ func ConnectRpc4(addr string, s *rpc.Server) {
 		if err == nil {
 			s.ServeCodec(NewServerCodec(conn))
 		} else {
-			fmt.Printf("%s\n", err)
+			l4g.Error(err)
 		}
 	}
 }

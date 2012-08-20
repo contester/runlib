@@ -4,6 +4,7 @@ import (
 	l4g "code.google.com/p/log4go"
 	"os"
 	"runlib/contester_proto"
+	"syscall"
 )
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.EmptyMessage) error {
@@ -22,10 +23,18 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		defer sandbox.Mutex.Unlock()
 	}
 
-	destination, err := os.Create(resolved)
-	if err != nil {
-		l4g.Error(err)
-		return err
+	var destination *os.File
+
+	for {
+		destination, err = os.Create(resolved)
+		if err != nil {
+			l4g.Error(err)
+			if err == syscall.ERROR_ACCESS_DENIED {
+				continue
+			}
+			return err
+		}
+		break
 	}
 	data, err := request.Data.Bytes()
 	if err != nil {

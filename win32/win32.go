@@ -15,7 +15,7 @@ var (
 	user32   = syscall.NewLazyDLL("user32.dll")
 
 	procCreateProcessWithLogonW   = advapi32.NewProc("CreateProcessWithLogonW")
-	procCreateProcessW            = kernel32.NewProc("CreateProcessW")
+	procCreateProcessAsUserW      = advapi32.NewProc("CreateProcessAsUserW")
 	procResumeThread              = kernel32.NewProc("ResumeThread")
 	procGetProcessMemoryInfo      = psapi.NewProc("GetProcessMemoryInfo")
 	procLogonUserW                = advapi32.NewProc("LogonUserW")
@@ -58,7 +58,7 @@ const (
 	LOGON32_LOGON_NEW_CREDENTIALS   = 9
 
 	MAXIMUM_ALLOWED = 0x2000000
-	PI_NOUI = 2
+	PI_NOUI         = 2
 )
 
 type ProcessMemoryCountersEx struct {
@@ -76,13 +76,13 @@ type ProcessMemoryCountersEx struct {
 }
 
 type ProfileInfo struct {
-	Size         uint32
-	Flags        uint32
-	Username     *uint16
-	ProfilePath  *uint16
-	DefaultPath  *uint16
-	ServerName *uint16
-	PolicyPath *uint16
+	Size        uint32
+	Flags       uint32
+	Username    *uint16
+	ProfilePath *uint16
+	DefaultPath *uint16
+	ServerName  *uint16
+	PolicyPath  *uint16
 	Profile     syscall.Handle
 }
 
@@ -148,6 +148,45 @@ func CreateProcessWithLogonW(
 		uintptr(logonFlags),
 		uintptr(unsafe.Pointer(applicationName)),
 		uintptr(unsafe.Pointer(commandLine)),
+		uintptr(creationFlags),
+		uintptr(unsafe.Pointer(environment)), // env
+		uintptr(unsafe.Pointer(currentDirectory)),
+		uintptr(unsafe.Pointer(startupInfo)),
+		uintptr(unsafe.Pointer(processInformation)))
+
+	if int(r1) == 0 {
+		return e1
+	}
+
+	return nil
+}
+
+func CreateProcessAsUser(
+	token syscall.Handle,
+	applicationName *uint16,
+	commandLine *uint16,
+	procSecurity *syscall.SecurityAttributes,
+	threadSecurity *syscall.SecurityAttributes,
+	inheritHandles bool,
+	creationFlags uint32,
+	environment *uint16,
+	currentDirectory *uint16,
+	startupInfo *syscall.StartupInfo,
+	processInformation *syscall.ProcessInformation) (err error) {
+
+	var _p0 uint32
+	if inheritHandles {
+		_p0 = 1
+	} else {
+		_p0 = 0
+	}
+	r1, _, e1 := procCreateProcessAsUserW.Call(
+		uintptr(token),
+		uintptr(unsafe.Pointer(applicationName)),
+		uintptr(unsafe.Pointer(commandLine)),
+		uintptr(unsafe.Pointer(procSecurity)),
+		uintptr(unsafe.Pointer(threadSecurity)),
+		uintptr(_p0),
 		uintptr(creationFlags),
 		uintptr(unsafe.Pointer(environment)), // env
 		uintptr(unsafe.Pointer(currentDirectory)),

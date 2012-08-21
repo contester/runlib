@@ -112,19 +112,34 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 
 	var e error
 
-	if sub.Login != nil && sub.Login.Username != "" {
-		e = win32.CreateProcessWithLogonW(
-			syscall.StringToUTF16Ptr(sub.Login.Username),
-			syscall.StringToUTF16Ptr("."),
-			syscall.StringToUTF16Ptr(sub.Login.Password),
-			win32.LOGON_WITH_PROFILE,
-			applicationName,
-			commandLine,
-			win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT,
-			environment,
-			currentDirectory,
-			si,
-			pi)
+	if sub.Login != nil {
+		if sub.NoJob {
+			e = win32.CreateProcessWithLogonW(
+				syscall.StringToUTF16Ptr(sub.Login.Username),
+				syscall.StringToUTF16Ptr("."),
+				syscall.StringToUTF16Ptr(sub.Login.Password),
+				win32.LOGON_WITH_PROFILE,
+				applicationName,
+				commandLine,
+				win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT,
+				environment,
+				currentDirectory,
+				si,
+				pi)
+		} else {
+			e = win32.CreateProcessAsUser(
+				sub.Login.HUser,
+				applicationName,
+				commandLine,
+				nil,
+				nil,
+				true,
+				win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
+				environment,
+				currentDirectory,
+				si,
+				pi)
+		}
 	} else {
 		e = syscall.CreateProcess(
 			applicationName,

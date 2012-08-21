@@ -56,6 +56,8 @@ type Subprocess struct {
 	Cmd                   *CommandLine
 	Login                 *LoginInfo
 	StdIn, StdOut, StdErr *Redirect
+
+	Desktop string
 }
 
 func SubprocessCreate() *Subprocess {

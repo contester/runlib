@@ -58,6 +58,7 @@ const (
 	LOGON32_LOGON_NEW_CREDENTIALS   = 9
 
 	MAXIMUM_ALLOWED = 0x2000000
+	PI_NOUI = 2
 )
 
 type ProcessMemoryCountersEx struct {
@@ -77,12 +78,12 @@ type ProcessMemoryCountersEx struct {
 type ProfileInfo struct {
 	Size         uint32
 	Flags        uint32
-	UserName     *uint16
+	Username     *uint16
 	ProfilePath  *uint16
 	DefaultPath  *uint16
-	lpServerName *uint16
-	lpPolicyPath *uint16
-	hProfile     syscall.Handle
+	ServerName *uint16
+	PolicyPath *uint16
+	Profile     syscall.Handle
 }
 
 type Hwinsta uintptr

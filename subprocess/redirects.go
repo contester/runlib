@@ -27,7 +27,6 @@ func (d *subprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 		return nil, e
 	}
 
-
 	e = syscall.SetHandleInformation(syscall.Handle(writer.Fd()), syscall.HANDLE_FLAG_INHERIT, syscall.HANDLE_FLAG_INHERIT)
 	if e != nil {
 		return nil, e

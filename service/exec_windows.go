@@ -130,10 +130,8 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	sub.StdOut = fillRedirect(request.StdOut)
 	sub.StdErr = fillRedirect(request.StdErr)
 
-	if sandbox.Username != nil {
-		sub.Login = &subprocess.LoginInfo{
-			Username: sandbox.Username,
-			Password: sandbox.Password}
+	if sandbox.Login != nil {
+		sub.Login = sandbox.Login
 	}
 
 	result, err := sub.Execute()

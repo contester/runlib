@@ -4,11 +4,11 @@ package subprocess
 
 import (
 	"bytes"
+	l4g "code.google.com/p/log4go"
 	"io"
 	"runlib/win32"
 	"syscall"
 	"unsafe"
-	l4g "code.google.com/p/log4go"
 )
 
 type subprocessData struct {
@@ -25,6 +25,20 @@ type subprocessData struct {
 type subdataWin32 struct {
 	hProcess syscall.Handle
 	hThread  syscall.Handle
+}
+
+type LoginInfo struct {
+	Username, Password string
+	HUser, HProfile    syscall.Handle
+}
+
+func NewLoginInfo(username, password string) (*LoginInfo, error) {
+	result := &LoginInfo{Username: username, Password: password}
+	err := result.Prepare()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // 1. setup; create redirects
@@ -98,11 +112,11 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 
 	var e error
 
-	if sub.Login != nil && sub.Login.Username != nil {
+	if sub.Login != nil && sub.Login.Username != "" {
 		e = win32.CreateProcessWithLogonW(
-			win32.StringPtrToUTF16Ptr(sub.Login.Username),
+			syscall.StringToUTF16Ptr(sub.Login.Username),
 			syscall.StringToUTF16Ptr("."),
-			win32.StringPtrToUTF16Ptr(sub.Login.Password),
+			syscall.StringToUTF16Ptr(sub.Login.Password),
 			win32.LOGON_WITH_PROFILE,
 			applicationName,
 			commandLine,

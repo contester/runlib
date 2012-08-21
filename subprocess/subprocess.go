@@ -38,11 +38,6 @@ type CommandLine struct {
 	Parameters                   []string
 }
 
-type LoginInfo struct {
-	Username, Password *string
-	Uid                int
-}
-
 type Subprocess struct {
 	CurrentDirectory *string
 	Environment      *[]string

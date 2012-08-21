@@ -2,10 +2,10 @@ package service
 
 import (
 	"code.google.com/p/goconf/conf"
-	"code.google.com/p/goprotobuf/proto"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runlib/subprocess"
 	"strconv"
 	"strings"
 )
@@ -47,14 +47,20 @@ func configureSandboxes(conf *ContesterConfig) ([]SandboxPair, error) {
 		localBase := filepath.Join(conf.BasePath, strconv.Itoa(index))
 		result[index].Compile.Path = filepath.Join(localBase, "C")
 		result[index].Run.Path = filepath.Join(localBase, "R")
-		result[index].Run.Username = proto.String("tester" + strconv.Itoa(index))
-		result[index].Run.Password = proto.String(password)
 
-		e := checkSandbox(&result[index].Compile)
+		e := checkSandbox(result[index].Compile.Path)
 		if e != nil {
 			return nil, e
 		}
-		e = checkSandbox(&result[index].Run)
+		e = checkSandbox(result[index].Run.Path)
+		if e != nil {
+			return nil, e
+		}
+		e = setAcl(result[index].Run.Path, "tester"+strconv.Itoa(index))
+		if e != nil {
+			return nil, e
+		}
+		result[index].Run.Login, e = subprocess.NewLoginInfo("tester"+strconv.Itoa(index), password)
 		if e != nil {
 			return nil, e
 		}
@@ -62,14 +68,16 @@ func configureSandboxes(conf *ContesterConfig) ([]SandboxPair, error) {
 	return result, nil
 }
 
-func checkSandbox(s *Sandbox) error {
-	err := os.MkdirAll(s.Path, os.ModeDir)
+func checkSandbox(path string) error {
+	err := os.MkdirAll(path, os.ModeDir)
 	if err != nil {
 		return err
 	}
-	if s.Username != nil {
-		cmd := exec.Command("subinacl.exe", "/file", s.Path, "/grant="+*s.Username+"=RWC")
-		cmd.Run()
-	}
+	return nil
+}
+
+func setAcl(path, username string) error {
+	cmd := exec.Command("subinacl.exe", "/file", path, "/grant="+username+"=RWC")
+	cmd.Run()
 	return nil
 }

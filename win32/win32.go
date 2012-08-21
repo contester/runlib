@@ -11,11 +11,15 @@ var (
 	advapi32 = syscall.NewLazyDLL("advapi32.dll")
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
 	psapi    = syscall.NewLazyDLL("psapi.dll")
+	userenv  = syscall.NewLazyDLL("userenv.dll")
 
 	procCreateProcessWithLogonW = advapi32.NewProc("CreateProcessWithLogonW")
 	procCreateProcessW          = kernel32.NewProc("CreateProcessW")
 	procResumeThread            = kernel32.NewProc("ResumeThread")
 	procGetProcessMemoryInfo    = psapi.NewProc("GetProcessMemoryInfo")
+	procLogonUserW              = advapi32.NewProc("LogonUserW")
+	procLoadUserProfileW        = userenv.NewProc("LoadUserProfileW")
+	procUnloadUserProfile       = userenv.NewProc("UnloadUserProfile")
 )
 
 const (
@@ -29,6 +33,19 @@ const (
 	STARTF_FORCEOFFFEEDBACK = 0x00000080
 
 	FILE_FLAG_SEQUENTIAL_SCAN = 0x08000000
+
+	LOGON32_PROVIDER_DEFAULT = 0
+	LOGON32_PROVIDER_WINNT35 = 1
+	LOGON32_PROVIDER_WINNT40 = 2
+	LOGON32_PROVIDER_WINNT50 = 3
+
+	LOGON32_LOGON_INTERACTIVE       = 2
+	LOGON32_LOGON_NETWORK           = 3
+	LOGON32_LOGON_BATCH             = 4
+	LOGON32_LOGON_SERVICE           = 5
+	LOGON32_LOGON_UNLOCK            = 7
+	LOGON32_LOGON_NETWORK_CLEARTEXT = 8
+	LOGON32_LOGON_NEW_CREDENTIALS   = 9
 )
 
 type ProcessMemoryCountersEx struct {
@@ -43,6 +60,17 @@ type ProcessMemoryCountersEx struct {
 	PagefileUsage              uint32
 	PeakPagefileUsage          uint32
 	PrivateUsage               uint32
+}
+
+type ProfileInfo struct {
+	Size         uint32
+	Flags        uint32
+	UserName     *uint16
+	ProfilePath  *uint16
+	DefaultPath  *uint16
+	lpServerName *uint16
+	lpPolicyPath *uint16
+	hProfile     syscall.Handle
 }
 
 func StringPtrToUTF16Ptr(src *string) (result *uint16) {
@@ -126,4 +154,39 @@ func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx,
 		return nil, e1
 	}
 	return pmc, nil
+}
+
+func LogonUser(username *uint16, domain *uint16, password *uint16, logonType uint32, logonProvider uint32) (token syscall.Handle, err error) {
+	r1, _, e1 := procLogonUserW.Call(
+		uintptr(unsafe.Pointer(username)),
+		uintptr(unsafe.Pointer(domain)),
+		uintptr(unsafe.Pointer(password)),
+		uintptr(logonType),
+		uintptr(logonProvider),
+		uintptr(unsafe.Pointer(&token)))
+
+	if int(r1) == 0 {
+		return syscall.InvalidHandle, e1
+	}
+	return
+}
+
+func LoadUserProfile(token syscall.Handle, pinfo *ProfileInfo) error {
+	r1, _, e1 := procLoadUserProfileW.Call(
+		uintptr(token),
+		uintptr(unsafe.Pointer(pinfo)))
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+func UnloadUserProfile(token, profile syscall.Handle) error {
+	r1, _, e1 := procUnloadUserProfile.Call(
+		uintptr(token),
+		uintptr(profile))
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
 }

@@ -44,6 +44,12 @@ func (lw *lwrapper) Write(p []byte) (n int, err error) {
 func main() {
 	l4g.Global.AddFilter("log", l4g.FINE, l4g.NewFileLogWriter("server.log", true))
 
+	hdesk, hname, err := service.CreateContesterDesktop()
+	if err != nil {
+		l4g.Error(err)
+	}
+	l4g.Info(hdesk, hname)
+
 	lw := &lwrapper{}
 	log.SetOutput(lw)
 

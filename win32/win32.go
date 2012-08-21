@@ -12,14 +12,24 @@ var (
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
 	psapi    = syscall.NewLazyDLL("psapi.dll")
 	userenv  = syscall.NewLazyDLL("userenv.dll")
+	user32   = syscall.NewLazyDLL("user32.dll")
 
-	procCreateProcessWithLogonW = advapi32.NewProc("CreateProcessWithLogonW")
-	procCreateProcessW          = kernel32.NewProc("CreateProcessW")
-	procResumeThread            = kernel32.NewProc("ResumeThread")
-	procGetProcessMemoryInfo    = psapi.NewProc("GetProcessMemoryInfo")
-	procLogonUserW              = advapi32.NewProc("LogonUserW")
-	procLoadUserProfileW        = userenv.NewProc("LoadUserProfileW")
-	procUnloadUserProfile       = userenv.NewProc("UnloadUserProfile")
+	procCreateProcessWithLogonW   = advapi32.NewProc("CreateProcessWithLogonW")
+	procCreateProcessW            = kernel32.NewProc("CreateProcessW")
+	procResumeThread              = kernel32.NewProc("ResumeThread")
+	procGetProcessMemoryInfo      = psapi.NewProc("GetProcessMemoryInfo")
+	procLogonUserW                = advapi32.NewProc("LogonUserW")
+	procLoadUserProfileW          = userenv.NewProc("LoadUserProfileW")
+	procUnloadUserProfile         = userenv.NewProc("UnloadUserProfile")
+	procGetProcessWindowStation   = user32.NewProc("GetProcessWindowStation")
+	procGetCurrentThreadId        = kernel32.NewProc("GetCurrentThreadId")
+	procGetThreadDesktop          = user32.NewProc("GetThreadDesktop")
+	procCreateWindowStationW      = user32.NewProc("CreateWindowStationW")
+	procSetProcessWindowStation   = user32.NewProc("SetProcessWindowStation")
+	procCreateDesktopW            = user32.NewProc("CreateDesktopW")
+	procSetThreadDesktop          = user32.NewProc("SetThreadDesktop")
+	procGetUserObjectInformationW = user32.NewProc("GetUserObjectInformationW")
+	procCloseWindowStation        = user32.NewProc("CloseWindowStation")
 )
 
 const (
@@ -46,6 +56,8 @@ const (
 	LOGON32_LOGON_UNLOCK            = 7
 	LOGON32_LOGON_NETWORK_CLEARTEXT = 8
 	LOGON32_LOGON_NEW_CREDENTIALS   = 9
+
+	MAXIMUM_ALLOWED = 0x2000000
 )
 
 type ProcessMemoryCountersEx struct {
@@ -71,6 +83,16 @@ type ProfileInfo struct {
 	lpServerName *uint16
 	lpPolicyPath *uint16
 	hProfile     syscall.Handle
+}
+
+type Hwinsta uintptr
+type Hdesk uintptr
+
+func MakeInheritSa() *syscall.SecurityAttributes {
+	var sa syscall.SecurityAttributes
+	sa.Length = uint32(unsafe.Sizeof(sa))
+	sa.InheritHandle = 1
+	return &sa
 }
 
 func StringPtrToUTF16Ptr(src *string) (result *uint16) {
@@ -185,6 +207,108 @@ func UnloadUserProfile(token, profile syscall.Handle) error {
 	r1, _, e1 := procUnloadUserProfile.Call(
 		uintptr(token),
 		uintptr(profile))
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+func GetProcessWindowStation() (Hwinsta, error) {
+	r1, _, e1 := procGetProcessWindowStation.Call()
+	if int(r1) == 0 {
+		return Hwinsta(r1), e1
+	}
+	return Hwinsta(r1), nil
+}
+
+func GetCurrentThreadId() uint32 {
+	r1, _, _ := procGetCurrentThreadId.Call()
+	return uint32(r1)
+}
+
+func GetThreadDesktop(threadId uint32) (Hdesk, error) {
+	r1, _, e1 := procGetThreadDesktop.Call(
+		uintptr(threadId))
+	if int(r1) == 0 {
+		return Hdesk(r1), e1
+	}
+	return Hdesk(r1), nil
+}
+
+func CreateWindowStation(winsta *uint16, flags, desiredAccess uint32, sa *syscall.SecurityAttributes) (Hwinsta, error) {
+	r1, _, e1 := procCreateWindowStationW.Call(
+		uintptr(unsafe.Pointer(winsta)),
+		uintptr(flags),
+		uintptr(desiredAccess),
+		uintptr(unsafe.Pointer(sa)))
+	if int(r1) == 0 {
+		return Hwinsta(r1), e1
+	}
+	return Hwinsta(r1), nil
+}
+
+func SetProcessWindowStation(winsta Hwinsta) error {
+	r1, _, e1 := procSetProcessWindowStation.Call(
+		uintptr(winsta))
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+func CreateDesktop(desktop, device *uint16, devmode uintptr, flags, desiredAccess uint32, sa *syscall.SecurityAttributes) (Hdesk, error) {
+	r1, _, e1 := procCreateDesktopW.Call(
+		uintptr(unsafe.Pointer(desktop)),
+		uintptr(unsafe.Pointer(device)),
+		devmode,
+		uintptr(flags),
+		uintptr(desiredAccess),
+		uintptr(unsafe.Pointer(sa)))
+	if int(r1) == 0 {
+		return Hdesk(r1), e1
+	}
+	return Hdesk(r1), nil
+}
+
+func SetThreadDesktop(desk Hdesk) error {
+	r1, _, e1 := procSetThreadDesktop.Call(
+		uintptr(desk))
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+const (
+	UOI_NAME = 2
+)
+
+func GetUserObjectInformation(obj syscall.Handle, index int, info unsafe.Pointer, length uint32) (uint32, error) {
+	var nLength uint32
+	r1, _, e1 := procGetUserObjectInformationW.Call(
+		uintptr(obj),
+		uintptr(index),
+		uintptr(info),
+		uintptr(length),
+		uintptr(unsafe.Pointer(&nLength)))
+	if int(r1) == 0 {
+		return nLength, e1
+	}
+	return 0, nil
+}
+
+func GetUserObjectName(obj syscall.Handle) (string, error) {
+	namebuf := make([]uint16, 256)
+	_, err := GetUserObjectInformation(obj, UOI_NAME, unsafe.Pointer(&namebuf[0]), 256*2)
+	if err != nil {
+		return "", err
+	}
+	return syscall.UTF16ToString(namebuf), nil
+}
+
+func CloseWindowStation(winsta Hwinsta) error {
+	r1, _, e1 := procCloseWindowStation.Call(
+		uintptr(winsta))
 	if int(r1) == 0 {
 		return e1
 	}

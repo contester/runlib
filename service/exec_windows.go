@@ -123,6 +123,7 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	sub.CheckIdleness = request.GetCheckIdleness()
 	sub.RestrictUi = request.GetRestrictUi()
 	sub.NoJob = request.GetNoJob()
+	sub.Desktop = s.Desktop
 
 	sub.Environment = fillEnv(request.Environment)
 

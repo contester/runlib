@@ -57,6 +57,7 @@ func main() {
 	go LogMemLoop()
 
 	c := service.NewContester("server.ini")
+	c.Desktop = hname
 
 	rpc.Register(c)
 	rpc4.ConnectRpc4(c.ServerAddress, rpc.DefaultServer)

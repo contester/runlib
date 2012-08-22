@@ -30,8 +30,9 @@ var (
 	procSetThreadDesktop          = user32.NewProc("SetThreadDesktop")
 	procGetUserObjectInformationW = user32.NewProc("GetUserObjectInformationW")
 	procCloseWindowStation        = user32.NewProc("CloseWindowStation")
-	procCreateJobObjectW = kernel32.NewProc("CreateJobObjectW")
+	procCreateJobObjectW          = kernel32.NewProc("CreateJobObjectW")
 	procQueryInformationJobObject = kernel32.NewProc("QueryInformationJobObject")
+	procAssignProcessToJobObject = kernel32.NewProc("AssignProcessToJobObject")
 )
 
 const (
@@ -383,14 +384,14 @@ func QueryInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe
 }
 
 type JobObjectBasicAccountingInformation struct {
-  TotalUserTime uint64
-  TotalKernelTime uint64
-  ThisPeriodTotalUserTime uint64
-  ThisPeriodTotalKernelTime uint64
-  TotalPageFaultCount uint32
-  TotalProcesses uint32
-  ActiveProcesses uint32
-  TotalTerminatedProcesses uint32
+	TotalUserTime             uint64
+	TotalKernelTime           uint64
+	ThisPeriodTotalUserTime   uint64
+	ThisPeriodTotalKernelTime uint64
+	TotalPageFaultCount       uint32
+	TotalProcesses            uint32
+	ActiveProcesses           uint32
+	TotalTerminatedProcesses  uint32
 }
 
 func GetJobObjectBasicAccountingInformation(job syscall.Handle) (*JobObjectBasicAccountingInformation, error) {
@@ -400,4 +401,53 @@ func GetJobObjectBasicAccountingInformation(job syscall.Handle) (*JobObjectBasic
 		return nil, err
 	}
 	return &jinfo, nil
+}
+
+type JobObjectBasicLimitInformation struct {
+	PerProcessUserTimeLimit uint64
+	PerJobUserTimeLimit     uint64
+	LimitFlags              uint32
+	MinimumWorkingSetSize   uint32 //size_t
+	MaximumWorkingSetSize   uint32 //size_t
+	ActiveProcessLimit      uint32
+	Affinity                uintptr
+	PriorityClass           uint32
+	SchedulingClass         uint32
+}
+
+type IoCounters struct {
+	ReadOperationCount  uint64
+	WriteOperationCount uint64
+	OtherOperationCount uint64
+	ReadTransferCount   uint64
+	WriteTransferCount  uint64
+	OtherTransferCount  uint64
+}
+
+type JobObjectExtendedLimitInformation struct {
+	BasicLimitInformation JobObjectBasicLimitInformation
+	IoInfo                IoCounters
+	ProcessMemoryLimit    uint32 // size_t
+	JobMemoryLimit        uint32 //
+	PeakProcessMemoryUsed uint32
+	PeakJobMemoryUsed     uint32
+}
+
+func GetJobObjectBasicExtendedLimitInformation(job syscall.Handle) (*JobObjectExtendedLimitInformation, error) {
+	var jinfo JobObjectExtendedLimitInformation
+	_, err := QueryInformationJobObject(job, 9, unsafe.Pointer(&jinfo), uint32(unsafe.Sizeof(jinfo)))
+	if err != nil {
+		return nil, err
+	}
+	return &jinfo, nil
+}
+
+func AssignProcessToJobObject (job syscall.Handle, process syscall.Handle) error {
+	r1, _, e1 := procAssignProcessToJobObject.Call(
+		uintptr(job),
+		uintptr(process))
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
 }

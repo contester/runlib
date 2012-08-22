@@ -25,6 +25,7 @@ type subprocessData struct {
 type subdataWin32 struct {
 	hProcess syscall.Handle
 	hThread  syscall.Handle
+	hJob syscall.Handle
 }
 
 type LoginInfo struct {
@@ -161,6 +162,20 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	p.hProcess = pi.Process
 	p.hThread = pi.Thread
 
+	if !sub.NoJob {
+		p.hJob, e = win32.CreateJobObject(nil, nil)
+		if e != nil {
+			l4g.Error(e)
+		} else {
+			e = win32.AssignProcessToJobObject(p.hJob, p.hProcess)
+			if e != nil {
+				l4g.Error(e)
+				syscall.CloseHandle(p.hJob)
+				p.hJob = syscall.InvalidHandle
+			}
+		}
+	}
+
 	return d, e
 }
 
@@ -231,6 +246,7 @@ func UpdateProcessMemory(process syscall.Handle, result *SubprocessResult) {
 
 func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult) {
 	hProcess := d.platformData.(*subdataWin32).hProcess
+	hJob := d.platformData.(*subdataWin32).hJob
 	result := &SubprocessResult{}
 	var waitResult uint32
 	waitResult = syscall.WAIT_TIMEOUT
@@ -283,6 +299,10 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 	UpdateProcessMemory(hProcess, result)
 
 	syscall.CloseHandle(hProcess)
+	if hJob != syscall.InvalidHandle {
+		syscall.CloseHandle(hJob)
+	}
+	
 
 	if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
 		result.SuccessCode |= EF_TIME_LIMIT_HIT_POST
@@ -316,7 +336,7 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 	}
 
 	if err = d.SetupOnFrozen(); err != nil {
-		return nil, err
+		return nil, err // we must die here
 	}
 
 	sig := make(chan *SubprocessResult)

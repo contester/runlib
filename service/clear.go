@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runlib/contester_proto"
+	"time"
 )
 
 func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response *contester_proto.EmptyMessage) error {
@@ -29,10 +30,15 @@ func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response
 			continue
 		}
 		fullpath := filepath.Join(path, info.Name())
-		err = os.RemoveAll(fullpath)
-		if err != nil {
-			l4g.Error(err)
-			return err
+		for i := 5; i > 0; i++ {
+			err = os.RemoveAll(fullpath)
+			if err != nil {
+				// on windows, this is racy. sleep and retry
+				l4g.Error(err)
+				time.Sleep(time.Second / 5)
+			} else {
+				break
+			}
 		}
 	}
 	return nil

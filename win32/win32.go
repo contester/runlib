@@ -30,6 +30,8 @@ var (
 	procSetThreadDesktop          = user32.NewProc("SetThreadDesktop")
 	procGetUserObjectInformationW = user32.NewProc("GetUserObjectInformationW")
 	procCloseWindowStation        = user32.NewProc("CloseWindowStation")
+	procCreateJobObjectW = kernel32.NewProc("CreateJobObjectW")
+	procQueryInformationJobObject = kernel32.NewProc("QueryInformationJobObject")
 )
 
 const (
@@ -353,4 +355,49 @@ func CloseWindowStation(winsta Hwinsta) error {
 		return e1
 	}
 	return nil
+}
+
+func CreateJobObject(sa *syscall.SecurityAttributes, name *uint16) (syscall.Handle, error) {
+	r1, _, e1 := procCreateJobObjectW.Call(
+		uintptr(unsafe.Pointer(sa)),
+		uintptr(unsafe.Pointer(name)))
+	if int(r1) == 0 {
+		return syscall.InvalidHandle, e1
+	}
+	return syscall.Handle(r1), nil
+}
+
+func QueryInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe.Pointer, length uint32) (uint32, error) {
+	var nLength uint32
+	r1, _, e1 := procQueryInformationJobObject.Call(
+		uintptr(job),
+		uintptr(infoclass),
+		uintptr(info),
+		uintptr(length),
+		uintptr(unsafe.Pointer(&nLength)))
+
+	if int(r1) == 0 {
+		return nLength, e1
+	}
+	return nLength, nil
+}
+
+type JobObjectBasicAccountingInformation struct {
+  TotalUserTime uint64
+  TotalKernelTime uint64
+  ThisPeriodTotalUserTime uint64
+  ThisPeriodTotalKernelTime uint64
+  TotalPageFaultCount uint32
+  TotalProcesses uint32
+  ActiveProcesses uint32
+  TotalTerminatedProcesses uint32
+}
+
+func GetJobObjectBasicAccountingInformation(job syscall.Handle) (*JobObjectBasicAccountingInformation, error) {
+	var jinfo JobObjectBasicAccountingInformation
+	_, err := QueryInformationJobObject(job, 1, unsafe.Pointer(&jinfo), uint32(unsafe.Sizeof(jinfo)))
+	if err != nil {
+		return nil, err
+	}
+	return &jinfo, nil
 }

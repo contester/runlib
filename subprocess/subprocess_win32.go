@@ -19,10 +19,10 @@ type subprocessData struct {
 	stdOut bytes.Buffer
 	stdErr bytes.Buffer
 
-	platformData interface{}
+	platformData PlatformData
 }
 
-type subdataWin32 struct {
+type PlatformData struct {
 	hProcess syscall.Handle
 	hThread  syscall.Handle
 	hJob syscall.Handle
@@ -95,8 +95,7 @@ func (d *subprocessData) wAllRedirects(s *Subprocess, si *syscall.StartupInfo) e
 }
 
 func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
-	p := &subdataWin32{}
-	d := &subprocessData{platformData: p}
+	d := &subprocessData{}
 
 	si := &syscall.StartupInfo{}
 	si.Cb = uint32(unsafe.Sizeof(*si))
@@ -159,19 +158,19 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 		return nil, e
 	}
 
-	p.hProcess = pi.Process
-	p.hThread = pi.Thread
+	d.platformData.hProcess = pi.Process
+	d.platformData.hThread = pi.Thread
 
 	if !sub.NoJob {
-		p.hJob, e = win32.CreateJobObject(nil, nil)
+		d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
 		if e != nil {
 			l4g.Error(e)
 		} else {
-			e = win32.AssignProcessToJobObject(p.hJob, p.hProcess)
+			e = win32.AssignProcessToJobObject(d.platformData.hJob, d.platformData.hProcess)
 			if e != nil {
 				l4g.Error(e)
-				syscall.CloseHandle(p.hJob)
-				p.hJob = syscall.InvalidHandle
+				syscall.CloseHandle(d.platformData.hJob)
+				d.platformData.hJob = syscall.InvalidHandle
 			}
 		}
 	}
@@ -196,7 +195,7 @@ func (d *subprocessData) SetupOnFrozen() error {
 
 func (d *subprocessData) Unfreeze() error {
 	// platform
-	hThread := d.platformData.(*subdataWin32).hThread
+	hThread := d.platformData.hThread
 	win32.ResumeThread(hThread)
 	syscall.CloseHandle(hThread)
 	return nil
@@ -245,8 +244,8 @@ func UpdateProcessMemory(process syscall.Handle, result *SubprocessResult) {
 }
 
 func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult) {
-	hProcess := d.platformData.(*subdataWin32).hProcess
-	hJob := d.platformData.(*subdataWin32).hJob
+	hProcess := d.platformData.hProcess
+	hJob := d.platformData.hJob
 	result := &SubprocessResult{}
 	var waitResult uint32
 	waitResult = syscall.WAIT_TIMEOUT

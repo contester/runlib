@@ -255,8 +255,21 @@ func GetProcessMemoryUsage(process syscall.Handle) uint32 {
 	return pmc.PrivateUsage
 }
 
-func UpdateProcessMemory(process syscall.Handle, result *SubprocessResult) {
-	result.PeakMemory = uint64(GetProcessMemoryUsage(process))
+func UpdateProcessMemory(pdata *PlatformData, result *SubprocessResult) {
+	var jinfo *win32.JobObjectExtendedLimitInformation
+	var err error
+
+	if pdata.hJob != syscall.InvalidHandle {
+		jinfo, err = win32.GetJobObjectExtendedLimitInformation(pdata.hJob)
+		if err != nil {
+			l4g.Error(err)
+		}
+	}
+	if jinfo != nil {
+		result.PeakMemory = uint64(jinfo.PeakJobMemoryUsed)
+	} else {
+		result.PeakMemory = uint64(GetProcessMemoryUsage(pdata.hProcess))
+	}
 }
 
 func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult) {
@@ -292,7 +305,7 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 		ttLast = ttLastNew
 
 		if sub.MemoryLimit > 0 {
-			UpdateProcessMemory(hProcess, result)
+			UpdateProcessMemory(&d.platformData, result)
 			if result.PeakMemory > sub.MemoryLimit {
 				result.SuccessCode |= EF_MEMORY_LIMIT_HIT
 			}
@@ -311,7 +324,7 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 	}
 
 	_ = UpdateProcessTimes(&d.platformData, result, true)
-	UpdateProcessMemory(hProcess, result)
+	UpdateProcessMemory(&d.platformData, result)
 
 	syscall.CloseHandle(hProcess)
 	if hJob != syscall.InvalidHandle {

@@ -101,6 +101,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	si.Cb = uint32(unsafe.Sizeof(*si))
 	si.Flags = win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW
 	si.ShowWindow = syscall.SW_SHOWMINNOACTIVE
+	si.Desktop = syscall.StringToUTF16Ptr(sub.Desktop)
 	d.wAllRedirects(sub, si)
 
 	pi := &syscall.ProcessInformation{}

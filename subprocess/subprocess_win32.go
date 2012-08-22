@@ -234,6 +234,7 @@ func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished 
 	if jinfo != nil {
 		result.UserTime = jinfo.TotalUserTime / 10
 		result.KernelTime = jinfo.TotalKernelTime / 10
+		result.TotalProcesses = uint64(jinfo.TotalProcesses)
 	} else {
 		result.UserTime = FiletimeToUint64(user) / 10
 		result.KernelTime = FiletimeToUint64(kernel) / 10

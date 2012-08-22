@@ -205,13 +205,13 @@ func FiletimeToUint64(ft *syscall.Filetime) uint64 {
 	return uint64(ft.HighDateTime)<<32 + uint64(ft.LowDateTime)
 }
 
-func UpdateProcessTimes(process syscall.Handle, result *SubprocessResult, finished bool) error {
+func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished bool) error {
 	creation := &syscall.Filetime{}
 	end := &syscall.Filetime{}
 	user := &syscall.Filetime{}
 	kernel := &syscall.Filetime{}
 
-	err := syscall.GetProcessTimes(process, creation, end, kernel, user)
+	err := syscall.GetProcessTimes(pdata.hProcess, creation, end, kernel, user)
 	if err != nil {
 		return err
 	}
@@ -221,8 +221,23 @@ func UpdateProcessTimes(process syscall.Handle, result *SubprocessResult, finish
 	}
 
 	result.WallTime = (FiletimeToUint64(end) / 10) - (FiletimeToUint64(creation) / 10)
-	result.UserTime = FiletimeToUint64(user) / 10
-	result.KernelTime = FiletimeToUint64(kernel) / 10
+
+	var jinfo *win32.JobObjectBasicAccountingInformation
+
+	if pdata.hJob != syscall.InvalidHandle {
+		jinfo, err = win32.GetJobObjectBasicAccountingInformation(pdata.hJob)
+		if err != nil {
+			l4g.Error(err)
+		}
+	}
+
+	if jinfo != nil {
+		result.UserTime = jinfo.TotalUserTime / 10
+		result.KernelTime = jinfo.TotalKernelTime / 10
+	} else {
+		result.UserTime = FiletimeToUint64(user) / 10
+		result.KernelTime = FiletimeToUint64(kernel) / 10
+	}
 
 	return nil
 }
@@ -258,7 +273,7 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 			break
 		}
 
-		_ = UpdateProcessTimes(hProcess, result, false)
+		_ = UpdateProcessTimes(&d.platformData, result, false)
 		ttLastNew := result.KernelTime + result.UserTime
 
 		if sub.CheckIdleness && (ttLast == ttLastNew) {
@@ -294,7 +309,7 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 		}
 	}
 
-	_ = UpdateProcessTimes(hProcess, result, true)
+	_ = UpdateProcessTimes(&d.platformData, result, true)
 	UpdateProcessMemory(hProcess, result)
 
 	syscall.CloseHandle(hProcess)

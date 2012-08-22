@@ -433,7 +433,7 @@ type JobObjectExtendedLimitInformation struct {
 	PeakJobMemoryUsed     uint32
 }
 
-func GetJobObjectBasicExtendedLimitInformation(job syscall.Handle) (*JobObjectExtendedLimitInformation, error) {
+func GetJobObjectExtendedLimitInformation(job syscall.Handle) (*JobObjectExtendedLimitInformation, error) {
 	var jinfo JobObjectExtendedLimitInformation
 	_, err := QueryInformationJobObject(job, 9, unsafe.Pointer(&jinfo), uint32(unsafe.Sizeof(jinfo)))
 	if err != nil {

@@ -14,12 +14,6 @@ const (
 	alignOffset = 16
 )
 
-func alignedBuffer(size int) []byte {
-	buf := make([]byte, size + alignOffset)
-	ofs := int((alignOffset - (uintptr(unsafe.Pointer(&buf[0])) % alignOffset)) % alignOffset)
-	return buf[ofs:ofs+size]
-}
-
 func startSubprocess(filename string, args, env []string, cwd string, suid int, stdhandles []int) {
 	params := &C.struct_CloneParams{}
 	tls := alignedBuffer(4096)

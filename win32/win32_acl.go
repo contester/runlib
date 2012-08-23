@@ -11,6 +11,7 @@ import (
 var (
 	procGetUserObjectSecurity = user32.NewProc("GetUserObjectSecurity")
 	procGetSecurityDescriptorDacl = advapi32.NewProc("GetSecurityDescriptorDacl")
+	procIsValidAcl = advapi32.NewProc("IsValidAcl")
 )
 
 const (
@@ -74,4 +75,13 @@ func GetSecurityDescriptorDacl(sid []byte) (present bool, acl *Acl, defaulted bo
 		err = e1
 	}
 	return
+}
+
+func IsValidAcl(acl *Acl) bool {
+	r1, _, _ := procIsValidAcl.Call(
+		uintptr(unsafe.Pointer(acl)))
+	if r1 == 0 {
+		return false
+	}
+	return true
 }

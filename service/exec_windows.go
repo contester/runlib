@@ -123,7 +123,6 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	sub.CheckIdleness = request.GetCheckIdleness()
 	sub.RestrictUi = request.GetRestrictUi()
 	sub.NoJob = request.GetNoJob()
-	sub.Desktop = s.Desktop
 
 	sub.Environment = fillEnv(request.Environment)
 
@@ -133,6 +132,7 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 	if sandbox.Login != nil {
 		sub.Login = sandbox.Login
+		sub.Desktop = s.Desktop
 	}
 
 	result, err := sub.Execute()
@@ -141,6 +141,9 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 		return err
 	}
 
+	if result.TotalProcesses > 0 {
+		response.TotalProcesses = proto.Uint64(result.TotalProcesses)
+	}
 	response.ReturnCode = proto.Uint32(result.ExitCode)
 	response.Flags = parseSuccessCode(result.SuccessCode)
 	response.Time = parseTime(result)

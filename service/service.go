@@ -23,7 +23,7 @@ type Contester struct {
 	Mlocation string
 	Mdb       *mgo.Database
 	Mfs       *mgo.GridFS
-	Desktop string
+	Desktop   string
 }
 
 func getHostname() string {

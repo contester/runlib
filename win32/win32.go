@@ -32,7 +32,7 @@ var (
 	procCloseWindowStation        = user32.NewProc("CloseWindowStation")
 	procCreateJobObjectW          = kernel32.NewProc("CreateJobObjectW")
 	procQueryInformationJobObject = kernel32.NewProc("QueryInformationJobObject")
-	procAssignProcessToJobObject = kernel32.NewProc("AssignProcessToJobObject")
+	procAssignProcessToJobObject  = kernel32.NewProc("AssignProcessToJobObject")
 )
 
 const (
@@ -426,6 +426,7 @@ type IoCounters struct {
 
 type JobObjectExtendedLimitInformation struct {
 	BasicLimitInformation JobObjectBasicLimitInformation
+	align1                uint32
 	IoInfo                IoCounters
 	ProcessMemoryLimit    uint32 // size_t
 	JobMemoryLimit        uint32 //
@@ -442,7 +443,7 @@ func GetJobObjectExtendedLimitInformation(job syscall.Handle) (*JobObjectExtende
 	return &jinfo, nil
 }
 
-func AssignProcessToJobObject (job syscall.Handle, process syscall.Handle) error {
+func AssignProcessToJobObject(job syscall.Handle, process syscall.Handle) error {
 	r1, _, e1 := procAssignProcessToJobObject.Call(
 		uintptr(job),
 		uintptr(process))

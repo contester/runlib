@@ -25,7 +25,7 @@ type subprocessData struct {
 type PlatformData struct {
 	hProcess syscall.Handle
 	hThread  syscall.Handle
-	hJob syscall.Handle
+	hJob     syscall.Handle
 }
 
 type LoginInfo struct {
@@ -101,7 +101,9 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	si.Cb = uint32(unsafe.Sizeof(*si))
 	si.Flags = win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW
 	si.ShowWindow = syscall.SW_SHOWMINNOACTIVE
-	si.Desktop = syscall.StringToUTF16Ptr(sub.Desktop)
+	if !sub.NoJob && sub.Desktop != "" {
+		si.Desktop = syscall.StringToUTF16Ptr(sub.Desktop)
+	}
 	d.wAllRedirects(sub, si)
 
 	pi := &syscall.ProcessInformation{}
@@ -161,6 +163,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 
 	d.platformData.hProcess = pi.Process
 	d.platformData.hThread = pi.Thread
+	d.platformData.hJob = syscall.InvalidHandle
 
 	if !sub.NoJob {
 		d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
@@ -331,7 +334,6 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 	if hJob != syscall.InvalidHandle {
 		syscall.CloseHandle(hJob)
 	}
-	
 
 	if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
 		result.SuccessCode |= EF_TIME_LIMIT_HIT_POST

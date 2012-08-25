@@ -12,6 +12,7 @@ var (
 	procGetUserObjectSecurity = user32.NewProc("GetUserObjectSecurity")
 	procGetSecurityDescriptorDacl = advapi32.NewProc("GetSecurityDescriptorDacl")
 	procIsValidAcl = advapi32.NewProc("IsValidAcl")
+	procGetAclInformation = advapi32.NewProc("GetAclInformation")
 )
 
 const (
@@ -19,7 +20,11 @@ const (
 )
 
 func AddAceToDesktop(desk Hdesk, sid *syscall.SID) {
-	secDesc, err := GetUserObjectSecurity(syscall.Handle(desk), DACL_SECURITY_INFORMATION)
+	// secDesc, err := GetUserObjectSecurity(syscall.Handle(desk), DACL_SECURITY_INFORMATION)
+	//_, acl, _, err := GetSecurityDescriptorDacl(secDesc)
+
+	newDesc := CreateSecurityDescriptor(256)
+	
 }	
 
 
@@ -84,4 +89,31 @@ func IsValidAcl(acl *Acl) bool {
 		return false
 	}
 	return true
+}
+
+func GetAclInformation(acl *Acl, info unsafe.Pointer, length uint32, class uint32) error {
+	r1, _, e1 := procGetAclInformation.Call(
+		uintptr(unsafe.Pointer(acl)),
+		uintptr(info),
+		uintptr(length),
+		uintptr(class))
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+type AclSizeInformation struct {
+	AceCount uint32
+	AclBytesInUse uint32
+	AclBytesFree uint32
+}
+
+func GerAclSize(acl *acl) (*AclSizeInformation, error) {
+	var result AclSizeInformation
+	err := GetAclInformation(acl, unsafe.Pointer(&result), uint32(unsafe.Sizeof(result)), 2)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

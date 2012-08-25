@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"runlib/win32"
+	"runlib/platform/win32"
 	"syscall"
 	"unsafe"
 )

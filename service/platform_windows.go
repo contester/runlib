@@ -1,7 +1,7 @@
 package service
 
 import (
-	"runlib/win32"
+	"runlib/platform/win32"
 )
 
 type PlatformData struct {

@@ -6,7 +6,7 @@ import (
 	"bytes"
 	l4g "code.google.com/p/log4go"
 	"io"
-	"runlib/win32"
+	"runlib/platform/win32"
 	"syscall"
 	"unsafe"
 )

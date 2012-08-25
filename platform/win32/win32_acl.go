@@ -23,7 +23,7 @@ func AddAceToDesktop(desk Hdesk, sid *syscall.SID) {
 	// secDesc, err := GetUserObjectSecurity(syscall.Handle(desk), DACL_SECURITY_INFORMATION)
 	//_, acl, _, err := GetSecurityDescriptorDacl(secDesc)
 
-	newDesc := CreateSecurityDescriptor(256)
+	_ = CreateSecurityDescriptor(256)
 	
 }	
 
@@ -109,7 +109,7 @@ type AclSizeInformation struct {
 	AclBytesFree uint32
 }
 
-func GerAclSize(acl *acl) (*AclSizeInformation, error) {
+func GerAclSize(acl *Acl) (*AclSizeInformation, error) {
 	var result AclSizeInformation
 	err := GetAclInformation(acl, unsafe.Pointer(&result), uint32(unsafe.Sizeof(result)), 2)
 	if err != nil {

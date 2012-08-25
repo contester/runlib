@@ -13,25 +13,53 @@ var (
 	procGetSecurityDescriptorDacl = advapi32.NewProc("GetSecurityDescriptorDacl")
 	procIsValidAcl = advapi32.NewProc("IsValidAcl")
 	procGetAclInformation = advapi32.NewProc("GetAclInformation")
+	procInitializeSecurityDescriptor = advapi32.NewProc("InitializeSecurityDescriptor")
+	procInitializeAcl = advapi32.NewProc("InitializeAcl")
 )
 
 const (
 	DACL_SECURITY_INFORMATION = 0x00000004
+	SECURITY_DESCRIPTOR_REVISION = 1
+	ACL_REVISION = 2
 )
 
 func AddAceToDesktop(desk Hdesk, sid *syscall.SID) {
-	// secDesc, err := GetUserObjectSecurity(syscall.Handle(desk), DACL_SECURITY_INFORMATION)
-	//_, acl, _, err := GetSecurityDescriptorDacl(secDesc)
+	secDesc, err := GetUserObjectSecurity(syscall.Handle(desk), DACL_SECURITY_INFORMATION)
+	_, acl, _, err := GetSecurityDescriptorDacl(secDesc)
 
-	_ = CreateSecurityDescriptor(256)
+	newDesc, err := CreateSecurityDescriptor(256)
+	var aclSize *AclSizeInformation
+	if acl != nil {
+		aclSize, err = GetAclSize(acl)
+	}
+
 	
 }	
 
-
-func CreateSecurityDescriptor(length int) []byte {
-	return platform.AlignedBuffer(length, 4)
-}
+func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 	
+	return nil
+}
+
+
+func CreateSecurityDescriptor(length int) ([]byte, error) {
+	result := platform.AlignedBuffer(length, 4)
+	err := InitializeSecurityDescriptor(result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func CreateNewAcl(length int) (*Acl, error) {
+	result := (*Acl)(unsafe.Pointer(&platform.AlignedBuffer(length, 4)[0]))
+	err := InitializeAcl(result, uint32(length), ACL_REVISION)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 
 func GetUserObjectSecurity_Ex(obj syscall.Handle, sid uint32, desc []byte) (uint32, error) {
 	var nLength uint32
@@ -53,7 +81,7 @@ func GetUserObjectSecurity(obj syscall.Handle, sid uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	desc := CreateSecurityDescriptor(int(nLength))
+	desc, err := CreateSecurityDescriptor(int(nLength))
 	_, err = GetUserObjectSecurity_Ex(obj, sid, desc)
 	if err != nil {
 		return nil, err
@@ -109,11 +137,32 @@ type AclSizeInformation struct {
 	AclBytesFree uint32
 }
 
-func GerAclSize(acl *Acl) (*AclSizeInformation, error) {
+func GetAclSize(acl *Acl) (*AclSizeInformation, error) {
 	var result AclSizeInformation
 	err := GetAclInformation(acl, unsafe.Pointer(&result), uint32(unsafe.Sizeof(result)), 2)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
+}
+
+func InitializeSecurityDescriptor(sd []byte) error {
+	r1, _, e1 := procInitializeSecurityDescriptor.Call(
+		uintptr(unsafe.Pointer(&sd[0])),
+		SECURITY_DESCRIPTOR_REVISION)
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+func InitializeAcl(acl *Acl, length, revision uint32) error {
+	r1, _, e1 := procInitializeAcl.Call(
+		uintptr(unsafe.Pointer(acl)),
+		uintptr(length),
+		uintptr(revision))
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
 }

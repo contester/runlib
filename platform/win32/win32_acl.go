@@ -15,6 +15,7 @@ var (
 	procGetAclInformation = advapi32.NewProc("GetAclInformation")
 	procInitializeSecurityDescriptor = advapi32.NewProc("InitializeSecurityDescriptor")
 	procInitializeAcl = advapi32.NewProc("InitializeAcl")
+	procAddAce = advapi32.NewProc("AddAce")
 )
 
 const (
@@ -32,6 +33,7 @@ func AddAceToDesktop(desk Hdesk, sid *syscall.SID) {
 	if acl != nil {
 		aclSize, err = GetAclSize(acl)
 	}
+	newAcl, err := CreateNewAcl(1024)
 
 	
 }	
@@ -165,4 +167,32 @@ func InitializeAcl(acl *Acl, length, revision uint32) error {
 		return e1
 	}
 	return nil
+}
+
+type AceHeader struct {
+	AceType byte
+	AceFlags byte
+	AceSize uint16
+}
+
+type Ace struct {}
+
+func AddAce(acl *Acl, revision, startIndex uint32, ace *Ace, size uint32) error {
+	r1, _, e1 := procAddAce.Call(
+		uintptr(unsafe.Pointer(acl)),
+		uintptr(revision),
+		uintptr(startIndex),
+		uintptr(unsafe.Pointer(ace)),
+		uintptr(size))
+
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+func CopyAce(acl *Acl, ace *Ace) error {
+	header := (*AceHeader)(unsafe.Pointer(ace))
+	err := AddAce(acl, ACL_REVISION, 0xffffffff, ace, uint32(header.AceSize))
+	return err
 }

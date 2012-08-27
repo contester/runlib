@@ -3,45 +3,54 @@ package win32
 // +build windows,386
 
 import (
+	"runlib/platform"
 	"syscall"
 	"unsafe"
-	"runlib/platform"
 )
 
 var (
-	procGetUserObjectSecurity = user32.NewProc("GetUserObjectSecurity")
-	procSetUserObjectSecurity = user32.NewProc("SetUserObjectSecurity")
-	procGetSecurityDescriptorDacl = advapi32.NewProc("GetSecurityDescriptorDacl")
-	procSetSecurityDescriptorDacl = advapi32.NewProc("SetSecurityDescriptorDacl")
-	procIsValidAcl = advapi32.NewProc("IsValidAcl")
-	procGetAclInformation = advapi32.NewProc("GetAclInformation")
+	procGetUserObjectSecurity        = user32.NewProc("GetUserObjectSecurity")
+	procSetUserObjectSecurity        = user32.NewProc("SetUserObjectSecurity")
+	procGetSecurityDescriptorDacl    = advapi32.NewProc("GetSecurityDescriptorDacl")
+	procSetSecurityDescriptorDacl    = advapi32.NewProc("SetSecurityDescriptorDacl")
+	procIsValidAcl                   = advapi32.NewProc("IsValidAcl")
+	procGetAclInformation            = advapi32.NewProc("GetAclInformation")
 	procInitializeSecurityDescriptor = advapi32.NewProc("InitializeSecurityDescriptor")
-	procInitializeAcl = advapi32.NewProc("InitializeAcl")
-	procAddAce = advapi32.NewProc("AddAce")
-	procGetAce = advapi32.NewProc("GetAce")
-	procAddAccessAllowedAce = advapi32.NewProc("AddAccessAllowedAce")
+	procInitializeAcl                = advapi32.NewProc("InitializeAcl")
+	procAddAce                       = advapi32.NewProc("AddAce")
+	procGetAce                       = advapi32.NewProc("GetAce")
+	procAddAccessAllowedAce          = advapi32.NewProc("AddAccessAllowedAce")
+	procAddAccessAllowedAceEx        = advapi32.NewProc("AddAccessAllowedAceEx")
 )
 
 const (
-	DACL_SECURITY_INFORMATION = 0x00000004
+	DACL_SECURITY_INFORMATION    = 0x00000004
 	SECURITY_DESCRIPTOR_REVISION = 1
-	ACL_REVISION = 2
+	ACL_REVISION                 = 2
 
-	DESKTOP_CREATEMENU = 0x4
-	DESKTOP_CREATEWINDOW = 0x2
-	DESKTOP_ENUMERATE = 0x40
-	DESKTOP_HOOKCONTROL = 0x8
-	DESKTOP_JOURNALPLAYBACK = 0x20
-	DESKTOP_JOURNALRECORD = 0x10
-	DESKTOP_READOBJECTS = 0x1
-	DESKTOP_SWITCHDESKTOP = 0x100
-	DESKTOP_WRITEOBJECTS = 0x80
+	DESKTOP_CREATEMENU       = 0x4
+	DESKTOP_CREATEWINDOW     = 0x2
+	DESKTOP_ENUMERATE        = 0x40
+	DESKTOP_HOOKCONTROL      = 0x8
+	DESKTOP_JOURNALPLAYBACK  = 0x20
+	DESKTOP_JOURNALRECORD    = 0x10
+	DESKTOP_READOBJECTS      = 0x1
+	DESKTOP_SWITCHDESKTOP    = 0x100
+	DESKTOP_WRITEOBJECTS     = 0x80
 	STANDARD_RIGHTS_REQUIRED = 0x000F0000
-	READ_CONTROL = 0x00020000
+	READ_CONTROL             = 0x00020000
 
 	DESKTOP_ALL = (DESKTOP_CREATEMENU | DESKTOP_CREATEWINDOW | DESKTOP_ENUMERATE | DESKTOP_HOOKCONTROL |
 		DESKTOP_JOURNALPLAYBACK | DESKTOP_JOURNALRECORD | DESKTOP_READOBJECTS | DESKTOP_SWITCHDESKTOP |
 		DESKTOP_WRITEOBJECTS | READ_CONTROL)
+
+	WINSTA_ALL_ACCESS = 0x37F
+	WINSTA_ALL        = WINSTA_ALL_ACCESS | READ_CONTROL
+
+	CONTAINER_INHERIT_ACE    = 2
+	INHERIT_ONLY_ACE         = 8
+	OBJECT_INHERIT_ACE       = 1
+	NO_PROPAGATE_INHERIT_ACE = 4
 )
 
 func AddAceToDesktop(desk Hdesk, sid *syscall.SID) error {
@@ -112,7 +121,6 @@ func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 		return err
 	}
 
-
 	newDesc, err := CreateSecurityDescriptor(2048)
 	if err != nil {
 		return err
@@ -125,7 +133,13 @@ func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 	if err != nil {
 		return err
 	}
-	err = AddAccessAllowedAce(newAcl, ACL_REVISION, DESKTOP_ALL, sid)
+	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, CONTAINER_INHERIT_ACE|INHERIT_ONLY_ACE|OBJECT_INHERIT_ACE,
+		syscall.GENERIC_ALL, sid)
+	if err != nil {
+		return err
+	}
+	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE,
+		WINSTA_ALL, sid)
 	if err != nil {
 		return err
 	}
@@ -137,7 +151,6 @@ func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 
 	return err
 }
-
 
 func CreateSecurityDescriptor(length int) ([]byte, error) {
 	result := platform.AlignedBuffer(length, 4)
@@ -156,7 +169,6 @@ func CreateNewAcl(length int) (*Acl, error) {
 	}
 	return result, nil
 }
-
 
 func GetUserObjectSecurity_Ex(obj syscall.Handle, sid uint32, desc []byte) (uint32, error) {
 	var nLength uint32
@@ -241,9 +253,9 @@ func GetAclInformation(acl *Acl, info unsafe.Pointer, length uint32, class uint3
 }
 
 type AclSizeInformation struct {
-	AceCount uint32
+	AceCount      uint32
 	AclBytesInUse uint32
-	AclBytesFree uint32
+	AclBytesFree  uint32
 }
 
 func GetAclSize(acl *Acl) (*AclSizeInformation, error) {
@@ -277,12 +289,12 @@ func InitializeAcl(acl *Acl, length, revision uint32) error {
 }
 
 type AceHeader struct {
-	AceType byte
+	AceType  byte
 	AceFlags byte
-	AceSize uint16
+	AceSize  uint16
 }
 
-type Ace struct {}
+type Ace struct{}
 
 func AddAce(acl *Acl, revision, startIndex uint32, ace *Ace, size uint32) error {
 	r1, _, e1 := procAddAce.Call(
@@ -343,6 +355,20 @@ func SetSecurityDescriptorDacl(sd []byte, present bool, acl *Acl, defaulted bool
 		uintptr(ppresent),
 		uintptr(unsafe.Pointer(acl)),
 		uintptr(pdefault))
+
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+func AddAccessAllowedAceEx(acl *Acl, revision, flags, mask uint32, sid *syscall.SID) error {
+	r1, _, e1 := procAddAccessAllowedAceEx.Call(
+		uintptr(unsafe.Pointer(acl)),
+		uintptr(revision),
+		uintptr(flags),
+		uintptr(mask),
+		uintptr(unsafe.Pointer(sid)))
 
 	if int(r1) == 0 {
 		return e1

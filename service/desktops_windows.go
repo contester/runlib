@@ -3,8 +3,9 @@ package service
 import (
 	"runlib/platform/win32"
 	"syscall"
+	l4g "code.google.com/p/log4go"
 
-//	"fmt"
+	//	"fmt"
 )
 
 func CreateContesterDesktop() (desk win32.Hdesk, name string, err error) {
@@ -42,6 +43,19 @@ func CreateContesterDesktop() (desk win32.Hdesk, name string, err error) {
 
 	win32.SetProcessWindowStation(origWinsta)
 	win32.SetThreadDesktop(origDesktop)
+
+	everyone, err := syscall.StringToSid("S-1-1-0")
+	if err == nil {
+		err = win32.AddAceToWindowStation(newWinsta, everyone)
+		if err != nil {
+			l4g.Error(err)
+		}
+		err = win32.AddAceToDesktop(desk, everyone)
+		if err != nil {
+			l4g.Error(err)
+		}
+	}
+
 	win32.CloseWindowStation(newWinsta)
 	return
 }

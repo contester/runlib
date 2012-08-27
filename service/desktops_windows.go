@@ -56,6 +56,6 @@ func CreateContesterDesktop() (desk win32.Hdesk, name string, err error) {
 		}
 	}
 
-	win32.CloseWindowStation(newWinsta)
+	// win32.CloseWindowStation(newWinsta)
 	return
 }

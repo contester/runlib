@@ -172,10 +172,14 @@ func CreateNewAcl(length int) (*Acl, error) {
 
 func GetUserObjectSecurity_Ex(obj syscall.Handle, sid uint32, desc []byte) (uint32, error) {
 	var nLength uint32
+	var nptr uintptr
+	if desc != nil {
+		nptr = uintptr(unsafe.Pointer(&desc[0]))
+	}
 	r1, _, e1 := procGetUserObjectSecurity.Call(
 		uintptr(obj),
 		uintptr(unsafe.Pointer(&sid)),
-		uintptr(unsafe.Pointer(&desc[0])),
+		nptr,
 		uintptr(len(desc)),
 		uintptr(unsafe.Pointer(&nLength)))
 	if int(r1) == 0 {

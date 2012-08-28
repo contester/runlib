@@ -11,7 +11,7 @@ func fillEnv(src *contester_proto.LocalEnvironment) *[]string {
 		return nil
 	}
 
-	result := make([]string, len(src.Variable))
+	result := make([]string,len(src.Variable))
 	for i, v := range src.Variable {
 		result[i] = v.GetName() + "=" + v.GetValue()
 	}
@@ -23,28 +23,28 @@ func parseSuccessCode(succ uint32) *contester_proto.ExecutionResultFlags {
 		return nil
 	}
 	result := &contester_proto.ExecutionResultFlags{}
-	if succ&subprocess.EF_KILLED != 0 {
+	if succ & subprocess.EF_KILLED != 0 {
 		result.Killed = proto.Bool(true)
 	}
-	if succ&subprocess.EF_TIME_LIMIT_HIT != 0 {
+	if succ & subprocess.EF_TIME_LIMIT_HIT != 0 {
 		result.TimeLimitHit = proto.Bool(true)
 	}
-	if succ&subprocess.EF_MEMORY_LIMIT_HIT != 0 {
+	if succ & subprocess.EF_MEMORY_LIMIT_HIT != 0 {
 		result.MemoryLimitHit = proto.Bool(true)
 	}
-	if succ&subprocess.EF_INACTIVE != 0 {
+	if succ & subprocess.EF_INACTIVE != 0 {
 		result.Inactive = proto.Bool(true)
 	}
-	if succ&subprocess.EF_TIME_LIMIT_HARD != 0 {
+	if succ & subprocess.EF_TIME_LIMIT_HARD != 0 {
 		result.TimeLimitHard = proto.Bool(true)
 	}
-	if succ&subprocess.EF_TIME_LIMIT_HIT_POST != 0 {
+	if succ & subprocess.EF_TIME_LIMIT_HIT_POST != 0 {
 		result.TimeLimitHitPost = proto.Bool(true)
 	}
-	if succ&subprocess.EF_MEMORY_LIMIT_HIT_POST != 0 {
+	if succ & subprocess.EF_MEMORY_LIMIT_HIT_POST != 0 {
 		result.MemoryLimitHitPost = proto.Bool(true)
 	}
-	if succ&subprocess.EF_PROCESS_LIMIT_HIT != 0 {
+	if succ & subprocess.EF_PROCESS_LIMIT_HIT != 0 {
 		result.ProcessLimitHit = proto.Bool(true)
 	}
 
@@ -132,7 +132,7 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 	if sandbox.Login != nil {
 		sub.Login = sandbox.Login
-		sub.Desktop = s.Desktop
+		sub.Desktop = s.GData.DesktopName
 	}
 
 	result, err := sub.Execute()

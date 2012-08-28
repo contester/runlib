@@ -1,4 +1,6 @@
-package service
+package platform
+
+// +build windows,386
 
 import (
 	"runlib/platform/win32"
@@ -8,7 +10,13 @@ import (
 	//	"fmt"
 )
 
-func CreateContesterDesktop() (desk win32.Hdesk, name string, err error) {
+type GlobalData struct {
+	WindowStation win32.Hwinsta
+	Desktop       win32.Hdesk
+	DesktopName   string
+}
+
+func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name string, err error) {
 	origWinsta, err := win32.GetProcessWindowStation()
 	if err != nil {
 		return
@@ -28,6 +36,8 @@ func CreateContesterDesktop() (desk win32.Hdesk, name string, err error) {
 		win32.CloseWindowStation(newWinsta)
 		return
 	}
+
+	winsta = newWinsta
 
 	newWinstaName, err := win32.GetUserObjectName(syscall.Handle(newWinsta))
 
@@ -56,6 +66,16 @@ func CreateContesterDesktop() (desk win32.Hdesk, name string, err error) {
 		}
 	}
 
-	// win32.CloseWindowStation(newWinsta)
 	return
+}
+
+func CreateGlobalData() (*GlobalData, error) {
+	var err error
+	var result GlobalData
+
+	result.WindowStation, result.Desktop, result.DesktopName, err = CreateContesterDesktop()
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

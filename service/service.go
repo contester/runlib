@@ -6,6 +6,7 @@ import (
 	"os"
 	"runlib/contester_proto"
 	"strings"
+	"runlib/platform"
 )
 
 type Contester struct {
@@ -19,11 +20,12 @@ type Contester struct {
 	Disks         []string
 	ProgramFiles  []string
 
+	GData *platform.GlobalData
+
 	Msession  *mgo.Session
 	Mlocation string
 	Mdb       *mgo.Database
 	Mfs       *mgo.GridFS
-	Desktop   string
 }
 
 func getHostname() string {
@@ -36,7 +38,7 @@ func getHostname() string {
 
 func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {
 	list := os.Environ()
-	result := make([]*contester_proto.LocalEnvironment_Variable, len(list))
+	result := make([]*contester_proto.LocalEnvironment_Variable,len(list))
 	for i, v := range list {
 		s := strings.SplitN(v, "=", 2)
 		result[i] = &contester_proto.LocalEnvironment_Variable{
@@ -46,7 +48,7 @@ func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {
 	return result
 }
 
-func NewContester(configFile string) *Contester {
+func NewContester(configFile string, gData *platform.GlobalData) *Contester {
 	conf, err := readConfigFile(configFile)
 	if err != nil {
 		return nil
@@ -66,6 +68,7 @@ func NewContester(configFile string) *Contester {
 		PathSeparator: string(os.PathSeparator),
 		Disks:         []string{"C:\\"},
 		ProgramFiles:  []string{"C:\\Program Files", "C:\\Program Files (x86)"},
+		GData: gData,
 	}
 
 	return result
@@ -86,7 +89,7 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	response.InvokerId = &s.InvokerId
 	response.Environment = &contester_proto.LocalEnvironment{
 		Variable: s.Env[:]}
-	response.Sandboxes = make([]*contester_proto.SandboxLocations, len(s.Sandboxes))
+	response.Sandboxes = make([]*contester_proto.SandboxLocations,len(s.Sandboxes))
 	for i, p := range s.Sandboxes {
 		response.Sandboxes[i] = &contester_proto.SandboxLocations{
 			Compile: proto.String(p.Compile.Path),

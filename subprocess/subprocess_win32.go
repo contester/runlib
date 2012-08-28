@@ -188,6 +188,8 @@ func InjectDll(s *Subprocess, d *subprocessData) error {
 	if s.Options.InjectDLL == "" || int(s.Options.LoadLibraryW) == 0 {
 		return nil
 	}
+
+	l4g.Info("Injecting", s.Options.InjectDLL, s.Options.LoadLibraryW)
 	name := syscall.StringToUTF16(s.Options.InjectDLL)
 	nameLen := uint32((len(name) + 1) * 2)
 	remoteName, err := win32.VirtualAllocEx(d.platformData.hProcess, 0, nameLen, win32.MEM_COMMIT, win32.PAGE_READWRITE)
@@ -212,6 +214,7 @@ func InjectDll(s *Subprocess, d *subprocessData) error {
 	if wr != syscall.WAIT_OBJECT_0 {
 		return fmt.Errorf("foo")
 	}
+	
 	return nil
 }
 

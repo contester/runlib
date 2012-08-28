@@ -8,6 +8,7 @@ import (
 	"runlib/platform/win32"
 	"syscall"
 	"unsafe"
+	"fmt"
 )
 
 
@@ -20,6 +21,7 @@ type PlatformData struct {
 type PlatformOptions struct {
 	Desktop string
 	InjectDLL string
+	LoadLibraryW uintptr
 }
 
 type LoginInfo struct {
@@ -159,6 +161,12 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	d.platformData.hThread = pi.Thread
 	d.platformData.hJob = syscall.InvalidHandle
 
+	e = InjectDll(sub, d)
+
+	if e != nil {
+		l4g.Error(e)
+	}
+
 	if !sub.NoJob {
 		d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
 		if e != nil {
@@ -174,6 +182,37 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	}
 
 	return d, e
+}
+
+func InjectDll(s *Subprocess, d *subprocessData) error {
+	if s.Options.InjectDLL == "" || int(s.Options.LoadLibraryW) == 0 {
+		return nil
+	}
+	name := syscall.StringToUTF16(s.Options.InjectDLL)
+	nameLen := uint32((len(name) + 1) * 2)
+	remoteName, err := win32.VirtualAllocEx(d.platformData.hProcess, 0, nameLen, win32.MEM_COMMIT, win32.PAGE_READWRITE)
+	if err != nil {
+		return err
+	}
+	defer win32.VirtualFreeEx(d.platformData.hProcess, remoteName, 0, win32.MEM_RELEASE)
+
+	_, err = win32.WriteProcessMemory(d.platformData.hProcess, remoteName, unsafe.Pointer(&name[0]), nameLen)
+	if err != nil {
+		return err
+	}
+	thread, _, err := win32.CreateRemoteThread(d.platformData.hProcess, win32.MakeInheritSa(), 0, s.Options.LoadLibraryW, remoteName, 0)
+	if err != nil {
+		return err
+	}
+	defer syscall.CloseHandle(thread)
+	wr, err := syscall.WaitForSingleObject(thread, syscall.INFINITE)
+	if err != nil {
+		return err
+	}
+	if wr != syscall.WAIT_OBJECT_0 {
+		return fmt.Errorf("foo")
+	}
+	return nil
 }
 
 func (d *subprocessData) SetupOnFrozen() error {

@@ -37,6 +37,7 @@ var (
 	procWriteProcessMemory = kernel32.NewProc("WriteProcessMemory")
 	procGetModuleHandle = kernel32.NewProc("GetModuleHandle")
 	procCreateRemoteThread = kernel32.NewProc("CreateRemoteThread")
+	procVirtualFreeEx = kernel32.NewProc("VirtualFreeEx")
 )
 
 const (
@@ -515,4 +516,21 @@ func CreateRemoteThread(process syscall.Handle, sa *syscall.SecurityAttributes, 
 		return syscall.InvalidHandle, 0, e1
 	}
 	return syscall.Handle(r1), threadId, nil
+}
+
+const (
+	MEM_RELEASE = 0x8000
+)
+
+func VirtualFreeEx(process syscall.Handle, addr uintptr, size, freeType uint32) error {
+	r1, _, e1 := procVirtualFreeEx.Call(
+		uintptr(process),
+		addr,
+		uintptr(size),
+		uintptr(freeType))
+
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
 }

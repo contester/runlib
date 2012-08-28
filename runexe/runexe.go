@@ -17,6 +17,7 @@ type ProcessConfig struct {
 
 	TimeLimit TimeLimitFlag
 	MemoryLimit MemoryLimitFlag
+	Environment EnvFlag
 
 	LoginName string
 	Password string
@@ -36,12 +37,18 @@ type ProcessConfig struct {
 	XmlToFile string
 }
 
+type RunexeConfig struct {
+	Quiet bool
+	Xml bool
+}
+
 func GetProcessConfig(args []string) *ProcessConfig {
 	var result ProcessConfig
 	fs := flag.NewFlagSet("subprocess", flag.PanicOnError)
 
 	fs.Var(&result.TimeLimit, "t", "time limit")
 	fs.Var(&result.MemoryLimit, "m", "memory limit")
+	fs.Var(&result.Environment, "D", "environment")
 	fs.StringVar(&result.CurrentDirectory, "d", "", "Current directory")
 	fs.StringVar(&result.LoginName, "l", "", "Login name")
 	fs.StringVar(&result.Password, "p", "", "Password")
@@ -52,7 +59,6 @@ func GetProcessConfig(args []string) *ProcessConfig {
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
 	fs.BoolVar(&result.Quiet, "q", false, "Quiet")
 	fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
-	// -D env var
 	fs.BoolVar(&result.TrustedMode, "z", false, "trusted mode")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
 	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "no idle check")
@@ -105,7 +111,9 @@ func main() {
 	sub.CheckIdleness = !s.NoIdleCheck
 	sub.RestrictUi = !s.TrustedMode
 
-	//sub.Environment = fillEnv(request.Environment)
+	if len(s.Environment) > 0 {
+		sub.Environment = (*[]string)(&s.Environment)
+	}
 
 	sub.StdIn = fillRedirect(s.StdIn)
 	sub.StdOut = fillRedirect(s.StdOut)

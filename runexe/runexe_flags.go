@@ -51,3 +51,14 @@ func (t *MemoryLimitFlag) Set(v string) error {
 	*t = MemoryLimitFlag(r)
 	return nil
 }
+
+type EnvFlag []string
+
+func (t *EnvFlag) String() string {
+	return strings.Join(*t, "|")
+}
+
+func (t *EnvFlag) Set(v string) error {
+	*t = append(*t, v)
+	return nil
+}

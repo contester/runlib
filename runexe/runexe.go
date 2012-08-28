@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"os"
-	"fmt"
 	"strings"
 	l4g "code.google.com/p/log4go"
 
@@ -135,6 +134,9 @@ func main() {
 	}
 
 	result, err := sub.Execute()
-
-	fmt.Println(result)
+	if err != nil {
+		l4g.Error(err)
+		return
+	}
+	PrintResult(sub, result, "foo")
 }

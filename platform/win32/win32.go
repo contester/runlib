@@ -483,11 +483,11 @@ func GetJobObjectExtendedLimitInformation(job syscall.Handle) (*JobObjectExtende
 }
 
 func SetJobObjectBasicUiRestrictions(job syscall.Handle, info *JobObjectBasicUiRestrictions) error {
-	return SetInformationJobObject(job, 4, unsafe.Pointer(info), uint32(unsafe.Sizeof(info)))
+	return SetInformationJobObject(job, 4, unsafe.Pointer(info), uint32(unsafe.Sizeof(*info)))
 }
 
 func SetJobObjectExtendedLimitInformation(job syscall.Handle, info *JobObjectExtendedLimitInformation) error {
-	return SetInformationJobObject(job, 9, unsafe.Pointer(info), uint32(unsafe.Sizeof(info)))
+	return SetInformationJobObject(job, 9, unsafe.Pointer(info), uint32(unsafe.Sizeof(*info)))
 }
 
 func AssignProcessToJobObject(job syscall.Handle, process syscall.Handle) error {

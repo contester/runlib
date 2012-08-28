@@ -204,6 +204,7 @@ func CreateJob(s *Subprocess, d *subprocessData) error {
 
 		e = win32.SetJobObjectBasicUiRestrictions(d.platformData.hJob, &info)
 		if e != nil {
+			l4g.Error("UI", e)
 			return e
 		}
 	}

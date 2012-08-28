@@ -35,7 +35,7 @@ var (
 	procAssignProcessToJobObject  = kernel32.NewProc("AssignProcessToJobObject")
 	procVirtualAllocEx = kernel32.NewProc("VirtualAllocEx")
 	procWriteProcessMemory = kernel32.NewProc("WriteProcessMemory")
-	procGetModuleHandle = kernel32.NewProc("GetModuleHandle")
+	procGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	procCreateRemoteThread = kernel32.NewProc("CreateRemoteThread")
 	procVirtualFreeEx = kernel32.NewProc("VirtualFreeEx")
 )
@@ -493,7 +493,7 @@ func WriteProcessMemory(process syscall.Handle, addr uintptr, buf unsafe.Pointer
 }
 
 func GetModuleHandle(name *uint16) (syscall.Handle, error) {
-	r1, _, e1 := procGetModuleHandle.Call(uintptr(unsafe.Pointer(name)))
+	r1, _, e1 := procGetModuleHandleW.Call(uintptr(unsafe.Pointer(name)))
 	if int(r1) == 0 {
 		return syscall.InvalidHandle, e1
 	}

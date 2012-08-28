@@ -32,13 +32,13 @@ var (
 	procCloseWindowStation        = user32.NewProc("CloseWindowStation")
 	procCreateJobObjectW          = kernel32.NewProc("CreateJobObjectW")
 	procQueryInformationJobObject = kernel32.NewProc("QueryInformationJobObject")
-	procSetInformationJobObject = kernel32.NewProc("SetInformationJobObject")
-procAssignProcessToJobObject  = kernel32.NewProc("AssignProcessToJobObject")
-	procVirtualAllocEx = kernel32.NewProc("VirtualAllocEx")
-	procWriteProcessMemory = kernel32.NewProc("WriteProcessMemory")
-	procGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
-	procCreateRemoteThread = kernel32.NewProc("CreateRemoteThread")
-	procVirtualFreeEx = kernel32.NewProc("VirtualFreeEx")
+	procSetInformationJobObject   = kernel32.NewProc("SetInformationJobObject")
+	procAssignProcessToJobObject  = kernel32.NewProc("AssignProcessToJobObject")
+	procVirtualAllocEx            = kernel32.NewProc("VirtualAllocEx")
+	procWriteProcessMemory        = kernel32.NewProc("WriteProcessMemory")
+	procGetModuleHandleW          = kernel32.NewProc("GetModuleHandleW")
+	procCreateRemoteThread        = kernel32.NewProc("CreateRemoteThread")
+	procVirtualFreeEx             = kernel32.NewProc("VirtualFreeEx")
 )
 
 const (
@@ -418,14 +418,14 @@ type JobObjectBasicUiRestrictions struct {
 }
 
 const (
-	JOB_OBJECT_UILIMIT_DESKTOP = 0x40
-	JOB_OBJECT_UILIMIT_DISPLAYSETTINGS = 0x10
-	JOB_OBJECT_UILIMIT_EXITWINDOWS = 0x80
-	JOB_OBJECT_UILIMIT_GLOBALATOMS = 0x20
-	JOB_OBJECT_UILIMIT_HANDLES = 1
-	JOB_OBJECT_UILIMIT_READCLIPBOARD = 2
+	JOB_OBJECT_UILIMIT_DESKTOP          = 0x40
+	JOB_OBJECT_UILIMIT_DISPLAYSETTINGS  = 0x10
+	JOB_OBJECT_UILIMIT_EXITWINDOWS      = 0x80
+	JOB_OBJECT_UILIMIT_GLOBALATOMS      = 0x20
+	JOB_OBJECT_UILIMIT_HANDLES          = 1
+	JOB_OBJECT_UILIMIT_READCLIPBOARD    = 2
 	JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS = 8
-	JOB_OBJECT_UILIMIT_WRITECLIPBOARD = 4
+	JOB_OBJECT_UILIMIT_WRITECLIPBOARD   = 4
 )
 
 func GetJobObjectBasicAccountingInformation(job syscall.Handle) (*JobObjectBasicAccountingInformation, error) {
@@ -450,8 +450,14 @@ type JobObjectBasicLimitInformation struct {
 }
 
 const (
-	JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+	JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE          = 0x2000
 	JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION = 0x400
+	JOB_OBJECT_LIMIT_ACTIVE_PROCESS = 8
+	JOB_OBJECT_LIMIT_JOB_MEMORY = 0x200
+	JOB_OBJECT_LIMIT_JOB_TIME = 4
+	JOB_OBJECT_LIMIT_PROCESS_MEMORY = 0x100
+	JOB_OBJECT_LIMIT_PROCESS_TIME = 2
+	JOB_OBJECT_LIMIT_WORKINGSET = 1
 )
 
 type IoCounters struct {
@@ -501,7 +507,7 @@ func AssignProcessToJobObject(job syscall.Handle, process syscall.Handle) error 
 }
 
 const (
-	MEM_COMMIT = 0x00001000
+	MEM_COMMIT     = 0x00001000
 	PAGE_READWRITE = 0x04
 )
 

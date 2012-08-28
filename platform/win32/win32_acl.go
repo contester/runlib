@@ -3,9 +3,9 @@ package win32
 // +build windows,386
 
 import (
+	"runlib/tools"
 	"syscall"
 	"unsafe"
-	"runlib/tools"
 )
 
 var (
@@ -133,7 +133,7 @@ func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 	if err != nil {
 		return err
 	}
-	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE | OBJECT_INHERIT_ACE,
+	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, CONTAINER_INHERIT_ACE|INHERIT_ONLY_ACE|OBJECT_INHERIT_ACE,
 		syscall.GENERIC_ALL, sid)
 	if err != nil {
 		return err
@@ -237,7 +237,7 @@ func GetSecurityDescriptorDacl(sid []byte) (present bool, acl *Acl, defaulted bo
 
 func IsValidAcl(acl *Acl) bool {
 	r1, _, _ := procIsValidAcl.Call(
-	uintptr(unsafe.Pointer(acl)))
+		uintptr(unsafe.Pointer(acl)))
 	if r1 == 0 {
 		return false
 	}

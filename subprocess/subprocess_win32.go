@@ -212,6 +212,24 @@ func CreateJob(s *Subprocess, d *subprocessData) error {
 	var einfo win32.JobObjectExtendedLimitInformation
 	einfo.BasicLimitInformation.LimitFlags = win32.JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION | win32.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
 
+	if s.HardTimeLimit > 0 {
+		einfo.BasicLimitInformation.PerJobUserTimeLimit = s.HardTimeLimit
+		einfo.BasicLimitInformation.PerProcessUserTimeLimit = s.HardTimeLimit
+		einfo.BasicLimitInformation.LimitFlags |= win32.JOB_OBJECT_LIMIT_PROCESS_TIME | win32.JOB_OBJECT_LIMIT_JOB_TIME
+	}
+
+	if s.ProcessLimit > 0 {
+		einfo.BasicLimitInformation.ActiveProcessLimit = s.ProcessLimit
+		einfo.BasicLimitInformation.LimitFlags |= win32.JOB_OBJECT_LIMIT_ACTIVE_PROCESS
+	}
+
+	if s.HardMemoryLimit > 0 {
+		einfo.ProcessMemoryLimit = uint32(s.HardMemoryLimit)
+		einfo.JobMemoryLimit = uint32(s.HardMemoryLimit)
+		einfo.BasicLimitInformation.MaximumWorkingSetSize = uint32(s.HardMemoryLimit)
+		einfo.BasicLimitInformation.LimitFlags |= win32.JOB_OBJECT_LIMIT_JOB_MEMORY | win32.JOB_OBJECT_LIMIT_PROCESS_MEMORY | win32.JOB_OBJECT_LIMIT_WORKINGSET
+	}
+
 	e = win32.SetJobObjectExtendedLimitInformation(d.platformData.hJob, &einfo)
 	return e
 }

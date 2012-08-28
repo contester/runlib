@@ -129,6 +129,11 @@ func main() {
 		sub.Options.Desktop = globalData.DesktopName
 	}
 
+	if s.InjectDLL != "" {
+		sub.Options.InjectDLL = s.InjectDLL
+		sub.Options.LoadLibraryW = globalData.LoadLibraryW
+	}
+
 	result, err := sub.Execute()
 
 	fmt.Println(result)

@@ -8,7 +8,7 @@ import (
 type TimeLimit uint64
 
 func (t *TimeLimit) String() string {
-	return t.String()
+	return strconv.Itoa(int(*t / 1000)) + "ms"
 }
 
 func (t *TimeLimit) Set(v string) error {
@@ -32,7 +32,7 @@ func (t *TimeLimit) Set(v string) error {
 type MemoryLimit uint64
 
 func (t *MemoryLimit) String() string {
-	return t.String()
+	return strconv.Itoa(int(*t))
 }
 
 func (t *MemoryLimit) Set(v string) error {

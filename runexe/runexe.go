@@ -6,6 +6,8 @@ import (
 	"fmt"
 )
 
+func ConfigureSubprocessFlags()
+
 func main() {
 	fs := flag.NewFlagSet("subprocess", flag.PanicOnError)
 	var tl TimeLimit
@@ -14,7 +16,8 @@ func main() {
 	fs.Var(&tl, "t", "time limit")
 	fs.Var(&ml, "m", "memory limit")
 
+
 	fs.Parse(os.Args[1:])
 
-	fmt.Println(tl, ml)
+	fmt.Println(tl, ml, fs)
 }

@@ -33,6 +33,7 @@ var (
 	procCreateJobObjectW          = kernel32.NewProc("CreateJobObjectW")
 	procQueryInformationJobObject = kernel32.NewProc("QueryInformationJobObject")
 	procAssignProcessToJobObject  = kernel32.NewProc("AssignProcessToJobObject")
+	procVirtualAllocEx = kernel32.NewProc("VirtualAllocEx")
 )
 
 const (
@@ -452,3 +453,23 @@ func AssignProcessToJobObject(job syscall.Handle, process syscall.Handle) error 
 	}
 	return nil
 }
+
+const (
+	MEM_COMMIT = 0x00001000
+	PAGE_READWRITE = 0x04
+)
+
+func VirtualAllocEx(process syscall.Handle, addr uintptr, size, allocType, protect uint32) (uintptr, error) {
+	r1, _, e1 := procVirtualAllocEx.Call(
+		uintptr(process),
+		addr,
+		uintptr(size),
+		uintptr(allocType),
+		uintptr(protect))
+
+	if int(r1) == 0 {
+		return r1, e1
+	}
+	return r1, nil
+}
+

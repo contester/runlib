@@ -28,6 +28,11 @@ type PlatformData struct {
 	hJob     syscall.Handle
 }
 
+type PlatformOptions struct {
+	Desktop string
+	InjectDLL string
+}
+
 type LoginInfo struct {
 	Username, Password string
 	HUser, HProfile    syscall.Handle

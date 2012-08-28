@@ -130,9 +130,13 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	sub.StdOut = fillRedirect(request.StdOut)
 	sub.StdErr = fillRedirect(request.StdErr)
 
+	sub.Options = &subprocess.PlatformOptions{}
+
 	if sandbox.Login != nil {
 		sub.Login = sandbox.Login
-		sub.Desktop = s.GData.DesktopName
+		if !sub.NoJob {
+			sub.Options.Desktop = s.GData.DesktopName
+		}
 	}
 
 	result, err := sub.Execute()

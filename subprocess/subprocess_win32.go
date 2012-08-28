@@ -5,22 +5,11 @@ package subprocess
 import (
 	"bytes"
 	l4g "code.google.com/p/log4go"
-	"io"
 	"runlib/platform/win32"
 	"syscall"
 	"unsafe"
 )
 
-type subprocessData struct {
-	bufferChan      chan error     // receives buffer errors
-	startAfterStart []func() error // buffer functions, launch after createFrozen
-	closeAfterStart []io.Closer    // close after createFrozen
-
-	stdOut bytes.Buffer
-	stdErr bytes.Buffer
-
-	platformData PlatformData
-}
 
 type PlatformData struct {
 	hProcess syscall.Handle
@@ -106,8 +95,8 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	si.Cb = uint32(unsafe.Sizeof(*si))
 	si.Flags = win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW
 	si.ShowWindow = syscall.SW_SHOWMINNOACTIVE
-	if !sub.NoJob && sub.Desktop != "" {
-		si.Desktop = syscall.StringToUTF16Ptr(sub.Desktop)
+	if !sub.NoJob && sub.Options != nil && sub.Options.Desktop != "" {
+		si.Desktop = syscall.StringToUTF16Ptr(sub.Options.Desktop)
 	}
 	d.wAllRedirects(sub, si)
 

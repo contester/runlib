@@ -34,6 +34,9 @@ var (
 	procQueryInformationJobObject = kernel32.NewProc("QueryInformationJobObject")
 	procAssignProcessToJobObject  = kernel32.NewProc("AssignProcessToJobObject")
 	procVirtualAllocEx = kernel32.NewProc("VirtualAllocEx")
+	procWriteProcessMemory = kernel32.NewProc("WriteProcessMemory")
+	procGetModuleHandle = kernel32.NewProc("GetModuleHandle")
+	procCreateRemoteThread = kernel32.NewProc("CreateRemoteThread")
 )
 
 const (
@@ -473,3 +476,43 @@ func VirtualAllocEx(process syscall.Handle, addr uintptr, size, allocType, prote
 	return r1, nil
 }
 
+func WriteProcessMemory(process syscall.Handle, addr uintptr, buf unsafe.Pointer, size uint32) (uint32, error) {
+	var nLength uint32
+	r1, _, e1 := procWriteProcessMemory.Call(
+		uintptr(process),
+		addr,
+		uintptr(buf),
+		uintptr(size),
+		uintptr(unsafe.Pointer(&nLength)))
+
+	if int(r1) == 0 {
+		return nLength, e1
+	}
+	return nLength, nil
+}
+
+func GetModuleHandle(name *uint16) (syscall.Handle, error) {
+	r1, _, e1 := procGetModuleHandle.Call(uintptr(unsafe.Pointer(name)))
+	if int(r1) == 0 {
+		return syscall.InvalidHandle, e1
+	}
+	return syscall.Handle(r1), nil
+}
+
+func CreateRemoteThread(process syscall.Handle, sa *syscall.SecurityAttributes, stackSize uint32, startAddress,
+	parameter uintptr, creationFlags uint32) (syscall.Handle, uint32, error) {
+	var threadId uint32
+	r1, _, e1 := procCreateRemoteThread.Call(
+		uintptr(process),
+		uintptr(unsafe.Pointer(sa)),
+		uintptr(stackSize),
+		startAddress,
+		parameter,
+		uintptr(creationFlags),
+		uintptr(unsafe.Pointer(&threadId)))
+
+	if int(r1) == 0 {
+		return syscall.InvalidHandle, 0, e1
+	}
+	return syscall.Handle(r1), threadId, nil
+}

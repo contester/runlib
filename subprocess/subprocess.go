@@ -1,5 +1,10 @@
 package subprocess
 
+import (
+	"bytes"
+	"io"
+)
+
 const (
 	EF_INACTIVE               = (1 << 0)
 	EF_TIME_LIMIT_HIT         = (1 << 1)
@@ -58,6 +63,17 @@ type Subprocess struct {
 	StdIn, StdOut, StdErr *Redirect
 
 	Options *PlatformOptions
+}
+
+type subprocessData struct {
+	bufferChan      chan error     // receives buffer errors
+	startAfterStart []func() error // buffer functions, launch after createFrozen
+	closeAfterStart []io.Closer    // close after createFrozen
+
+	stdOut bytes.Buffer
+	stdErr bytes.Buffer
+
+	platformData PlatformData
 }
 
 func SubprocessCreate() *Subprocess {

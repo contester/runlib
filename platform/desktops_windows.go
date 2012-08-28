@@ -6,14 +6,13 @@ import (
 	"runlib/platform/win32"
 	"syscall"
 	l4g "code.google.com/p/log4go"
-
-	//	"fmt"
 )
 
 type GlobalData struct {
 	WindowStation win32.Hwinsta
 	Desktop       win32.Hdesk
 	DesktopName   string
+	LoadLibraryW	uintptr
 }
 
 func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name string, err error) {
@@ -69,11 +68,28 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 	return
 }
 
+func GetLoadLibrary() (uintptr, error) {
+	handle, err := win32.GetModuleHandle(syscall.StringToUTF16Ptr("kernel32"))
+	if err != nil {
+		return 0, err
+	}
+	addr, err := syscall.GetProcAddress(handle, "LoadLibraryW")
+	if err != nil {
+		return 0, err
+	}
+	return addr, nil
+}
+
 func CreateGlobalData() (*GlobalData, error) {
 	var err error
 	var result GlobalData
 
 	result.WindowStation, result.Desktop, result.DesktopName, err = CreateContesterDesktop()
+	if err != nil {
+		return nil, err
+	}
+
+	result.LoadLibraryW, err = GetLoadLibrary()
 	if err != nil {
 		return nil, err
 	}

@@ -5,12 +5,11 @@ package subprocess
 import (
 	"bytes"
 	l4g "code.google.com/p/log4go"
+	"fmt"
 	"runlib/platform/win32"
 	"syscall"
 	"unsafe"
-	"fmt"
 )
-
 
 type PlatformData struct {
 	hProcess syscall.Handle
@@ -19,8 +18,8 @@ type PlatformData struct {
 }
 
 type PlatformOptions struct {
-	Desktop string
-	InjectDLL string
+	Desktop      string
+	InjectDLL    string
 	LoadLibraryW uintptr
 }
 
@@ -194,13 +193,13 @@ func CreateJob(s *Subprocess, d *subprocessData) error {
 	if s.RestrictUi {
 		var info win32.JobObjectBasicUiRestrictions
 		info.UIRestrictionClass = (win32.JOB_OBJECT_UILIMIT_DESKTOP |
-		win32.JOB_OBJECT_UILIMIT_DISPLAYSETTINGS |
-		win32.JOB_OBJECT_UILIMIT_EXITWINDOWS |
-		win32.JOB_OBJECT_UILIMIT_GLOBALATOMS |
-		win32.JOB_OBJECT_UILIMIT_HANDLES |
-		win32.JOB_OBJECT_UILIMIT_READCLIPBOARD |
-		win32.JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS |
-		win32.JOB_OBJECT_UILIMIT_WRITECLIPBOARD)
+			win32.JOB_OBJECT_UILIMIT_DISPLAYSETTINGS |
+			win32.JOB_OBJECT_UILIMIT_EXITWINDOWS |
+			win32.JOB_OBJECT_UILIMIT_GLOBALATOMS |
+			win32.JOB_OBJECT_UILIMIT_HANDLES |
+			win32.JOB_OBJECT_UILIMIT_READCLIPBOARD |
+			win32.JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS |
+			win32.JOB_OBJECT_UILIMIT_WRITECLIPBOARD)
 
 		e = win32.SetJobObjectBasicUiRestrictions(d.platformData.hJob, &info)
 		if e != nil {
@@ -263,21 +262,6 @@ func InjectDll(s *Subprocess, d *subprocessData) error {
 	}
 	if wr != syscall.WAIT_OBJECT_0 {
 		return fmt.Errorf("foo")
-	}
-	
-	return nil
-}
-
-func (d *subprocessData) SetupOnFrozen() error {
-	// portable
-	closeDescriptors(d.closeAfterStart)
-
-	d.bufferChan = make(chan error, len(d.startAfterStart))
-
-	for _, fn := range d.startAfterStart {
-		go func(fn func() error) {
-			d.bufferChan <- fn()
-		}(fn)
 	}
 
 	return nil

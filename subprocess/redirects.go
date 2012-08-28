@@ -94,12 +94,6 @@ func (d *subprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	return nil, nil
 }
 
-func closeDescriptors(closers []io.Closer) {
-	for _, fd := range closers {
-		fd.Close()
-	}
-}
-
 func OpenFileForOutputRedirect(name string) (*os.File, error) {
 	sa := &syscall.SecurityAttributes{}
 	sa.Length = uint32(unsafe.Sizeof(*sa))

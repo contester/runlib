@@ -82,3 +82,24 @@ func SubprocessCreate() *Subprocess {
 
 	return result
 }
+
+func (d *subprocessData) SetupOnFrozen() error {
+	// portable
+	closeDescriptors(d.closeAfterStart)
+
+	d.bufferChan = make(chan error, len(d.startAfterStart))
+
+	for _, fn := range d.startAfterStart {
+		go func(fn func() error) {
+			d.bufferChan <- fn()
+		}(fn)
+	}
+
+	return nil
+}
+
+func closeDescriptors(closers []io.Closer) {
+	for _, fd := range closers {
+		fd.Close()
+	}
+}

@@ -449,6 +449,11 @@ type JobObjectBasicLimitInformation struct {
 	SchedulingClass         uint32
 }
 
+const (
+	JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+	JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION = 0x400
+)
+
 type IoCounters struct {
 	ReadOperationCount  uint64
 	WriteOperationCount uint64

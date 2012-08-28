@@ -168,7 +168,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	}
 
 	if !sub.NoJob {
-		d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
+		e = CreateJob(sub, d)
 		if e != nil {
 			l4g.Error(e)
 		} else {
@@ -182,6 +182,37 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	}
 
 	return d, e
+}
+
+func CreateJob(s *Subprocess, d *subprocessData) error {
+	var e error
+	d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
+	if e != nil {
+		return e
+	}
+
+	if s.RestrictUi {
+		var info win32.JobObjectBasicUiRestrictions
+		info.UIRestrictionClass = (win32.JOB_OBJECT_UILIMIT_DESKTOP |
+		win32.JOB_OBJECT_UILIMIT_DISPLAYSETTINGS |
+		win32.JOB_OBJECT_UILIMIT_EXITWINDOWS |
+		win32.JOB_OBJECT_UILIMIT_GLOBALATOMS |
+		win32.JOB_OBJECT_UILIMIT_HANDLES |
+		win32.JOB_OBJECT_UILIMIT_READCLIPBOARD |
+		win32.JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS |
+		win32.JOB_OBJECT_UILIMIT_WRITECLIPBOARD)
+
+		e = win32.SetJobObjectBasicUiRestrictions(d.platformData.hJob, &info)
+		if e != nil {
+			return e
+		}
+	}
+
+	var einfo win32.JobObjectExtendedLimitInformation
+	einfo.BasicLimitInformation.LimitFlags = win32.JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION | win32.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+
+	e = win32.SetJobObjectExtendedLimitInformation(d.platformData.hJob, &einfo)
+	return e
 }
 
 func InjectDll(s *Subprocess, d *subprocessData) error {

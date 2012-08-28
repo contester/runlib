@@ -5,19 +5,19 @@ import (
 	"strconv"
 )
 
-type TimeLimit uint64
+type TimeLimitFlag uint64
 
-func (t *TimeLimit) String() string {
+func (t *TimeLimitFlag) String() string {
 	return strconv.Itoa(int(*t / 1000)) + "ms"
 }
 
-func (t *TimeLimit) Set(v string) error {
+func (t *TimeLimitFlag) Set(v string) error {
 	if strings.HasSuffix(v, "ms") {
 		r, err := strconv.Atoi(v[:len(v) - 2])
 		if err != nil {
 			return err
 		}
-		*t = TimeLimit(r * 1000)
+		*t = TimeLimitFlag(r * 1000)
 		return nil
 	}
 
@@ -25,29 +25,29 @@ func (t *TimeLimit) Set(v string) error {
 	if err != nil {
 		return err
 	}
-	*t = TimeLimit(r * 1000000)
+	*t = TimeLimitFlag(r * 1000000)
 	return nil
 }
 
-type MemoryLimit uint64
+type MemoryLimitFlag uint64
 
-func (t *MemoryLimit) String() string {
+func (t *MemoryLimitFlag) String() string {
 	return strconv.Itoa(int(*t))
 }
 
-func (t *MemoryLimit) Set(v string) error {
+func (t *MemoryLimitFlag) Set(v string) error {
 	if strings.HasSuffix(v, "M") {
 		r, err := strconv.Atoi(v[:len(v) - 1])
 		if err != nil {
 			return err
 		}
-		*t = MemoryLimit(r * 1024 * 1024)
+		*t = MemoryLimitFlag(r * 1024 * 1024)
 		return nil
 	}
 	r, err := strconv.Atoi(v)
 	if err != nil {
 		return err
 	}
-	*t = MemoryLimit(r)
+	*t = MemoryLimitFlag(r)
 	return nil
 }

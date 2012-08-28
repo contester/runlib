@@ -4,59 +4,67 @@ import (
 	"flag"
 	"os"
 	"fmt"
-	"runlib/subprocess"
 	"strings"
 )
 
-func ConfigureSubprocess(args []string) error {
-	result := subprocess.SubprocessCreate()
-	fs := flag.NewFlagSet("subprocess", flag.PanicOnError)
-	var timeLimit TimeLimit
-	var memoryLimit MemoryLimit
-	var err error
+type ProcessConfig struct {
+	ApplicationName string
+	CommandLine string
+	CurrentDirectory string
 
-	fs.Var(&timeLimit, "t", "time limit")
-	fs.Var(&memoryLimit, "m", "memory limit")
-	currentDirectory := fs.String("d", "", "Current directory")
-	loginName := fs.String("l", "", "Login name")
-	password := fs.String("p", "", "Password")
-	injectDll := fs.String("j", "", "Inject DLL")
-	stdIn := fs.String("i", "", "StdIn")
-	stdOut := fs.String("o", "", "StdOut")
-	stdErr := fs.String("e", "", "StdErr")
-	passExitCode := fs.Bool("x", false, "Pass exit code")
-	quiet := fs.Bool("q", false, "Quiet")
-	statsToFile := fs.String("s", "", "Store stats in file")
+	TimeLimit TimeLimitFlag
+	MemoryLimit MemoryLimitFlag
+
+	LoginName string
+	Password string
+	InjectDLL string
+
+	StdIn string
+	StdOut string
+	StdErr string
+
+	ReturnExitCode bool
+	Quiet bool
+	StatsToFile string
+	TrustedMode bool
+	ShowKernelModeTime bool
+	NoIdleCheck bool
+	Xml bool
+	XmlToFile string
+}
+
+func GetProcessConfig(args []string) *ProcessConfig {
+	var result ProcessConfig
+	fs := flag.NewFlagSet("subprocess", flag.PanicOnError)
+
+	fs.Var(&result.TimeLimit, "t", "time limit")
+	fs.Var(&result.MemoryLimit, "m", "memory limit")
+	fs.StringVar(&result.CurrentDirectory, "d", "", "Current directory")
+	fs.StringVar(&result.LoginName, "l", "", "Login name")
+	fs.StringVar(&result.Password, "p", "", "Password")
+	fs.StringVar(&result.InjectDLL, "j", "", "Inject DLL")
+	fs.StringVar(&result.StdIn, "i", "", "StdIn")
+	fs.StringVar(&result.StdOut, "o", "", "StdOut")
+	fs.StringVar(&result.StdErr, "e", "", "StdErr")
+	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
+	fs.BoolVar(&result.Quiet, "q", false, "Quiet")
+	fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
 	// -D env var
-	trustedMode := fs.Bool("z", false, "trusted mode")
-	showKernelModeTime := fs.Bool("show-kernel-mode-time", false, "Show kernel mode time")
-	noIdleCheck := fs.Bool("no-idleness-check", false, "no idle check")
-	xml := fs.Bool("xml", false, "Print xml")
-	xmlToFile := fs.String("xml-to-file", "", "xml to file")
+	fs.BoolVar(&result.TrustedMode, "z", false, "trusted mode")
+	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
+	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "no idle check")
+	fs.BoolVar(&result.Xml, "xml", false, "Print xml")
+	fs.StringVar(&result.XmlToFile, "xml-to-file", "", "xml to file")
 
 	fs.Parse(args)
 
-	result.MemoryLimit = memoryLimit
-	result.TimeLimit = timeLimit
-	result.Cmd = &subprocess.CommandLine{
-		ApplicationName: fs.Args()[0],
-		CommandLine: strings.Join(fs.Args(), " "),
-		Parameters: fs.Args()[1:],
-	}
-	result.CurrentDirectory = currentDirectory
-	result.CheckIdleness = !*noIdleCheck
-	result.Options = &subprocess.PlatformOptions{}
-	if *loginName != "" && *password != "" {
-		result.Login, err = subprocess.NewLoginInfo(*loginName, *password)
-	}
-	if !*trustedMode {
-		result.ProcessLimit = 1
-		result.RestrictUi = 1
-	}
-	if *injectDll != "" {
-	}
+	result.ApplicationName = fs.Args()[0]
+	result.CommandLine = strings.Join(fs.Args(), " ")
+
+	return &result
 }
 
 func main() {
-	s := ConfigureSubprocess(os.Args[1:])
+	s := GetProcessConfig(os.Args[1:])
+	fmt.Println(s)
 }

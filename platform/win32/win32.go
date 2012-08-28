@@ -32,7 +32,8 @@ var (
 	procCloseWindowStation        = user32.NewProc("CloseWindowStation")
 	procCreateJobObjectW          = kernel32.NewProc("CreateJobObjectW")
 	procQueryInformationJobObject = kernel32.NewProc("QueryInformationJobObject")
-	procAssignProcessToJobObject  = kernel32.NewProc("AssignProcessToJobObject")
+	procSetInformationJobObject = kernel32.NewProc("SetInformationJobObject")
+procAssignProcessToJobObject  = kernel32.NewProc("AssignProcessToJobObject")
 	procVirtualAllocEx = kernel32.NewProc("VirtualAllocEx")
 	procWriteProcessMemory = kernel32.NewProc("WriteProcessMemory")
 	procGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
@@ -388,6 +389,19 @@ func QueryInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe
 	return nLength, nil
 }
 
+func SetInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe.Pointer, length uint32) error {
+	r1, _, e1 := procSetInformationJobObject.Call(
+		uintptr(job),
+		uintptr(infoclass),
+		uintptr(info),
+		uintptr(length))
+
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
 type JobObjectBasicAccountingInformation struct {
 	TotalUserTime             uint64
 	TotalKernelTime           uint64
@@ -398,6 +412,21 @@ type JobObjectBasicAccountingInformation struct {
 	ActiveProcesses           uint32
 	TotalTerminatedProcesses  uint32
 }
+
+type JobObjectBasicUiRestrictions struct {
+	UIRestrictionClass uint32
+}
+
+const (
+	JOB_OBJECT_UILIMIT_DESKTOP = 0x40
+	JOB_OBJECT_UILIMIT_DISPLAYSETTINGS = 0x10
+	JOB_OBJECT_UILIMIT_EXITWINDOWS = 0x80
+	JOB_OBJECT_UILIMIT_GLOBALATOMS = 0x20
+	JOB_OBJECT_UILIMIT_HANDLES = 1
+	JOB_OBJECT_UILIMIT_READCLIPBOARD = 2
+	JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS = 8
+	JOB_OBJECT_UILIMIT_WRITECLIPBOARD = 4
+)
 
 func GetJobObjectBasicAccountingInformation(job syscall.Handle) (*JobObjectBasicAccountingInformation, error) {
 	var jinfo JobObjectBasicAccountingInformation
@@ -446,6 +475,14 @@ func GetJobObjectExtendedLimitInformation(job syscall.Handle) (*JobObjectExtende
 		return nil, err
 	}
 	return &jinfo, nil
+}
+
+func SetJobObjectBasicUiRestrictions(job syscall.Handle, info *JobObjectBasicUiRestrictions) error {
+	return SetInformationJobObject(job, 4, unsafe.Pointer(info), uint32(unsafe.Sizeof(info)))
+}
+
+func SetJobObjectExtendedLimitInformation(job syscall.Handle, info *JobObjectExtendedLimitInformation) error {
+	return SetInformationJobObject(job, 9, unsafe.Pointer(info), uint32(unsafe.Sizeof(info)))
 }
 
 func AssignProcessToJobObject(job syscall.Handle, process syscall.Handle) error {

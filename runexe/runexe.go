@@ -5,6 +5,10 @@ import (
 	"os"
 	"fmt"
 	"strings"
+	l4g "code.google.com/p/log4go"
+
+	"runlib/subprocess"
+"runlib/platform"
 )
 
 type ProcessConfig struct {
@@ -64,7 +68,68 @@ func GetProcessConfig(args []string) *ProcessConfig {
 	return &result
 }
 
+func (pc *ProcessConfig) NeedLogin() bool {
+	return pc.LoginName != "" && pc.Password != ""
+}
+
+func fillRedirect(x string) *subprocess.Redirect {
+	if x == "" {
+		return nil
+	}
+	return &subprocess.Redirect{
+		Filename: &x,
+		Mode: subprocess.REDIRECT_FILE,
+	}
+}
+
 func main() {
 	s := GetProcessConfig(os.Args[1:])
-	fmt.Println(s)
+	sub := subprocess.SubprocessCreate()
+
+	sub.Cmd = &subprocess.CommandLine{}
+
+	if s.ApplicationName != "" {
+		sub.Cmd.ApplicationName = &s.ApplicationName
+	}
+
+	if s.CommandLine != "" {
+		sub.Cmd.CommandLine = &s.CommandLine
+	}
+
+	if s.CurrentDirectory != "" {
+		sub.CurrentDirectory = &s.CurrentDirectory
+	}
+
+	sub.TimeLimit = uint64(s.TimeLimit)
+	sub.HardTimeLimit = sub.TimeLimit * 10
+	sub.MemoryLimit = uint64(s.MemoryLimit)
+	sub.CheckIdleness = !s.NoIdleCheck
+	sub.RestrictUi = !s.TrustedMode
+
+	//sub.Environment = fillEnv(request.Environment)
+
+	sub.StdIn = fillRedirect(s.StdIn)
+	sub.StdOut = fillRedirect(s.StdOut)
+	sub.StdErr = fillRedirect(s.StdErr)
+
+	sub.Options = &subprocess.PlatformOptions{}
+
+	globalData, err := platform.CreateGlobalData()
+	if err != nil {
+		l4g.Error(err)
+		return
+	}
+
+	if s.NeedLogin() {
+		sub.Login, err = subprocess.NewLoginInfo(s.LoginName, s.Password)
+		if err != nil {
+			l4g.Error(err)
+			return
+		}
+		sub.Options.Desktop = globalData.DesktopName
+	}
+
+	result, err := sub.Execute()
+
+	fmt.Println(result)
 }

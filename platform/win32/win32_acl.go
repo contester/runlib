@@ -6,6 +6,7 @@ import (
 	"runlib/tools"
 	"syscall"
 	"unsafe"
+	l4g "code.google.com/p/log4go"
 )
 
 var (
@@ -114,37 +115,45 @@ func CopyAllAce(dest, source *Acl) error {
 func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 	secDesc, err := GetUserObjectSecurity(syscall.Handle(winsta), DACL_SECURITY_INFORMATION)
 	if err != nil {
+		l4g.Error(err)
 		return err
 	}
 	_, acl, _, err := GetSecurityDescriptorDacl(secDesc)
 	if err != nil {
+		l4g.Error(err)
 		return err
 	}
 
 	newDesc, err := CreateSecurityDescriptor(2048)
 	if err != nil {
+		l4g.Error(err)
 		return err
 	}
 	newAcl, err := CreateNewAcl(1024)
 	if err != nil {
+		l4g.Error(err)
 		return err
 	}
 	err = CopyAllAce(newAcl, acl)
 	if err != nil {
+		l4g.Error(err)
 		return err
 	}
 	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, CONTAINER_INHERIT_ACE|INHERIT_ONLY_ACE|OBJECT_INHERIT_ACE,
 		syscall.GENERIC_ALL, sid)
 	if err != nil {
+		l4g.Error(err)
 		return err
 	}
 	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE,
 		WINSTA_ALL, sid)
 	if err != nil {
+		l4g.Error(err)
 		return err
 	}
 	err = SetSecurityDescriptorDacl(newDesc, true, newAcl, false)
 	if err != nil {
+		l4g.Error(err)
 		return err
 	}
 	err = SetUserObjectSecurity(syscall.Handle(winsta), DACL_SECURITY_INFORMATION, newDesc)

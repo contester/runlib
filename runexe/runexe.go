@@ -222,12 +222,13 @@ func main() {
 
 	if isub != nil {
 		i++
-		go ExecAndSend(sub, cs, true)
+		go ExecAndSend(isub, cs, true)
 	}
 	go ExecAndSend(sub, cs, false)
 
 	for i > 0 {
 		r := <- cs
+		i--
 		var c string
 		if r.isInteractor {
 			c = "interactor"

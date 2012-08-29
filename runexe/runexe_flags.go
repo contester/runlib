@@ -20,7 +20,9 @@ func (t *TimeLimitFlag) Set(v string) error {
 		*t = TimeLimitFlag(r * 1000)
 		return nil
 	}
-
+	if strings.HasSuffix(v, "s") {
+		v = v[:len(v) - 1]
+	}
 	r, err := strconv.ParseFloat(v, 32)
 	if err != nil {
 		return err

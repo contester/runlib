@@ -42,8 +42,8 @@ func (d *subprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	return writer, nil
 }
 
-func (d *subprocessData) SetupOutputFile(filename string) (*os.File, error) {
-	writer, e := OpenFileForOutputRedirect(filename)
+func (d *subprocessData) SetupFile(filename string, read bool) (*os.File, error) {
+	writer, e := OpenFileForRedirect(filename, read)
 	if e != nil {
 		return nil, e
 	}
@@ -52,7 +52,7 @@ func (d *subprocessData) SetupOutputFile(filename string) (*os.File, error) {
 	return writer, nil
 }
 
-func (d *subprocessData) SetupOutputPipe(f *os.File) (*os.File, error) {
+func (d *subprocessData) SetupPipe(f *os.File) (*os.File, error) {
 	d.closeAfterStart = append(d.closeAfterStart, f)
 	return f, nil
 }
@@ -66,9 +66,9 @@ func (d *subprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 	case REDIRECT_MEMORY:
 		return d.SetupOutputMemory(b)
 	case REDIRECT_FILE:
-		return d.SetupOutputFile(*w.Filename)
+		return d.SetupFile(*w.Filename, false)
 	case REDIRECT_PIPE:
-		return d.SetupOutputPipe(w.Pipe)
+		return d.SetupPipe(w.Pipe)
 	}
 	return nil, nil
 }
@@ -97,21 +97,34 @@ func (d *subprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	switch w.Mode {
 	case REDIRECT_MEMORY:
 		return d.SetupInputMemory(w.Data)
+	case REDIRECT_PIPE:
+		return d.SetupPipe(w.Pipe)
+	case REDIRECT_FILE:
+		return d.SetupFile(*w.Filename, true)
 	}
 	return nil, nil
 }
 
-func OpenFileForOutputRedirect(name string) (*os.File, error) {
+func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 	sa := &syscall.SecurityAttributes{}
 	sa.Length = uint32(unsafe.Sizeof(*sa))
 	sa.InheritHandle = 1
 
+	var wmode, cmode uint32
+	if read {
+		wmode = syscall.GENERIC_READ
+		cmode = syscall.OPEN_EXISTING
+	} else {
+		wmode = syscall.GENERIC_WRITE
+		cmode = syscall.CREATE_ALWAYS
+	}
+
 	h, e := syscall.CreateFile(
 		syscall.StringToUTF16Ptr(name),
-		syscall.GENERIC_WRITE,
+		wmode,
 		syscall.FILE_SHARE_READ|syscall.FILE_SHARE_WRITE,
 		sa,
-		syscall.CREATE_ALWAYS,
+		cmode,
 		win32.FILE_FLAG_SEQUENTIAL_SCAN,
 		0)
 

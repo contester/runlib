@@ -249,14 +249,14 @@ func main() {
 	}
 	go ExecAndSend(sub, cs, false)
 
-	var out, xmlOut io.Writer
+	var out io.Writer
 
 	switch {
 	case gc.Quiet:
 		out = &bytes.Buffer{}
 	case gc.XmlToFile != "":
 		gc.Xml = true
-		xmlOut, err = os.Create(gc.XmlToFile)
+		out, err = os.Create(gc.XmlToFile)
 	case gc.StatsToFile != "":
 		out, err = os.Create(gc.StatsToFile)
 	}
@@ -265,12 +265,8 @@ func main() {
 		out = os.Stdout
 	}
 
-	if xmlOut == nil {
-		xmlOut = os.Stdout
-	}
-
 	if gc.Xml {
-		fmt.Fprintln(xmlOut, XML_HEADER)
+		fmt.Fprintln(out, XML_HEADER)
 	}
 
 	for i > 0 {
@@ -285,9 +281,10 @@ func main() {
 		if r.e != nil {
 			l4g.Error(c, r.e)
 		} else {
-			PrintResult(out, r.s, r.r, c, gc.ShowKernelModeTime)
 			if gc.Xml {
-				xmlOut.Write(XmlResult(r.r, c)[:])
+				out.Write(XmlResult(r.r, c)[:])
+			} else {
+				PrintResult(out, r.s, r.r, c, gc.ShowKernelModeTime)
 			}
 		}
 	}

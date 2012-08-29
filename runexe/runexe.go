@@ -129,6 +129,7 @@ func SetupSubprocess(s *ProcessConfig, g *platform.GlobalData, pipes *Interactor
 	sub.MemoryLimit = uint64(s.MemoryLimit)
 	sub.CheckIdleness = !s.NoIdleCheck
 	sub.RestrictUi = !s.TrustedMode
+	sub.NoJob = true
 
 	if len(s.Environment) > 0 {
 		sub.Environment = (*[]string)(&s.Environment)

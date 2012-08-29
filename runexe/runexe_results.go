@@ -4,6 +4,8 @@ import (
 	"runlib/subprocess"
 	"fmt"
 	"strconv"
+	"bytes"
+	"io"
 )
 
 type Verdict int
@@ -56,29 +58,71 @@ func GetVerdict(r *subprocess.SubprocessResult) Verdict {
 	return CRASH
 }
 
+const XML_HEADER = "<?xml version = \"1.1\" encoding = \"UTF-8\"?>"
 
-func PrintResult(s *subprocess.Subprocess, r *subprocess.SubprocessResult, c string) {
+func XmlResult(r *subprocess.SubprocessResult, c string) []byte {
+	var result bytes.Buffer
 	v := GetVerdict(r)
-	fmt.Println("<?xml version = \"1.1\" encoding = \"UTF-8\"?>")
-	fmt.Println()
-	fmt.Println("<invocationResult>")
-	fmt.Println("    <invocationVerdict>" + v.String() + "</invocationVerdict>")
-	fmt.Println("    <exitCode>" +
+	fmt.Fprintln(&result, "<invocationResult>")
+	fmt.Fprintln(&result, "    <invocationVerdict>" + v.String() + "</invocationVerdict>")
+	fmt.Fprintln(&result, "    <exitCode>" +
 			strconv.Itoa(int(r.ExitCode)) +
 			"</exitCode>")
-	fmt.Println("    <processorUserModeTime>" +
+	fmt.Fprintln(&result, "    <processorUserModeTime>" +
 			strconv.Itoa(int(r.UserTime / 1000)) +
 			"</processorUserModeTime>")
-	fmt.Println("    <processorKernelModeTime>" +
+	fmt.Fprintln(&result, "    <processorKernelModeTime>" +
 			strconv.Itoa(int(r.KernelTime / 1000)) +
 			"</processorKernelModeTime>")
-	fmt.Println("    <passedTime>" +
+	fmt.Fprintln(&result, "    <passedTime>" +
 			strconv.Itoa(int(r.WallTime / 1000)) +
 			"</passedTime>")
-	fmt.Println("    <consumedMemory>" +
+	fmt.Fprintln(&result, "    <consumedMemory>" +
 			strconv.Itoa(int(r.PeakMemory)) +
 			"</consumedMemory>");
-	fmt.Println("    <comment>" + c +
+	fmt.Fprintln(&result, "    <comment>" + c +
 			"</comment>");
-	fmt.Println("</invocationResult>")
+	fmt.Fprintln(&result, "</invocationResult>")
+
+	return result.Bytes()
+}
+
+func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.SubprocessResult, c string, kernelTime bool) {
+	v := GetVerdict(r)
+
+	switch v {
+	case SUCCESS:
+		fmt.Fprintln(out, c + " successfully terminated")
+		fmt.Fprintln(out, "  exit code:    " + strconv.Itoa(int(r.ExitCode)))
+	case TIME_LIMIT_EXCEEDED:
+		fmt.Fprintln(out, "Time limit exceeded")
+		fmt.Fprintln(out, c + " failed to terminate within " + strconv.FormatFloat(float64(s.TimeLimit) / 1000000, 'f', 1, 64) + " sec")
+	case MEMORY_LIMIT_EXCEEDED:
+		fmt.Fprintln(out, "Memory limit exceeded")
+		fmt.Fprintln(out, c + " tried to allocate more than " + strconv.Itoa(int(s.MemoryLimit)) + " bytes")
+	case IDLE:
+		fmt.Fprintln(out, "Idleness limit exceeded")
+		fmt.Fprintln(out, "Detected " + c + " idle")
+	case SECURITY_VIOLATION:
+		fmt.Fprintln(out, "Security violation")
+		fmt.Fprintln(out, c + " tried to do some forbidden action")
+	}
+
+	var usuffix string
+	if v == TIME_LIMIT_EXCEEDED {
+		usuffix = "of " + strconv.FormatFloat(float64(s.TimeLimit) / 1000000, 'f', 1, 64) + " sec"
+	} else {
+		usuffix = "sec"
+	}
+	utime := strconv.FormatFloat(float64(r.UserTime) / 1000000, 'f', 1, 64) + " " + usuffix
+	if kernelTime {
+		fmt.Fprintln(out, "  time consumed:")
+		fmt.Fprintln(out, "    user mode:   " + utime)
+		fmt.Fprintln(out, "    kernel mode: " + strconv.FormatFloat(float64(r.KernelTime) / 1000000, 'f', 1, 64) + " sec")
+	} else {
+		fmt.Fprintln(out, "  time consumed: " + utime)
+	}
+	fmt.Fprintln(out, "  time passed: " + strconv.FormatFloat(float64(r.WallTime) / 1000000, 'f', 1, 64) + " sec")
+	fmt.Fprintln(out, "  peak memory: " + strconv.FormatUint(r.PeakMemory, 10) + " bytes")
+	fmt.Fprintln(out)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"flag"
 	"os"
 	"strings"
@@ -8,6 +9,10 @@ import (
 
 	"runlib/subprocess"
 "runlib/platform"
+	"io"
+	"runlib/platform/win32"
+	"syscall"
+	"bytes"
 )
 
 type ProcessConfig struct {
@@ -29,7 +34,6 @@ type ProcessConfig struct {
 
 	ReturnExitCode bool
 	TrustedMode bool
-	ShowKernelModeTime bool
 	NoIdleCheck bool
 }
 
@@ -37,6 +41,9 @@ type RunexeConfig struct {
 	Quiet bool
 	Xml bool
 	Interactor string
+	XmlToFile string
+	StatsToFile string
+	ShowKernelModeTime bool
 }
 
 func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
@@ -55,7 +62,6 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	fs.StringVar(&result.StdErr, "e", "", "StdErr")
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
 	fs.BoolVar(&result.TrustedMode, "z", false, "trusted mode")
-	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
 	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "no idle check")
 
 	return fs, &result
@@ -66,8 +72,9 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	fs.BoolVar(&result.Quiet, "q", false, "Quiet")
 	fs.BoolVar(&result.Xml, "xml", false, "Print xml")
 	fs.StringVar(&result.Interactor, "interactor", "", "Interactor")
-	//fs.StringVar(&result.XmlToFile, "xml-to-file", "", "xml to file")
-	//fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
+	fs.StringVar(&result.XmlToFile, "xml-to-file", "", "xml to file")
+	fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
+	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
 	return &result
 }
 
@@ -171,7 +178,23 @@ func CreatePipes() *InteractorPipes {
 	if err != nil {
 		return nil
 	}
+	err = win32.SetInheritHandle(syscall.Handle(result.read1.Fd()), true)
+	if err != nil {
+		return nil
+	}
+	err = win32.SetInheritHandle(syscall.Handle(result.write1.Fd()), true)
+	if err != nil {
+		return nil
+	}
 	result.read2, result.write2, err = os.Pipe()
+	if err != nil {
+		return nil
+	}
+	err = win32.SetInheritHandle(syscall.Handle(result.read2.Fd()), true)
+	if err != nil {
+		return nil
+	}
+	err = win32.SetInheritHandle(syscall.Handle(result.write2.Fd()), true)
 	if err != nil {
 		return nil
 	}
@@ -226,19 +249,46 @@ func main() {
 	}
 	go ExecAndSend(sub, cs, false)
 
+	var out, xmlOut io.Writer
+
+	switch {
+	case gc.Quiet:
+		out = &bytes.Buffer{}
+	case gc.XmlToFile != "":
+		gc.Xml = true
+		xmlOut, err = os.Create(gc.XmlToFile)
+	case gc.StatsToFile != "":
+		out, err = os.Create(gc.StatsToFile)
+	}
+
+	if out == nil {
+		out = os.Stdout
+	}
+
+	if xmlOut == nil {
+		xmlOut = os.Stdout
+	}
+
+	if gc.Xml {
+		fmt.Fprintln(xmlOut, XML_HEADER)
+	}
+
 	for i > 0 {
 		r := <- cs
 		i--
 		var c string
 		if r.isInteractor {
-			c = "interactor"
+			c = "Interactor"
 		} else {
-			c = "process"
+			c = "Process"
 		}
 		if r.e != nil {
 			l4g.Error(c, r.e)
 		} else {
-			PrintResult(r.s, r.r, c)
+			PrintResult(out, r.s, r.r, c, gc.ShowKernelModeTime)
+			if gc.Xml {
+				xmlOut.Write(XmlResult(r.r, c)[:])
+			}
 		}
 	}
 }

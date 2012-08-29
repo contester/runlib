@@ -582,3 +582,11 @@ func VirtualFreeEx(process syscall.Handle, addr uintptr, size, freeType uint32) 
 	}
 	return nil
 }
+
+func SetInheritHandle(h syscall.Handle, inherit bool) error {
+	var v uint32
+	if inherit {
+		v = syscall.HANDLE_FLAG_INHERIT
+	}
+	return syscall.SetHandleInformation(syscall.Handle(h), syscall.HANDLE_FLAG_INHERIT, v)
+}

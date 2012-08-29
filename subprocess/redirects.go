@@ -22,12 +22,12 @@ func (d *subprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 		return nil, e
 	}
 
-	e = syscall.SetHandleInformation(syscall.Handle(reader.Fd()), syscall.HANDLE_FLAG_INHERIT, 0)
+	e = win32.SetInheritHandle(syscall.Handle(reader.Fd()), false)
 	if e != nil {
 		return nil, e
 	}
 
-	e = syscall.SetHandleInformation(syscall.Handle(writer.Fd()), syscall.HANDLE_FLAG_INHERIT, syscall.HANDLE_FLAG_INHERIT)
+	e = win32.SetInheritHandle(syscall.Handle(writer.Fd()), true)
 	if e != nil {
 		return nil, e
 	}

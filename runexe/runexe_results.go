@@ -96,7 +96,7 @@ func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.Subproce
 		fmt.Fprintln(out, "  exit code:    " + strconv.Itoa(int(r.ExitCode)))
 	case TIME_LIMIT_EXCEEDED:
 		fmt.Fprintln(out, "Time limit exceeded")
-		fmt.Fprintln(out, c + " failed to terminate within " + strconv.FormatFloat(float64(s.TimeLimit) / 1000000, 'f', 1, 64) + " sec")
+		fmt.Fprintln(out, c + " failed to terminate within " + strconv.FormatFloat(float64(s.TimeLimit) / 1000000, 'f', 4, 64) + " sec")
 	case MEMORY_LIMIT_EXCEEDED:
 		fmt.Fprintln(out, "Memory limit exceeded")
 		fmt.Fprintln(out, c + " tried to allocate more than " + strconv.Itoa(int(s.MemoryLimit)) + " bytes")
@@ -110,7 +110,7 @@ func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.Subproce
 
 	var usuffix string
 	if v == TIME_LIMIT_EXCEEDED {
-		usuffix = "of " + strconv.FormatFloat(float64(s.TimeLimit) / 1000000, 'f', 1, 64) + " sec"
+		usuffix = "of " + strconv.FormatFloat(float64(s.TimeLimit) / 1000000, 'f', 4, 64) + " sec"
 	} else {
 		usuffix = "sec"
 	}
@@ -118,11 +118,11 @@ func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.Subproce
 	if kernelTime {
 		fmt.Fprintln(out, "  time consumed:")
 		fmt.Fprintln(out, "    user mode:   " + utime)
-		fmt.Fprintln(out, "    kernel mode: " + strconv.FormatFloat(float64(r.KernelTime) / 1000000, 'f', 1, 64) + " sec")
+		fmt.Fprintln(out, "    kernel mode: " + strconv.FormatFloat(float64(r.KernelTime) / 1000000, 'f', 4, 64) + " sec")
 	} else {
 		fmt.Fprintln(out, "  time consumed: " + utime)
 	}
-	fmt.Fprintln(out, "  time passed: " + strconv.FormatFloat(float64(r.WallTime) / 1000000, 'f', 1, 64) + " sec")
+	fmt.Fprintln(out, "  time passed: " + strconv.FormatFloat(float64(r.WallTime) / 1000000, 'f', 4, 64) + " sec")
 	fmt.Fprintln(out, "  peak memory: " + strconv.FormatUint(r.PeakMemory, 10) + " bytes")
 	fmt.Fprintln(out)
 }

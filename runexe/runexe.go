@@ -44,6 +44,7 @@ type RunexeConfig struct {
 	StatsToFile string
 	ShowKernelModeTime bool
 	ReturnExitCode bool
+	Logfile string
 }
 
 func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
@@ -73,6 +74,7 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	fs.StringVar(&result.Interactor, "interactor", "", "Interactor")
 	fs.StringVar(&result.XmlToFile, "xml-to-file", "", "xml to file")
 	fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
+	fs.StringVar(&result.Logfile, "logfile", "", "Logfile")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
 	return &result
@@ -81,7 +83,7 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 func ParseFlagSet(fs *flag.FlagSet, pc *ProcessConfig, args []string) error {
 	fs.Parse(args)
 
-	pc.ApplicationName = fs.Args()[0]
+	// pc.ApplicationName = fs.Args()[0]
 	pc.CommandLine = strings.Join(fs.Args(), " ")
 
 	return nil
@@ -220,6 +222,9 @@ func main() {
 	fs, s := CreateFlagSet()
 	gc := AddGlobalFlags(fs)
 	ParseFlagSet(fs, s, os.Args[1:])
+	if gc.Logfile != "" {
+		l4g.Global.AddFilter("log", l4g.FINE, l4g.NewFileLogWriter(gc.Logfile, true))
+	}
 
 	globalData, err := platform.CreateGlobalData()
 	if err != nil {

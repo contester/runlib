@@ -12,6 +12,7 @@ func (t *TimeLimitFlag) String() string {
 }
 
 func (t *TimeLimitFlag) Set(v string) error {
+	v = strings.ToLower(v)
 	if strings.HasSuffix(v, "ms") {
 		r, err := strconv.Atoi(v[:len(v) - 2])
 		if err != nil {
@@ -38,6 +39,7 @@ func (t *MemoryLimitFlag) String() string {
 }
 
 func (t *MemoryLimitFlag) Set(v string) error {
+	v = strings.ToUpper(v)
 	if strings.HasSuffix(v, "M") {
 		r, err := strconv.Atoi(v[:len(v) - 1])
 		if err != nil {

@@ -22,7 +22,7 @@ const (
 	REDIRECT_NONE   = 0
 	REDIRECT_MEMORY = 1
 	REDIRECT_FILE   = 2
-	REDIRECT_HANDLE = 3
+	REDIRECT_PIPE = 3
 )
 
 type SubprocessResult struct {

@@ -28,21 +28,18 @@ type ProcessConfig struct {
 	StdErr string
 
 	ReturnExitCode bool
-	Quiet bool
-	StatsToFile string
 	TrustedMode bool
 	ShowKernelModeTime bool
 	NoIdleCheck bool
-	Xml bool
-	XmlToFile string
 }
 
 type RunexeConfig struct {
 	Quiet bool
 	Xml bool
+	Interactor string
 }
 
-func GetProcessConfig(args []string) *ProcessConfig {
+func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	var result ProcessConfig
 	fs := flag.NewFlagSet("subprocess", flag.PanicOnError)
 
@@ -57,20 +54,30 @@ func GetProcessConfig(args []string) *ProcessConfig {
 	fs.StringVar(&result.StdOut, "o", "", "StdOut")
 	fs.StringVar(&result.StdErr, "e", "", "StdErr")
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
-	fs.BoolVar(&result.Quiet, "q", false, "Quiet")
-	fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
 	fs.BoolVar(&result.TrustedMode, "z", false, "trusted mode")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
 	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "no idle check")
-	fs.BoolVar(&result.Xml, "xml", false, "Print xml")
-	fs.StringVar(&result.XmlToFile, "xml-to-file", "", "xml to file")
 
+	return fs, &result
+}
+
+func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
+	var result RunexeConfig
+	fs.BoolVar(&result.Quiet, "q", false, "Quiet")
+	fs.BoolVar(&result.Xml, "xml", false, "Print xml")
+	fs.StringVar(&result.Interactor, "interactor", "", "Interactor")
+	//fs.StringVar(&result.XmlToFile, "xml-to-file", "", "xml to file")
+	//fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
+	return &result
+}
+
+func ParseFlagSet(fs *flag.FlagSet, pc *ProcessConfig, args []string) error {
 	fs.Parse(args)
 
-	result.ApplicationName = fs.Args()[0]
-	result.CommandLine = strings.Join(fs.Args(), " ")
+	pc.ApplicationName = fs.Args()[0]
+	pc.CommandLine = strings.Join(fs.Args(), " ")
 
-	return &result
+	return nil
 }
 
 func (pc *ProcessConfig) NeedLogin() bool {
@@ -87,8 +94,11 @@ func fillRedirect(x string) *subprocess.Redirect {
 	}
 }
 
-func main() {
-	s := GetProcessConfig(os.Args[1:])
+type InteractorPipes struct {
+	read1, read2, write1, write2 *os.File
+}
+
+func SetupSubprocess(s *ProcessConfig, g *platform.GlobalData, pipes *InteractorPipes, isInteractor bool) *subprocess.Subprocess {
 	sub := subprocess.SubprocessCreate()
 
 	sub.Cmd = &subprocess.CommandLine{}
@@ -115,11 +125,78 @@ func main() {
 		sub.Environment = (*[]string)(&s.Environment)
 	}
 
-	sub.StdIn = fillRedirect(s.StdIn)
-	sub.StdOut = fillRedirect(s.StdOut)
+	if pipes != nil {
+		sub.StdIn = &subprocess.Redirect{
+			Mode: subprocess.REDIRECT_PIPE,
+		}
+		sub.StdOut = &subprocess.Redirect{
+			Mode: subprocess.REDIRECT_PIPE,
+		}
+		if isInteractor {
+			sub.StdIn.Pipe = pipes.read1
+			sub.StdOut.Pipe = pipes.write2
+		} else {
+			sub.StdIn.Pipe = pipes.read2
+			sub.StdOut.Pipe = pipes.write1
+		}
+	} else {
+		sub.StdIn = fillRedirect(s.StdIn)
+		sub.StdOut = fillRedirect(s.StdOut)
+	}
 	sub.StdErr = fillRedirect(s.StdErr)
 
 	sub.Options = &subprocess.PlatformOptions{}
+
+	var err error
+	if s.NeedLogin() {
+		sub.Login, err = subprocess.NewLoginInfo(s.LoginName, s.Password)
+		if err != nil {
+			l4g.Error(err)
+			return nil
+		}
+		sub.Options.Desktop = g.DesktopName
+	}
+
+	if s.InjectDLL != "" {
+		sub.Options.InjectDLL = s.InjectDLL
+		sub.Options.LoadLibraryW = g.LoadLibraryW
+	}
+	return sub
+}
+
+func CreatePipes() *InteractorPipes {
+	var result InteractorPipes
+	var err error
+	result.read1, result.write1, err = os.Pipe()
+	if err != nil {
+		return nil
+	}
+	result.read2, result.write2, err = os.Pipe()
+	if err != nil {
+		return nil
+	}
+	return &result
+}
+
+type resultAndError struct {
+	s *subprocess.Subprocess
+	r *subprocess.SubprocessResult
+	e error
+	isInteractor bool
+}
+
+func ExecAndSend(sub *subprocess.Subprocess, c chan resultAndError, isInteractor bool) {
+	var r resultAndError
+	r.isInteractor = isInteractor
+	r.s = sub
+	r.r, r.e = sub.Execute()
+	c <- r
+}
+
+func main() {
+	fs, s := CreateFlagSet()
+	gc := AddGlobalFlags(fs)
+	ParseFlagSet(fs, s, os.Args[1:])
 
 	globalData, err := platform.CreateGlobalData()
 	if err != nil {
@@ -127,24 +204,40 @@ func main() {
 		return
 	}
 
-	if s.NeedLogin() {
-		sub.Login, err = subprocess.NewLoginInfo(s.LoginName, s.Password)
-		if err != nil {
-			l4g.Error(err)
-			return
+	var pipes *InteractorPipes
+	var isub *subprocess.Subprocess
+
+	if gc.Interactor != "" {
+		pipes = CreatePipes()
+		is, i := CreateFlagSet()
+		ParseFlagSet(is, i, strings.Split(gc.Interactor, " "))
+		isub = SetupSubprocess(i, globalData, pipes, true)
+	}
+
+	sub := SetupSubprocess(s, globalData, pipes, false)
+
+	cs := make(chan resultAndError, 1)
+
+	i := 1
+
+	if isub != nil {
+		i++
+		go ExecAndSend(sub, cs, true)
+	}
+	go ExecAndSend(sub, cs, false)
+
+	for i > 0 {
+		r := <- cs
+		var c string
+		if r.isInteractor {
+			c = "interactor"
+		} else {
+			c = "process"
 		}
-		sub.Options.Desktop = globalData.DesktopName
+		if r.e != nil {
+			l4g.Error(c, r.e)
+		} else {
+			PrintResult(r.s, r.r, c)
+		}
 	}
-
-	if s.InjectDLL != "" {
-		sub.Options.InjectDLL = s.InjectDLL
-		sub.Options.LoadLibraryW = globalData.LoadLibraryW
-	}
-
-	result, err := sub.Execute()
-	if err != nil {
-		l4g.Error(err)
-		return
-	}
-	PrintResult(sub, result, "foo")
 }

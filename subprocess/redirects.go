@@ -12,7 +12,7 @@ import (
 type Redirect struct {
 	Mode     int
 	Filename *string
-	Handle   uintptr
+	Pipe   *os.File
 	Data     []byte
 }
 
@@ -52,6 +52,11 @@ func (d *subprocessData) SetupOutputFile(filename string) (*os.File, error) {
 	return writer, nil
 }
 
+func (d *subprocessData) SetupOutputPipe(f *os.File) (*os.File, error) {
+	d.closeAfterStart = append(d.closeAfterStart, f)
+	return f, nil
+}
+
 func (d *subprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, error) {
 	if w == nil {
 		return nil, nil
@@ -62,6 +67,8 @@ func (d *subprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 		return d.SetupOutputMemory(b)
 	case REDIRECT_FILE:
 		return d.SetupOutputFile(*w.Filename)
+	case REDIRECT_PIPE:
+		return d.SetupOutputPipe(w.Pipe)
 	}
 	return nil, nil
 }

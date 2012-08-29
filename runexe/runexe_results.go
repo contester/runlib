@@ -126,3 +126,13 @@ func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.Subproce
 	fmt.Fprintln(out, "  peak memory: " + strconv.FormatUint(r.PeakMemory, 10) + " bytes")
 	fmt.Fprintln(out)
 }
+
+func Crash(out io.Writer, comment string, e error) {
+	fmt.Fprintln(out, "Invocation crashed")
+	fmt.Fprintln(out, "Comment: " + comment)
+	if e != nil {
+		fmt.Fprintln(out, "Error:", e)
+	}
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "Use \"runexe -h\" to get help information");
+}

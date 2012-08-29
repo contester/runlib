@@ -286,7 +286,7 @@ func main() {
 			c = "Process"
 		}
 		if r.e != nil {
-			l4g.Error(c, r.e)
+			Crash(out, "can't execute '" + *r.s.Cmd.CommandLine + "'", r.e)
 		} else {
 			if !r.isInteractor && gc.ReturnExitCode {
 				exitCode = int(r.r.ExitCode)

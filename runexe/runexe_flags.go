@@ -40,19 +40,20 @@ func (t *MemoryLimitFlag) String() string {
 
 func (t *MemoryLimitFlag) Set(v string) error {
 	v = strings.ToUpper(v)
-	if strings.HasSuffix(v, "M") {
-		r, err := strconv.Atoi(v[:len(v) - 1])
-		if err != nil {
-			return err
-		}
-		*t = MemoryLimitFlag(r * 1024 * 1024)
-		return nil
+	m := 1
+	switch v[len(v)-1] {
+		case 'M': m = 1024*1024
+		case 'K': m = 1024
+		case 'G': m = 1024*1024*1024
+	}
+	if m != 1 {
+		v = v[:len(v) - 1]
 	}
 	r, err := strconv.Atoi(v)
 	if err != nil {
 		return err
 	}
-	*t = MemoryLimitFlag(r)
+	*t = MemoryLimitFlag(r * m)
 	return nil
 }
 

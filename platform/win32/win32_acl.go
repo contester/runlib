@@ -64,11 +64,11 @@ func AddAceToDesktop(desk Hdesk, sid *syscall.SID) error {
 		return err
 	}
 
-	newDesc, err := CreateSecurityDescriptor(2048)
+	newDesc, err := CreateSecurityDescriptor(4096)
 	if err != nil {
 		return err
 	}
-	newAcl, err := CreateNewAcl(1024)
+	newAcl, err := CreateNewAcl(2048)
 	if err != nil {
 		return err
 	}
@@ -124,12 +124,12 @@ func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 		return err
 	}
 
-	newDesc, err := CreateSecurityDescriptor(2048)
+	newDesc, err := CreateSecurityDescriptor(4096)
 	if err != nil {
 		l4g.Error(err)
 		return err
 	}
-	newAcl, err := CreateNewAcl(1024)
+	newAcl, err := CreateNewAcl(2048)
 	if err != nil {
 		l4g.Error(err)
 		return err

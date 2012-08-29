@@ -32,7 +32,6 @@ type ProcessConfig struct {
 	StdOut string
 	StdErr string
 
-	ReturnExitCode bool
 	TrustedMode bool
 	NoIdleCheck bool
 }
@@ -44,6 +43,7 @@ type RunexeConfig struct {
 	XmlToFile string
 	StatsToFile string
 	ShowKernelModeTime bool
+	ReturnExitCode bool
 }
 
 func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
@@ -60,7 +60,6 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	fs.StringVar(&result.StdIn, "i", "", "StdIn")
 	fs.StringVar(&result.StdOut, "o", "", "StdOut")
 	fs.StringVar(&result.StdErr, "e", "", "StdErr")
-	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
 	fs.BoolVar(&result.TrustedMode, "z", false, "trusted mode")
 	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "no idle check")
 
@@ -75,6 +74,7 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	fs.StringVar(&result.XmlToFile, "xml-to-file", "", "xml to file")
 	fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
+	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
 	return &result
 }
 
@@ -269,6 +269,8 @@ func main() {
 		fmt.Fprintln(out, XML_HEADER)
 	}
 
+	var exitCode int
+
 	for i > 0 {
 		r := <- cs
 		i--
@@ -281,6 +283,9 @@ func main() {
 		if r.e != nil {
 			l4g.Error(c, r.e)
 		} else {
+			if !r.isInteractor && gc.ReturnExitCode {
+				exitCode = int(r.r.ExitCode)
+			}
 			if gc.Xml {
 				out.Write(XmlResult(r.r, c)[:])
 			} else {
@@ -288,4 +293,6 @@ func main() {
 			}
 		}
 	}
+
+	os.Exit(exitCode)
 }

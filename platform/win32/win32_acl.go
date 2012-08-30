@@ -54,38 +54,62 @@ const (
 	NO_PROPAGATE_INHERIT_ACE = 4
 )
 
-func AddAceToDesktop(desk Hdesk, sid *syscall.SID) error {
-	secDesc, err := GetUserObjectSecurity(syscall.Handle(desk), DACL_SECURITY_INFORMATION)
+func SetAclTo(obj syscall.Handle, acl *Acl) error {
+	desc, err := CreateSecurityDescriptor(4096)
 	if err != nil {
 		return err
 	}
-	_, _, _, err = GetSecurityDescriptorDacl(secDesc)
+	err = SetSecurityDescriptorDacl(desc, true, acl, false)
 	if err != nil {
 		return err
 	}
+	return SetUserObjectSecurity(obj, DACL_SECURITY_INFORMATION, desc)
+}
 
-	newDesc, err := CreateSecurityDescriptor(4096)
+func CreateDesktopAllowAcl(sid *syscall.SID) (*Acl, error) {
+	acl, err := CreateNewAcl(1024)
+	if err != nil {
+		return nil, err
+	}
+	err = AddAccessAllowedAce(acl, ACL_REVISION, DESKTOP_ALL, sid)
+	if err != nil {
+		return nil, err
+	}
+	return acl, nil
+}
+
+func AddAceToDesktop(desk Hdesk, sid *syscall.SID) error {
+	acl, err := CreateDesktopAllowAcl(sid)
 	if err != nil {
 		return err
 	}
-	newAcl, err := CreateNewAcl(1024)
+	return SetAclTo(syscall.Handle(desk), acl)
+}
+
+func CreateWinstaAllowAcl(sid *syscall.SID) (*Acl, error) {
+	acl, err := CreateNewAcl(1024)
+	if err != nil {
+		return nil, err
+	}
+	err = AddAccessAllowedAceEx(acl, ACL_REVISION, CONTAINER_INHERIT_ACE|INHERIT_ONLY_ACE|OBJECT_INHERIT_ACE,
+		syscall.GENERIC_ALL, sid)
+	if err != nil {
+		return nil, err
+	}
+	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE,
+		WINSTA_ALL, sid)
+	if err != nil {
+		return nil, err
+	}
+	return acl, nil
+}
+
+func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
+	acl, err := CreateWinstaAllowAcl(sid)
 	if err != nil {
 		return err
 	}
-	//err = CopyAllAce(newAcl, acl)
-	if err != nil {
-		return err
-	}
-	err = AddAccessAllowedAce(newAcl, ACL_REVISION, DESKTOP_ALL, sid)
-	if err != nil {
-		return err
-	}
-	err = SetSecurityDescriptorDacl(newDesc, true, newAcl, false)
-	if err != nil {
-		return err
-	}
-	err = SetUserObjectSecurity(syscall.Handle(desk), DACL_SECURITY_INFORMATION, newDesc)
-	return err
+	return SetAclTo(syscall.Handle(winsta), acl)
 }
 
 func CopyAllAce(dest, source *Acl) error {
@@ -110,55 +134,6 @@ func CopyAllAce(dest, source *Acl) error {
 		}
 	}
 	return nil
-}
-
-func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
-	secDesc, err := GetUserObjectSecurity(syscall.Handle(winsta), DACL_SECURITY_INFORMATION)
-	if err != nil {
-		l4g.Error(err)
-		return err
-	}
-	_, _, _, err = GetSecurityDescriptorDacl(secDesc)
-	if err != nil {
-		l4g.Error(err)
-		return err
-	}
-
-	newDesc, err := CreateSecurityDescriptor(4096)
-	if err != nil {
-		l4g.Error(err)
-		return err
-	}
-	newAcl, err := CreateNewAcl(1024)
-	if err != nil {
-		l4g.Error(err)
-		return err
-	}
-	// err = CopyAllAce(newAcl, acl)
-	if err != nil {
-		l4g.Error(err)
-		return err
-	}
-	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, CONTAINER_INHERIT_ACE|INHERIT_ONLY_ACE|OBJECT_INHERIT_ACE,
-		syscall.GENERIC_ALL, sid)
-	if err != nil {
-		l4g.Error(err)
-		return err
-	}
-	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE,
-		WINSTA_ALL, sid)
-	if err != nil {
-		l4g.Error(err)
-		return err
-	}
-	err = SetSecurityDescriptorDacl(newDesc, true, newAcl, false)
-	if err != nil {
-		l4g.Error(err)
-		return err
-	}
-	err = SetUserObjectSecurity(syscall.Handle(winsta), DACL_SECURITY_INFORMATION, newDesc)
-
-	return err
 }
 
 func CreateSecurityDescriptor(length int) ([]byte, error) {

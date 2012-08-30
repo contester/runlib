@@ -68,7 +68,7 @@ func AddAceToDesktop(desk Hdesk, sid *syscall.SID) error {
 	if err != nil {
 		return err
 	}
-	newAcl, err := CreateNewAcl(2048)
+	newAcl, err := CreateNewAcl(1024)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 		l4g.Error(err)
 		return err
 	}
-	newAcl, err := CreateNewAcl(2048)
+	newAcl, err := CreateNewAcl(1024)
 	if err != nil {
 		l4g.Error(err)
 		return err

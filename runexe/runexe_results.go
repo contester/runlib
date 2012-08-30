@@ -87,6 +87,14 @@ func XmlResult(r *subprocess.SubprocessResult, c string) []byte {
 	return result.Bytes()
 }
 
+func strTime(t uint64) string {
+	return strconv.FormatFloat(float64(t) / 1000000, 'f', 2, 64)
+}
+
+func strMemory(t uint64) string {
+	return strconv.FormatUint(t, 10)
+}
+
 func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.SubprocessResult, c string, kernelTime bool) {
 	v := GetVerdict(r)
 
@@ -96,10 +104,10 @@ func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.Subproce
 		fmt.Fprintln(out, "  exit code:    " + strconv.Itoa(int(r.ExitCode)))
 	case TIME_LIMIT_EXCEEDED:
 		fmt.Fprintln(out, "Time limit exceeded")
-		fmt.Fprintln(out, c + " failed to terminate within " + strconv.FormatFloat(float64(s.TimeLimit) / 1000000, 'f', 4, 64) + " sec")
+		fmt.Fprintln(out, c + " failed to terminate within " + strTime(s.TimeLimit) + " sec")
 	case MEMORY_LIMIT_EXCEEDED:
 		fmt.Fprintln(out, "Memory limit exceeded")
-		fmt.Fprintln(out, c + " tried to allocate more than " + strconv.Itoa(int(s.MemoryLimit)) + " bytes")
+		fmt.Fprintln(out, c + " tried to allocate more than " + strMemory(s.MemoryLimit) + " bytes")
 	case IDLE:
 		fmt.Fprintln(out, "Idleness limit exceeded")
 		fmt.Fprintln(out, "Detected " + c + " idle")
@@ -110,20 +118,20 @@ func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.Subproce
 
 	var usuffix string
 	if v == TIME_LIMIT_EXCEEDED {
-		usuffix = "of " + strconv.FormatFloat(float64(s.TimeLimit) / 1000000, 'f', 4, 64) + " sec"
+		usuffix = "of " + strTime(s.TimeLimit) + " sec"
 	} else {
 		usuffix = "sec"
 	}
-	utime := strconv.FormatFloat(float64(r.UserTime) / 1000000, 'f', 1, 64) + " " + usuffix
+	utime := strTime(r.UserTime) + " " + usuffix
 	if kernelTime {
 		fmt.Fprintln(out, "  time consumed:")
 		fmt.Fprintln(out, "    user mode:   " + utime)
-		fmt.Fprintln(out, "    kernel mode: " + strconv.FormatFloat(float64(r.KernelTime) / 1000000, 'f', 4, 64) + " sec")
+		fmt.Fprintln(out, "    kernel mode: " + strTime(r.KernelTime) + " sec")
 	} else {
 		fmt.Fprintln(out, "  time consumed: " + utime)
 	}
-	fmt.Fprintln(out, "  time passed: " + strconv.FormatFloat(float64(r.WallTime) / 1000000, 'f', 4, 64) + " sec")
-	fmt.Fprintln(out, "  peak memory: " + strconv.FormatUint(r.PeakMemory, 10) + " bytes")
+	fmt.Fprintln(out, "  time passed: " + strTime(r.WallTime) + " sec")
+	fmt.Fprintln(out, "  peak memory: " + strMemory(r.PeakMemory) + " bytes")
 	fmt.Fprintln(out)
 }
 

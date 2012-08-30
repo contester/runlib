@@ -5,6 +5,7 @@ package platform
 import (
 	"runlib/platform/win32"
 	"syscall"
+	"strconv"
 	l4g "code.google.com/p/log4go"
 )
 
@@ -55,12 +56,14 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 	newWinstaName, err := win32.GetUserObjectName(syscall.Handle(newWinsta))
 
 	if err == nil {
+		shortName := "c" + strconv.FormatUint(uint64(win32.GetCurrentThreadId()), 10)
+
 		desk, err = win32.CreateDesktop(
-			syscall.StringToUTF16Ptr("contester"),
+			syscall.StringToUTF16Ptr(shortName),
 			nil, 0, 0, syscall.GENERIC_ALL, win32.MakeInheritSa())
 
 		if err == nil {
-			name = newWinstaName + "\\contester"
+			name = newWinstaName + "\\" + shortName
 		}
 	}
 

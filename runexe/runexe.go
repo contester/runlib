@@ -107,7 +107,7 @@ type InteractorPipes struct {
 	read1, read2, write1, write2 *os.File
 }
 
-func SetupSubprocess(s *ProcessConfig, g *platform.GlobalData, pipes *InteractorPipes, isInteractor bool) *subprocess.Subprocess {
+func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadLibraryW uintptr, pipes *InteractorPipes, isInteractor bool) (*subprocess.Subprocess, error) {
 	sub := subprocess.SubprocessCreate()
 
 	sub.Cmd = &subprocess.CommandLine{}
@@ -160,17 +160,18 @@ func SetupSubprocess(s *ProcessConfig, g *platform.GlobalData, pipes *Interactor
 	if s.NeedLogin() {
 		sub.Login, err = subprocess.NewLoginInfo(s.LoginName, s.Password)
 		if err != nil {
-			l4g.Error(err)
-			return nil
+			return nil, err
 		}
-		sub.Options.Desktop = g.DesktopName
+		if desktop != nil {
+			sub.Options.Desktop = desktop.DesktopName
+		}
 	}
 
-	if s.InjectDLL != "" {
+	if s.InjectDLL != "" && loadLibraryW != 0 {
 		sub.Options.InjectDLL = s.InjectDLL
-		sub.Options.LoadLibraryW = g.LoadLibraryW
+		sub.Options.LoadLibraryW = loadLibraryW
 	}
-	return sub
+	return sub, nil
 }
 
 func CreatePipes() *InteractorPipes {
@@ -226,35 +227,8 @@ func main() {
 		l4g.Global.AddFilter("log", l4g.FINE, l4g.NewFileLogWriter(gc.Logfile, true))
 	}
 
-	globalData, err := platform.CreateGlobalData()
-	if err != nil {
-		l4g.Error(err)
-		return
-	}
-
-	var pipes *InteractorPipes
-	var isub *subprocess.Subprocess
-
-	if gc.Interactor != "" {
-		pipes = CreatePipes()
-		is, i := CreateFlagSet()
-		ParseFlagSet(is, i, strings.Split(gc.Interactor, " "))
-		isub = SetupSubprocess(i, globalData, pipes, true)
-	}
-
-	sub := SetupSubprocess(s, globalData, pipes, false)
-
-	cs := make(chan resultAndError, 1)
-
-	i := 1
-
-	if isub != nil {
-		i++
-		go ExecAndSend(isub, cs, true)
-	}
-	go ExecAndSend(sub, cs, false)
-
 	var out io.Writer
+	var err error
 
 	switch {
 	case gc.Quiet:
@@ -274,11 +248,67 @@ func main() {
 		fmt.Fprintln(out, XML_HEADER)
 	}
 
+	needDesktop := s.NeedLogin()
+	needLoadLibrary := s.InjectDLL != ""
+
+	var pipes *InteractorPipes
+	var isub *subprocess.Subprocess
+	var i *ProcessConfig
+
+	if gc.Interactor != "" {
+		pipes = CreatePipes()
+		var is *flag.FlagSet
+		is, i = CreateFlagSet()
+		ParseFlagSet(is, i, strings.Split(gc.Interactor, " "))
+		needDesktop = needDesktop && i.NeedLogin()
+		needLoadLibrary = needLoadLibrary && s.InjectDLL != ""
+	}
+
+	var desktop *platform.ContesterDesktop
+	if needDesktop {
+		desktop, err = platform.CreateContesterDesktopStruct()
+		if err != nil {
+			Crash(out, "can't create winsta/desktop", err)
+		}
+	}
+
+	var loadLibrary uintptr
+	if needLoadLibrary {
+		loadLibrary, err = platform.GetLoadLibrary()
+		if err != nil {
+			Crash(out, "can't get LoadLibraryW address", err)
+		}
+	}
+
+	if gc.Interactor != "" {
+		isub, err = SetupSubprocess(i, desktop, loadLibrary, pipes, true)
+		if err != nil {
+			Crash(out, "can't setup interactor", err)
+		}
+
+	}
+
+	sub, err := SetupSubprocess(s, desktop, loadLibrary, pipes, false)
+	if err != nil {
+		Crash(out, "can't setup process", err)
+	}
+
+	cs := make(chan resultAndError, 1)
+
+	j := 1
+
+	if isub != nil {
+		j++
+		go ExecAndSend(isub, cs, true)
+	}
+	go ExecAndSend(sub, cs, false)
+
+
 	var exitCode int
 
-	for i > 0 {
+	for j > 0 {
 		r := <- cs
-		i--
+		j--
 		var c string
 		if r.isInteractor {
 			c = "Interactor"

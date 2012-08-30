@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"bytes"
 	"io"
+	"os"
 )
 
 type Verdict int
@@ -142,5 +143,7 @@ func Crash(out io.Writer, comment string, e error) {
 		fmt.Fprintln(out, "Error:", e)
 	}
 	fmt.Fprintln(out)
-	fmt.Fprintln(out, "Use \"runexe -h\" to get help information");
+	fmt.Fprintln(out, "Use \"runexe -h\" to get help information")
+
+	os.Exit(0)
 }

@@ -6,7 +6,6 @@ import (
 	"runlib/tools"
 	"syscall"
 	"unsafe"
-	l4g "code.google.com/p/log4go"
 )
 
 var (
@@ -96,7 +95,7 @@ func CreateWinstaAllowAcl(sid *syscall.SID) (*Acl, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = AddAccessAllowedAceEx(newAcl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE,
+	err = AddAccessAllowedAceEx(acl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE,
 		WINSTA_ALL, sid)
 	if err != nil {
 		return nil, err

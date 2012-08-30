@@ -8,11 +8,25 @@ import (
 	l4g "code.google.com/p/log4go"
 )
 
-type GlobalData struct {
+type ContesterDesktop struct {
 	WindowStation win32.Hwinsta
 	Desktop       win32.Hdesk
 	DesktopName   string
-	LoadLibraryW	uintptr
+}
+
+type GlobalData struct {
+	Desktop *ContesterDesktop
+	LoadLibraryW uintptr
+}
+
+func CreateContesterDesktopStruct() (*ContesterDesktop, error) {
+	var result ContesterDesktop
+	var err error
+	result.WindowStation, result.Desktop, result.DesktopName, err = CreateContesterDesktop()
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name string, err error) {
@@ -83,8 +97,8 @@ func GetLoadLibrary() (uintptr, error) {
 func CreateGlobalData() (*GlobalData, error) {
 	var err error
 	var result GlobalData
+	result.Desktop, err = CreateContesterDesktopStruct()
 
-	result.WindowStation, result.Desktop, result.DesktopName, err = CreateContesterDesktop()
 	if err != nil {
 		return nil, err
 	}

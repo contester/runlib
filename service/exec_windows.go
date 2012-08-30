@@ -135,7 +135,7 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	if sandbox.Login != nil {
 		sub.Login = sandbox.Login
 		if !sub.NoJob {
-			sub.Options.Desktop = s.GData.DesktopName
+			sub.Options.Desktop = s.GData.Desktop.DesktopName
 		}
 	}
 

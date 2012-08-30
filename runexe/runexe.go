@@ -242,8 +242,8 @@ func main() {
 		var is *flag.FlagSet
 		is, i = CreateFlagSet()
 		ParseFlagSet(is, i, strings.Split(gc.Interactor, " "))
-		needDesktop = needDesktop && i.NeedLogin()
-		needLoadLibrary = needLoadLibrary && s.InjectDLL != ""
+		needDesktop = needDesktop || i.NeedLogin()
+		needLoadLibrary = needLoadLibrary || s.InjectDLL != ""
 	}
 
 	var desktop *platform.ContesterDesktop

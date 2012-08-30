@@ -9,6 +9,7 @@ import (
 	"runlib/platform/win32"
 	"syscall"
 	"unsafe"
+	"sync"
 )
 
 type PlatformData struct {
@@ -27,6 +28,8 @@ type LoginInfo struct {
 	Username, Password string
 	HUser, HProfile    syscall.Handle
 }
+
+var subMutex sync.Mutex
 
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
 	result := &LoginInfo{Username: username, Password: password}
@@ -89,6 +92,19 @@ func (d *subprocessData) wAllRedirects(s *Subprocess, si *syscall.StartupInfo) e
 	return nil
 }
 
+func wSetInherit(si *syscall.StartupInfo) {
+	if si.StdInput != syscall.InvalidHandle {
+		win32.SetInheritHandle(si.StdInput, true)
+	}
+	if si.StdOutput != syscall.InvalidHandle {
+		win32.SetInheritHandle(si.StdOutput, true)
+	}
+	if si.StdErr != syscall.InvalidHandle {
+		win32.SetInheritHandle(si.StdErr, true)
+	}
+	// TODO: errors
+}
+
 func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	d := &subprocessData{}
 
@@ -109,6 +125,9 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	currentDirectory := win32.StringPtrToUTF16Ptr(sub.CurrentDirectory)
 
 	var e error
+
+	subMutex.Lock()
+	wSetInherit(si)
 
 	if sub.Login != nil {
 		if sub.NoJob {
@@ -151,6 +170,9 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 			si,
 			pi)
 	}
+
+	closeDescriptors(d.closeAfterStart)
+	subMutex.Unlock()
 
 	if e != nil {
 		return nil, e

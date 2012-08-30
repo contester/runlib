@@ -6,7 +6,6 @@ import (
 	"os"
 	"runlib/platform/win32"
 	"syscall"
-	"unsafe"
 )
 
 type Redirect struct {
@@ -27,7 +26,7 @@ func (d *subprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 		return nil, e
 	}
 
-	e = win32.SetInheritHandle(syscall.Handle(writer.Fd()), true)
+	e = win32.SetInheritHandle(syscall.Handle(writer.Fd()), false)
 	if e != nil {
 		return nil, e
 	}
@@ -106,10 +105,6 @@ func (d *subprocessData) SetupInput(w *Redirect) (*os.File, error) {
 }
 
 func OpenFileForRedirect(name string, read bool) (*os.File, error) {
-	sa := &syscall.SecurityAttributes{}
-	sa.Length = uint32(unsafe.Sizeof(*sa))
-	sa.InheritHandle = 1
-
 	var wmode, cmode uint32
 	if read {
 		wmode = syscall.GENERIC_READ
@@ -123,7 +118,7 @@ func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 		syscall.StringToUTF16Ptr(name),
 		wmode,
 		syscall.FILE_SHARE_READ|syscall.FILE_SHARE_WRITE,
-		sa,
+		nil,
 		cmode,
 		win32.FILE_FLAG_SEQUENTIAL_SCAN,
 		0)

@@ -10,8 +10,6 @@ import (
 	"runlib/subprocess"
 "runlib/platform"
 	"io"
-	"runlib/platform/win32"
-	"syscall"
 	"bytes"
 )
 
@@ -181,23 +179,7 @@ func CreatePipes() *InteractorPipes {
 	if err != nil {
 		return nil
 	}
-	err = win32.SetInheritHandle(syscall.Handle(result.read1.Fd()), true)
-	if err != nil {
-		return nil
-	}
-	err = win32.SetInheritHandle(syscall.Handle(result.write1.Fd()), true)
-	if err != nil {
-		return nil
-	}
 	result.read2, result.write2, err = os.Pipe()
-	if err != nil {
-		return nil
-	}
-	err = win32.SetInheritHandle(syscall.Handle(result.read2.Fd()), true)
-	if err != nil {
-		return nil
-	}
-	err = win32.SetInheritHandle(syscall.Handle(result.write2.Fd()), true)
 	if err != nil {
 		return nil
 	}

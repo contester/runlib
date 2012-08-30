@@ -40,7 +40,9 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 		return
 	}
 
-	newWinsta, err := win32.CreateWindowStation(nil, 0, win32.MAXIMUM_ALLOWED, win32.MakeInheritSa())
+	newName := "w" + strconv.FormatUint(uint64(win32.GetCurrentThreadId()), 10)
+
+	newWinsta, err := win32.CreateWindowStation(syscall.StringToUTF16Ptr(newName), 0, win32.MAXIMUM_ALLOWED, win32.MakeInheritSa())
 	if err != nil {
 		return
 	}

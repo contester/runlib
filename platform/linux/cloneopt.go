@@ -9,6 +9,7 @@ package linux
 */
 import "C"
 import "unsafe"
+import "runlib/tools""
 
 const (
 	alignOffset = 16
@@ -16,8 +17,8 @@ const (
 
 func startSubprocess(filename string, args, env []string, cwd string, suid int, stdhandles []int) {
 	params := &C.struct_CloneParams{}
-	tls := alignedBuffer(4096)
-	stack := alignedBuffer(4096)
+	tls := tools.AlignedBuffer(4096)
+	stack := tools.AlignedBuffer(4096)
 	params.tls = (*C.char)(unsafe.Pointer(&tls[0]))
 	params.stack = (*C.char)(unsafe.Pointer(&stack[len(stack) - 1]))
 

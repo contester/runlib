@@ -129,3 +129,34 @@ func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 
 	return os.NewFile(uintptr(h), name), nil
 }
+
+func Interconnect(s1, s2 *Subprocess) error {
+	read1, write1, err := os.Pipe()
+	if err != nil {
+		return err
+	}
+	read2, write2, err := os.Pipe()
+	if err != nil {
+		read1.Close()
+		read2.Close()
+		return err
+	}
+
+	s1.StdIn = &Redirect{
+		Mode: REDIRECT_PIPE,
+		Pipe: read1,
+	}
+	s2.StdOut = &Redirect{
+		Mode: REDIRECT_PIPE,
+		Pipe: write1,
+	}
+	s1.StdOut = &Redirect{
+		Mode: REDIRECT_PIPE,
+		Pipe: write2,
+	}
+	s2.StdIn = &Redirect{
+		Mode: REDIRECT_PIPE,
+		Pipe: read2,
+	}
+	return nil
+}

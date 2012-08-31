@@ -9,7 +9,6 @@ import (
 	"runlib/platform/win32"
 	"syscall"
 	"unsafe"
-	"sync"
 )
 
 type PlatformData struct {
@@ -28,8 +27,6 @@ type LoginInfo struct {
 	Username, Password string
 	HUser, HProfile    syscall.Handle
 }
-
-var subMutex sync.Mutex
 
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
 	result := &LoginInfo{Username: username, Password: password}
@@ -126,7 +123,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 
 	var e error
 
-	subMutex.Lock()
+	syscall.ForkLock.Lock()
 	wSetInherit(si)
 
 	if sub.Login != nil {
@@ -172,7 +169,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	}
 
 	closeDescriptors(d.closeAfterStart)
-	subMutex.Unlock()
+	syscall.ForkLock.Unlock()
 
 	if e != nil {
 		return nil, e

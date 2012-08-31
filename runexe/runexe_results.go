@@ -4,9 +4,8 @@ import (
 	"runlib/subprocess"
 	"fmt"
 	"strconv"
-	"bytes"
-	"io"
 	"os"
+	"strings"
 )
 
 type Verdict int
@@ -60,32 +59,33 @@ func GetVerdict(r *subprocess.SubprocessResult) Verdict {
 }
 
 const XML_HEADER = "<?xml version = \"1.1\" encoding = \"UTF-8\"?>"
+const XML_RESULTS_START = "<invocationResults>"
+const XML_RESULTS_END = "</invocationResults>"
 
-func XmlResult(r *subprocess.SubprocessResult, c string) []byte {
-	var result bytes.Buffer
-	v := GetVerdict(r)
-	fmt.Fprintln(&result, "<invocationResult>")
-	fmt.Fprintln(&result, "    <invocationVerdict>" + v.String() + "</invocationVerdict>")
-	fmt.Fprintln(&result, "    <exitCode>" +
-			strconv.Itoa(int(r.ExitCode)) +
-			"</exitCode>")
-	fmt.Fprintln(&result, "    <processorUserModeTime>" +
-			strconv.Itoa(int(r.UserTime / 1000)) +
-			"</processorUserModeTime>")
-	fmt.Fprintln(&result, "    <processorKernelModeTime>" +
-			strconv.Itoa(int(r.KernelTime / 1000)) +
-			"</processorKernelModeTime>")
-	fmt.Fprintln(&result, "    <passedTime>" +
-			strconv.Itoa(int(r.WallTime / 1000)) +
-			"</passedTime>")
-	fmt.Fprintln(&result, "    <consumedMemory>" +
-			strconv.Itoa(int(r.PeakMemory)) +
-			"</consumedMemory>");
-	fmt.Fprintln(&result, "    <comment>" + c +
-			"</comment>");
-	fmt.Fprintln(&result, "</invocationResult>")
+func printTag(tag, content string) {
+	fmt.Printf("<%s>%s</%s>", tag, content, tag)
+}
 
-	return result.Bytes()
+func xmlTime(t uint64) string {
+	return strconv.FormatUint(t / 1000, 10)
+}
+
+func PrintResultXml(result *RunResult) {
+	fmt.Printf("<invocationResult id=\"%s\">", strings.ToLower(result.T.String()))
+
+	printTag("invocationVerdict", result.V.String())
+	if result.R != nil {
+		printTag("exitCode", strconv.Itoa(int(result.R.ExitCode)))
+		printTag("processorUserModeTime", xmlTime(result.R.UserTime))
+		printTag("processorKernelModeTime", xmlTime(result.R.KernelTime))
+	printTag("passedTime", xmlTime(result.R.WallTime))
+	printTag("consumedMemory", strconv.Itoa(int(result.R.PeakMemory)))
+	}
+
+	if result.E != nil {
+		printTag("comment", result.E.Error())
+	}
+	fmt.Println("</invocationResult>")
 }
 
 func strTime(t uint64) string {
@@ -96,54 +96,81 @@ func strMemory(t uint64) string {
 	return strconv.FormatUint(t, 10)
 }
 
-func PrintResult(out io.Writer, s *subprocess.Subprocess, r *subprocess.SubprocessResult, c string, kernelTime bool) {
-	v := GetVerdict(r)
-
-	switch v {
+func PrintResultText(kernelTime bool, result *RunResult) {
+	usuffix := "sec"
+	switch result.V {
 	case SUCCESS:
-		fmt.Fprintln(out, c + " successfully terminated")
-		fmt.Fprintln(out, "  exit code:    " + strconv.Itoa(int(r.ExitCode)))
+		fmt.Println(result.T, "successfully terminated")
+		fmt.Println("  exit code:    " + strconv.Itoa(int(result.R.ExitCode)))
 	case TIME_LIMIT_EXCEEDED:
-		fmt.Fprintln(out, "Time limit exceeded")
-		fmt.Fprintln(out, c + " failed to terminate within " + strTime(s.TimeLimit) + " sec")
+		fmt.Println("Time limit exceeded")
+		fmt.Println(result.T, "failed to terminate within", strTime(result.S.TimeLimit), "sec")
+		usuffix = "of " + strTime(result.S.TimeLimit) + " sec"
 	case MEMORY_LIMIT_EXCEEDED:
-		fmt.Fprintln(out, "Memory limit exceeded")
-		fmt.Fprintln(out, c + " tried to allocate more than " + strMemory(s.MemoryLimit) + " bytes")
+		fmt.Println("Memory limit exceeded")
+		fmt.Println(result.T, "tried to allocate more than", strMemory(result.S.MemoryLimit), "bytes")
 	case IDLE:
-		fmt.Fprintln(out, "Idleness limit exceeded")
-		fmt.Fprintln(out, "Detected " + c + " idle")
+		fmt.Println("Idleness limit exceeded")
+		fmt.Println("Detected", result.T, "idle")
 	case SECURITY_VIOLATION:
-		fmt.Fprintln(out, "Security violation")
-		fmt.Fprintln(out, c + " tried to do some forbidden action")
+		fmt.Println("Security violation")
+		fmt.Println(result.T, " tried to do some forbidden action")
+	case CRASH:
+		fmt.Println("Invocation crashed:", result.T)
+		fmt.Println("Comment:", result.E)
+		return
 	}
 
-	var usuffix string
-	if v == TIME_LIMIT_EXCEEDED {
-		usuffix = "of " + strTime(s.TimeLimit) + " sec"
-	} else {
-		usuffix = "sec"
-	}
-	utime := strTime(r.UserTime) + " " + usuffix
+	utime := strTime(result.R.UserTime) + " " + usuffix
 	if kernelTime {
-		fmt.Fprintln(out, "  time consumed:")
-		fmt.Fprintln(out, "    user mode:   " + utime)
-		fmt.Fprintln(out, "    kernel mode: " + strTime(r.KernelTime) + " sec")
+		fmt.Println("  time consumed:")
+		fmt.Println("    user mode:   " + utime)
+		fmt.Println("    kernel mode: " + strTime(result.R.KernelTime) + " sec")
 	} else {
-		fmt.Fprintln(out, "  time consumed: " + utime)
+		fmt.Println("  time consumed: " + utime)
 	}
-	fmt.Fprintln(out, "  time passed: " + strTime(r.WallTime) + " sec")
-	fmt.Fprintln(out, "  peak memory: " + strMemory(r.PeakMemory) + " bytes")
-	fmt.Fprintln(out)
+	fmt.Println("  time passed: " + strTime(result.R.WallTime) + " sec")
+	fmt.Println("  peak memory: " + strMemory(result.R.PeakMemory) + " bytes")
+	fmt.Println()
 }
 
-func Crash(out io.Writer, comment string, e error) {
-	fmt.Fprintln(out, "Invocation crashed")
-	fmt.Fprintln(out, "Comment: " + comment)
-	if e != nil {
-		fmt.Fprintln(out, "Error:", e)
+func PrintResult(xml, kernelTime bool, result *RunResult) {
+	if xml {
+		PrintResultXml(result)
+	} else {
+		PrintResultText(kernelTime, result)
 	}
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "Use \"runexe -h\" to get help information")
+}
 
-	os.Exit(0)
+type RunResult struct {
+	V Verdict
+	E error
+	S *subprocess.Subprocess
+	R *subprocess.SubprocessResult
+	T ProcessType
+}
+
+func Fail(xml bool, err error) {
+	if xml {
+		FailXml(err)
+	} else {
+		FailText(err)
+	}
+	os.Exit(3)
+}
+
+func FailText(err error) {
+	fmt.Println("Invocation failed")
+	fmt.Println("Comment: ", err)
+	fmt.Println()
+	fmt.Println("Use \"runexe -h\" to get help information")
+}
+
+func FailXml(err error) {
+	fmt.Println("<invocationResults>")
+	fmt.Println("<invocationResult id=\"program\">")
+	fmt.Println("<invocationVerdict>FAIL</invocationVerdict>")
+	fmt.Println("<comment>", err, "</comment>")
+	fmt.Println("</invocationResult>")
+	fmt.Println("</invocationResults>")
 }

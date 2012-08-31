@@ -9,8 +9,6 @@ import (
 
 	"runlib/subprocess"
 "runlib/platform"
-	"io"
-	"bytes"
 )
 
 type ProcessConfig struct {
@@ -35,14 +33,31 @@ type ProcessConfig struct {
 }
 
 type RunexeConfig struct {
-	Quiet bool
 	Xml bool
 	Interactor string
-	XmlToFile string
-	StatsToFile string
 	ShowKernelModeTime bool
 	ReturnExitCode bool
 	Logfile string
+}
+
+type ProcessType int
+
+const (
+	PROGRAM = ProcessType(0)
+	INTERACTOR = ProcessType(1)
+)
+
+func (i *ProcessType) String() string {
+	if i == nil {
+		return "UNKNOWN"
+	}
+	switch *i {
+	case PROGRAM:
+		return "Program"
+	case INTERACTOR:
+		return "Interactor"
+	}
+	return "UNKNOWN"
 }
 
 func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
@@ -67,11 +82,8 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 
 func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	var result RunexeConfig
-	fs.BoolVar(&result.Quiet, "q", false, "Quiet")
 	fs.BoolVar(&result.Xml, "xml", false, "Print xml")
 	fs.StringVar(&result.Interactor, "interactor", "", "Interactor")
-	fs.StringVar(&result.XmlToFile, "xml-to-file", "", "xml to file")
-	fs.StringVar(&result.StatsToFile, "s", "", "Store stats in file")
 	fs.StringVar(&result.Logfile, "logfile", "", "Logfile")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
@@ -101,11 +113,7 @@ func fillRedirect(x string) *subprocess.Redirect {
 	}
 }
 
-type InteractorPipes struct {
-	read1, read2, write1, write2 *os.File
-}
-
-func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadLibraryW uintptr, pipes *InteractorPipes, isInteractor bool) (*subprocess.Subprocess, error) {
+func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadLibraryW uintptr) (*subprocess.Subprocess, error) {
 	sub := subprocess.SubprocessCreate()
 
 	sub.Cmd = &subprocess.CommandLine{}
@@ -132,24 +140,8 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 		sub.Environment = (*[]string)(&s.Environment)
 	}
 
-	if pipes != nil {
-		sub.StdIn = &subprocess.Redirect{
-			Mode: subprocess.REDIRECT_PIPE,
-		}
-		sub.StdOut = &subprocess.Redirect{
-			Mode: subprocess.REDIRECT_PIPE,
-		}
-		if isInteractor {
-			sub.StdIn.Pipe = pipes.read1
-			sub.StdOut.Pipe = pipes.write2
-		} else {
-			sub.StdIn.Pipe = pipes.read2
-			sub.StdOut.Pipe = pipes.write1
-		}
-	} else {
-		sub.StdIn = fillRedirect(s.StdIn)
-		sub.StdOut = fillRedirect(s.StdOut)
-	}
+	sub.StdIn = fillRedirect(s.StdIn)
+	sub.StdOut = fillRedirect(s.StdOut)
 	sub.StdErr = fillRedirect(s.StdErr)
 
 	sub.Options = &subprocess.PlatformOptions{}
@@ -172,144 +164,112 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	return sub, nil
 }
 
-func CreatePipes() *InteractorPipes {
-	var result InteractorPipes
-	var err error
-	result.read1, result.write1, err = os.Pipe()
-	if err != nil {
-		return nil
+func ExecAndSend(sub *subprocess.Subprocess, c chan RunResult, ptype ProcessType) {
+	var r RunResult
+	r.T = ptype
+	r.S = sub
+	r.R, r.E = sub.Execute()
+	if r.E != nil {
+		r.V = CRASH
+	} else {
+		r.V = GetVerdict(r.R)
 	}
-	result.read2, result.write2, err = os.Pipe()
-	if err != nil {
-		return nil
-	}
-	return &result
-}
-
-type resultAndError struct {
-	s *subprocess.Subprocess
-	r *subprocess.SubprocessResult
-	e error
-	isInteractor bool
-}
-
-func ExecAndSend(sub *subprocess.Subprocess, c chan resultAndError, isInteractor bool) {
-	var r resultAndError
-	r.isInteractor = isInteractor
-	r.s = sub
-	r.r, r.e = sub.Execute()
 	c <- r
 }
 
+func ParseFlags(globals bool, args []string) (pc *ProcessConfig, gc *RunexeConfig, err error) {
+	var fs *flag.FlagSet
+
+	fs, pc = CreateFlagSet()
+	if globals {
+		gc = AddGlobalFlags(fs)
+	}
+	ParseFlagSet(fs, pc, args)
+	return
+}
+
+func CreateDesktopIfNeeded(program, interactor *ProcessConfig) (*platform.ContesterDesktop, error) {
+	if !program.NeedLogin() && (interactor != nil && !interactor.NeedLogin()) {
+		return nil, nil
+	}
+
+	return platform.CreateContesterDesktopStruct()
+}
+
+func GetLoadLibraryIfNeeded(program, interactor *ProcessConfig) (uintptr, error) {
+	if program.InjectDLL == "" && (interactor == nil || interactor.InjectDLL == "") {
+		return 0, nil
+	}
+	return platform.GetLoadLibrary()
+}
+
 func main() {
-	fs, s := CreateFlagSet()
-	gc := AddGlobalFlags(fs)
-	ParseFlagSet(fs, s, os.Args[1:])
-	if gc.Logfile != "" {
-		l4g.Global.AddFilter("log", l4g.FINE, l4g.NewFileLogWriter(gc.Logfile, true))
+	l4g.Global = l4g.Logger{}
+
+	programFlags, globalFlags, err := ParseFlags(true, os.Args[1:])
+
+	if globalFlags.Logfile != "" {
+		l4g.Global.AddFilter("log", l4g.FINE, l4g.NewFileLogWriter(globalFlags.Logfile, true))
 	}
 
-	var out io.Writer
-	var err error
+	var interactorFlags *ProcessConfig
 
-	switch {
-	case gc.Quiet:
-		out = &bytes.Buffer{}
-	case gc.XmlToFile != "":
-		gc.Xml = true
-		out, err = os.Create(gc.XmlToFile)
-	case gc.StatsToFile != "":
-		out, err = os.Create(gc.StatsToFile)
+	if globalFlags.Interactor != "" {
+		interactorFlags, _, err = ParseFlags(false, strings.Split(globalFlags.Interactor, " "))
 	}
 
-	if out == nil {
-		out = os.Stdout
+	if globalFlags.Xml {
+		fmt.Println(XML_HEADER)
 	}
 
-	if gc.Xml {
-		fmt.Fprintln(out, XML_HEADER)
-	}
-
-	needDesktop := s.NeedLogin()
-	needLoadLibrary := s.InjectDLL != ""
-
-	var pipes *InteractorPipes
-	var isub *subprocess.Subprocess
-	var i *ProcessConfig
-
-	if gc.Interactor != "" {
-		pipes = CreatePipes()
-		var is *flag.FlagSet
-		is, i = CreateFlagSet()
-		ParseFlagSet(is, i, strings.Split(gc.Interactor, " "))
-		needDesktop = needDesktop || i.NeedLogin()
-		needLoadLibrary = needLoadLibrary || s.InjectDLL != ""
-	}
-
-	var desktop *platform.ContesterDesktop
-	if needDesktop {
-		desktop, err = platform.CreateContesterDesktopStruct()
-		if err != nil {
-			Crash(out, "can't create winsta/desktop", err)
-		}
-	}
-
-	var loadLibrary uintptr
-	if needLoadLibrary {
-		loadLibrary, err = platform.GetLoadLibrary()
-		if err != nil {
-			Crash(out, "can't get LoadLibraryW address", err)
-		}
-	}
-
-	if gc.Interactor != "" {
-		isub, err = SetupSubprocess(i, desktop, loadLibrary, pipes, true)
-		if err != nil {
-			Crash(out, "can't setup interactor", err)
-		}
-
-	}
-
-	sub, err := SetupSubprocess(s, desktop, loadLibrary, pipes, false)
+	desktop, err := CreateDesktopIfNeeded(programFlags, interactorFlags)
 	if err != nil {
-		Crash(out, "can't setup process", err)
+		Fail(globalFlags.Xml, err)
 	}
 
-	cs := make(chan resultAndError, 1)
-
-	j := 1
-
-	if isub != nil {
-		j++
-		go ExecAndSend(isub, cs, true)
+	loadLibrary, err := GetLoadLibraryIfNeeded(programFlags, interactorFlags)
+	if err != nil {
+		Fail(globalFlags.Xml, err)
 	}
-	go ExecAndSend(sub, cs, false)
 
+	var program, interactor *subprocess.Subprocess
+	program, err = SetupSubprocess(programFlags, desktop, loadLibrary)
+	if err != nil {
+		Fail(globalFlags.Xml, err)
+	}
 
-	var exitCode int
+	if interactorFlags != nil {
+		interactor, err = SetupSubprocess(interactorFlags, desktop, loadLibrary)
+		if err != nil {
+			Fail(globalFlags.Xml, err)
+		}
+		err = subprocess.Interconnect(program, interactor)
+		if err != nil {
+			Fail(globalFlags.Xml, err)
+		}
+	}
 
-	for j > 0 {
+	cs := make(chan RunResult, 1)
+	outstanding := 1
+	if interactor != nil {
+		outstanding++
+		go ExecAndSend(interactor, cs, INTERACTOR)
+	}
+	go ExecAndSend(program, cs, PROGRAM)
+
+	var results [2]*RunResult
+
+	for outstanding > 0 {
 		r := <- cs
-		j--
-		var c string
-		if r.isInteractor {
-			c = "Interactor"
-		} else {
-			c = "Process"
-		}
-		if r.e != nil {
-			Crash(out, "can't execute '" + *r.s.Cmd.CommandLine + "'", r.e)
-		} else {
-			if !r.isInteractor && gc.ReturnExitCode {
-				exitCode = int(r.r.ExitCode)
-			}
-			if gc.Xml {
-				out.Write(XmlResult(r.r, c)[:])
-			} else {
-				PrintResult(out, r.s, r.r, c, gc.ShowKernelModeTime)
-			}
-		}
+		outstanding--
+		results[int(r.T)] = &r
 	}
 
-	os.Exit(exitCode)
+	for _, result := range results {
+		if result == nil {
+			continue
+		}
+
+		PrintResult(globalFlags.Xml, globalFlags.ShowKernelModeTime, result)
+	}
 }

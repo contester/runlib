@@ -1,11 +1,10 @@
-package subprocess
-
 // +build windows,386
+
+package subprocess
 
 import (
 	l4g "code.google.com/p/log4go"
 	"runlib/platform/win32"
-	//	"runtime"
 	"runtime"
 	"syscall"
 	"unsafe"

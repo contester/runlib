@@ -1,6 +1,6 @@
-package win32
-
 // +build windows,386
+
+package win32
 
 import (
 	"runlib/tools"

@@ -1,6 +1,6 @@
-package subprocess
-
 // +build windows,386
+
+package subprocess
 
 import (
 	"bytes"

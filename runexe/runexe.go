@@ -64,29 +64,37 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	var result ProcessConfig
 	fs := flag.NewFlagSet("subprocess", flag.PanicOnError)
 
-	fs.Var(&result.TimeLimit, "t", "time limit")
-	fs.Var(&result.MemoryLimit, "m", "memory limit")
+	fs.Var(&result.TimeLimit, "t", "time limit, terminate after <time-limit> seconds, you can\n" +
+				"   add \"ms\" (without quotes) after the number to specify\n" +
+				"   time limit in milliseconds.")
+	fs.Var(&result.MemoryLimit, "m", "memory limit, terminate if anonymous virtual memory of the process\n" +
+				"   exceeds <mem-limit> bytes, you can add K or M to specify\n" +
+				"   memory limit in kilo- or megabytes")
 	fs.Var(&result.Environment, "D", "environment")
-	fs.StringVar(&result.CurrentDirectory, "d", "", "Current directory")
-	fs.StringVar(&result.LoginName, "l", "", "Login name")
-	fs.StringVar(&result.Password, "p", "", "Password")
-	fs.StringVar(&result.InjectDLL, "j", "", "Inject DLL")
-	fs.StringVar(&result.StdIn, "i", "", "StdIn")
-	fs.StringVar(&result.StdOut, "o", "", "StdOut")
-	fs.StringVar(&result.StdErr, "e", "", "StdErr")
-	fs.BoolVar(&result.TrustedMode, "z", false, "trusted mode")
-	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "no idle check")
+	fs.StringVar(&result.CurrentDirectory, "d", "", "make <directory> home directory for process")
+	fs.StringVar(&result.LoginName, "l", "", "create process under <login-name>")
+	fs.StringVar(&result.Password, "p", "", "logins user using <password>")
+	fs.StringVar(&result.InjectDLL, "j", "", "injects specified dll file into the process")
+	fs.StringVar(&result.StdIn, "i", "", "redirects standart input stream to the <file>")
+	fs.StringVar(&result.StdOut, "o", "", "redirects standart output stream to the <file>")
+	fs.StringVar(&result.StdErr, "e", "", "redirects standart error stream to the <file>")
+	fs.BoolVar(&result.TrustedMode, "z", false, "run process in trusted mode")
+	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "switch off idleness checking")
 
 	return fs, &result
 }
 
 func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	var result RunexeConfig
-	fs.BoolVar(&result.Xml, "xml", false, "Print xml")
-	fs.StringVar(&result.Interactor, "interactor", "", "Interactor")
-	fs.StringVar(&result.Logfile, "logfile", "", "Logfile")
-	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "Show kernel mode time")
-	fs.BoolVar(&result.ReturnExitCode, "x", false, "Pass exit code")
+	fs.BoolVar(&result.Xml, "xml", false, "form xml document with invocation result information")
+	fs.StringVar(&result.Interactor, "interactor", "", "INTERACTOR MODE.\n" +
+				"   Launch another process and cross-connect its stdin&stdout with the main program.\n" +
+				"   Inside this flag, you can specify any process-controlling flags: interactor can have its\n" +
+				"   own limits, credentials, environment, directory. In interactor mode, however, -i and -o\n" +
+				"   have no effects on both main program and interactor.")
+	fs.StringVar(&result.Logfile, "logfile", "", "Dump extra error info in logfile (DEPRECATED)")
+	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "show user-mode and kernel-mode time")
+	fs.BoolVar(&result.ReturnExitCode, "x", false, "return exit code of the application (NOT IMPLEMENTED)")
 	return &result
 }
 

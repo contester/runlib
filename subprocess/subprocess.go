@@ -78,7 +78,7 @@ type subprocessData struct {
 
 func SubprocessCreate() *Subprocess {
 	result := &Subprocess{}
-	result.TimeQuantum = 1000
+	result.TimeQuantum = 250
 
 	return result
 }

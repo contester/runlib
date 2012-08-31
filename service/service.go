@@ -7,6 +7,11 @@ import (
 	"runlib/contester_proto"
 	"strings"
 	"runlib/platform"
+	"code.google.com/p/goconf/conf"
+	"path/filepath"
+	"strconv"
+	"runlib/subprocess"
+
 )
 
 type Contester struct {
@@ -48,30 +53,78 @@ func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {
 	return result
 }
 
-func NewContester(configFile string, gData *platform.GlobalData) *Contester {
-	conf, err := readConfigFile(configFile)
+func configureSandboxes(config *conf.ConfigFile) ([]SandboxPair, error) {
+	basePath, err := config.GetString("default", "path")
 	if err != nil {
-		return nil
+		return nil, err
 	}
-
-	sandboxes, err := configureSandboxes(conf)
+	passwords, err := getPasswords(config)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	result := &Contester{
-		InvokerId:     getHostname(),
-		Sandboxes:     sandboxes,
-		Env:           getLocalEnvironment(),
-		ServerAddress: conf.Server,
-		Platform:      "win32",
-		PathSeparator: string(os.PathSeparator),
-		Disks:         []string{"C:\\"},
-		ProgramFiles:  []string{"C:\\Program Files", "C:\\Program Files (x86)"},
-		GData: gData,
+	result := make([]SandboxPair, len(passwords))
+	for index, password := range passwords {
+		localBase := filepath.Join(basePath, strconv.Itoa(index))
+		result[index].Compile.Path = filepath.Join(localBase, "C")
+		result[index].Run.Path = filepath.Join(localBase, "R")
+
+		e := checkSandbox(result[index].Compile.Path)
+		if e != nil {
+			return nil, e
+		}
+		e = checkSandbox(result[index].Run.Path)
+		if e != nil {
+			return nil, e
+		}
+
+		restrictedUser := "tester"+strconv.Itoa(index)
+
+		e = setAcl(result[index].Run.Path, restrictedUser)
+		if e != nil {
+			return nil, e
+		}
+		// HACK HACK: on linux, passwords are ignored.
+		result[index].Run.Login, e = subprocess.NewLoginInfo(restrictedUser, password)
+		if e != nil {
+			return nil, e
+		}
+	}
+	return result, nil
+}
+
+func checkSandbox(path string) error {
+	err := os.MkdirAll(path, os.ModeDir)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
+	config, err := conf.ReadConfigFile(configFile)
+	if err != nil {
+		return nil, err
 	}
 
-	return result
+	var result Contester
+
+	result.InvokerId = getHostname()
+	result.Env = getLocalEnvironment()
+	result.ServerAddress, err = config.GetString("default", "server")
+	if err != nil {
+		return nil, err
+	}
+	result.Platform = PLATFORM_ID
+	result.PathSeparator = string(os.PathSeparator)
+	result.GData = gData
+
+	result.Sandboxes, err = configureSandboxes(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response *contester_proto.IdentifyResponse) error {

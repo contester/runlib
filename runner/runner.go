@@ -22,7 +22,11 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	go tools.LogMemLoop()
 
-	c := service.NewContester("server.ini", globalData)
+	c, err := service.NewContester("server.ini", globalData)
+	if err != nil {
+		l4g.Error(err)
+		return
+	}
 
 	rpc.Register(c)
 	rpc4.ConnectRpc4(c.ServerAddress, rpc.DefaultServer)

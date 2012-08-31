@@ -1,7 +1,5 @@
 package platform
 
-// +build windows,386
-
 import (
 	"runlib/platform/win32"
 	"syscall"

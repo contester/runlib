@@ -1,9 +1,7 @@
 package platform
 
-// +build windows,386
-
 import (
-	"runlib/platform/win32"
+	"runlib/win32"
 	"syscall"
 	"strconv"
 	l4g "code.google.com/p/log4go"

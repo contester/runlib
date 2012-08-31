@@ -4,6 +4,7 @@ package service
 
 import (
 "syscall"
+        l4g "code.google.com/p/log4go"
 )
 
 func OnOsCreateError(err error) (bool, error) {

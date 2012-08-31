@@ -100,23 +100,23 @@ func PrintResultText(kernelTime bool, result *RunResult) {
 	usuffix := "sec"
 	switch result.V {
 	case SUCCESS:
-		fmt.Println(result.T, "successfully terminated")
+		fmt.Println(result.T.String(), "successfully terminated")
 		fmt.Println("  exit code:    " + strconv.Itoa(int(result.R.ExitCode)))
 	case TIME_LIMIT_EXCEEDED:
 		fmt.Println("Time limit exceeded")
-		fmt.Println(result.T, "failed to terminate within", strTime(result.S.TimeLimit), "sec")
+		fmt.Println(result.T.String(), "failed to terminate within", strTime(result.S.TimeLimit), "sec")
 		usuffix = "of " + strTime(result.S.TimeLimit) + " sec"
 	case MEMORY_LIMIT_EXCEEDED:
 		fmt.Println("Memory limit exceeded")
-		fmt.Println(result.T, "tried to allocate more than", strMemory(result.S.MemoryLimit), "bytes")
+		fmt.Println(result.T.String(), "tried to allocate more than", strMemory(result.S.MemoryLimit), "bytes")
 	case IDLE:
 		fmt.Println("Idleness limit exceeded")
-		fmt.Println("Detected", result.T, "idle")
+		fmt.Println("Detected", result.T.String(), "idle")
 	case SECURITY_VIOLATION:
 		fmt.Println("Security violation")
-		fmt.Println(result.T, " tried to do some forbidden action")
+		fmt.Println(result.T.String(), " tried to do some forbidden action")
 	case CRASH:
-		fmt.Println("Invocation crashed:", result.T)
+		fmt.Println("Invocation crashed:", result.T.String())
 		fmt.Println("Comment:", result.E)
 		return
 	}

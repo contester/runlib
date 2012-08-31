@@ -265,11 +265,19 @@ func main() {
 		results[int(r.T)] = &r
 	}
 
+	if globalFlags.Xml {
+		fmt.Println(XML_RESULTS_START)
+	}
+
 	for _, result := range results {
 		if result == nil {
 			continue
 		}
 
 		PrintResult(globalFlags.Xml, globalFlags.ShowKernelModeTime, result)
+	}
+
+	if globalFlags.Xml {
+		fmt.Println(XML_RESULTS_END)
 	}
 }

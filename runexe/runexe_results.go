@@ -63,7 +63,7 @@ const XML_RESULTS_START = "<invocationResults>"
 const XML_RESULTS_END = "</invocationResults>"
 
 func printTag(tag, content string) {
-	fmt.Printf("<%s>%s</%s>", tag, content, tag)
+	fmt.Printf("<%s>%s</%s>\n", tag, content, tag)
 }
 
 func xmlTime(t uint64) string {
@@ -71,7 +71,7 @@ func xmlTime(t uint64) string {
 }
 
 func PrintResultXml(result *RunResult) {
-	fmt.Printf("<invocationResult id=\"%s\">", strings.ToLower(result.T.String()))
+	fmt.Printf("<invocationResult id=\"%s\">\n", strings.ToLower(result.T.String()))
 
 	printTag("invocationVerdict", result.V.String())
 	if result.R != nil {
@@ -118,6 +118,7 @@ func PrintResultText(kernelTime bool, result *RunResult) {
 	case CRASH:
 		fmt.Println("Invocation crashed:", result.T.String())
 		fmt.Println("Comment:", result.E)
+		fmt.Println()
 		return
 	}
 

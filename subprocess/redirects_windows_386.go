@@ -4,7 +4,7 @@ package subprocess
 
 import (
 "syscall"
-"platform/win32"
+"runlib/win32"
 "os"
 )
 

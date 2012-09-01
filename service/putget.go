@@ -27,7 +27,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 	for {
 		destination, err = os.Create(resolved)
 		loop, err := OnOsCreateError(err)
-		
+
 		if err != nil {
 			return err
 		}

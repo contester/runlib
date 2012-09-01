@@ -1,17 +1,16 @@
 package service
 
 import (
+	"code.google.com/p/goconf/conf"
 	"code.google.com/p/goprotobuf/proto"
 	"labix.org/v2/mgo"
 	"os"
-	"runlib/contester_proto"
-	"strings"
-	"runlib/platform"
-	"code.google.com/p/goconf/conf"
 	"path/filepath"
-	"strconv"
+	"runlib/contester_proto"
+	"runlib/platform"
 	"runlib/subprocess"
-
+	"strconv"
+	"strings"
 )
 
 type Contester struct {
@@ -43,7 +42,7 @@ func getHostname() string {
 
 func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {
 	list := os.Environ()
-	result := make([]*contester_proto.LocalEnvironment_Variable,len(list))
+	result := make([]*contester_proto.LocalEnvironment_Variable, len(list))
 	for i, v := range list {
 		s := strings.SplitN(v, "=", 2)
 		result[i] = &contester_proto.LocalEnvironment_Variable{
@@ -78,7 +77,7 @@ func configureSandboxes(config *conf.ConfigFile) ([]SandboxPair, error) {
 			return nil, e
 		}
 
-		restrictedUser := "tester"+strconv.Itoa(index)
+		restrictedUser := "tester" + strconv.Itoa(index)
 
 		e = setAcl(result[index].Run.Path, restrictedUser)
 		if e != nil {
@@ -144,7 +143,7 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	response.InvokerId = &s.InvokerId
 	response.Environment = &contester_proto.LocalEnvironment{
 		Variable: s.Env[:]}
-	response.Sandboxes = make([]*contester_proto.SandboxLocations,len(s.Sandboxes))
+	response.Sandboxes = make([]*contester_proto.SandboxLocations, len(s.Sandboxes))
 	for i, p := range s.Sandboxes {
 		response.Sandboxes[i] = &contester_proto.SandboxLocations{
 			Compile: proto.String(p.Compile.Path),

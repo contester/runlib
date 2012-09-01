@@ -116,6 +116,8 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 		return nil, err
 	}
 	result.Platform = PLATFORM_ID
+	result.Disks = PLATFORM_DISKS
+	result.ProgramFiles = PLATFORM_PFILES
 	result.PathSeparator = string(os.PathSeparator)
 	result.GData = gData
 

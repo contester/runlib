@@ -6,7 +6,12 @@ import (
 	"runlib/subprocess"
 )
 
-
+func (s *Contester) localPlatformSetup(sub *subprocess.Subprocess, request *contester_proto.LocalExecutionParameters) error {
+	if sub.Login != nil && !sub.NoJob {
+		sub.Options.Desktop = s.GData.Desktop.DesktopName
+	}
+	return nil
+}
 
 func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
 	var sandbox *Sandbox
@@ -54,9 +59,11 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 	if sandbox.Login != nil {
 		sub.Login = sandbox.Login
-		if !sub.NoJob {
-			sub.Options.Desktop = s.GData.Desktop.DesktopName
-		}
+	}
+
+	err := s.localPlatformSetup(sub, request)
+	if err != nil {
+		return err
 	}
 
 	result, err := sub.Execute()

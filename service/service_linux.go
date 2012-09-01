@@ -1,5 +1,3 @@
-// +build linux
-
 package service
 
 import (
@@ -8,6 +6,11 @@ import (
 )
 
 const PLATFORM_ID = "linux"
+var (
+PLATFORM_DISKS = []string{"/"}
+PLATFORM_PFILES = []string{"/usr/bin", "/bin"}
+)
+
 
 func OnOsCreateError(err error) (bool, error) {
 	return false, err
@@ -29,3 +32,5 @@ func setAcl(path, username string) error {
 	// TODO: use setfacl to set acl
 	return nil
 }
+
+

@@ -15,6 +15,7 @@ type ProcessConfig struct {
 	ApplicationName  string
 	CommandLine      string
 	CurrentDirectory string
+	Parameters []string
 
 	TimeLimit   TimeLimitFlag
 	MemoryLimit MemoryLimitFlag
@@ -101,8 +102,9 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 func ParseFlagSet(fs *flag.FlagSet, pc *ProcessConfig, args []string) error {
 	fs.Parse(args)
 
-	// pc.ApplicationName = fs.Args()[0]
+	pc.ApplicationName = fs.Args()[0]
 	pc.CommandLine = strings.Join(fs.Args(), " ")
+	pc.Parameters = fs.Args()
 
 	return nil
 }
@@ -132,6 +134,10 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 
 	if s.CommandLine != "" {
 		sub.Cmd.CommandLine = &s.CommandLine
+	}
+
+	if s.Parameters != nil {
+		sub.Cmd.Parameters = s.Parameters
 	}
 
 	if s.CurrentDirectory != "" {

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"time"
 	"net"
 	"net/rpc"
 	l4g "code.google.com/p/log4go"
@@ -161,6 +162,7 @@ func ConnectRpc4(addr string, s *rpc.Server) {
 			s.ServeCodec(NewServerCodec(conn))
 		} else {
 			l4g.Error(err)
+			time.Sleep(time.Second * 5)
 		}
 	}
 }

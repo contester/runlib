@@ -19,6 +19,7 @@ func main() {
 		return
 	}
 
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	go tools.LogMemLoop()
 

@@ -134,6 +134,14 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 	if sandbox.Login != nil {
 		sub.Login = sandbox.Login
+	} else {
+		if PLATFORM_ID == "linux" {
+			var err error
+			sub.Login, err = subprocess.NewLoginInfo("compiler", "compiler")
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	err := s.localPlatformSetup(sub, request)

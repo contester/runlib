@@ -61,7 +61,6 @@ func configureSandboxes(config *conf.ConfigFile) ([]SandboxPair, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	result := make([]SandboxPair, len(passwords))
 	for index, password := range passwords {
 		localBase := filepath.Join(basePath, strconv.Itoa(index))
@@ -75,6 +74,17 @@ func configureSandboxes(config *conf.ConfigFile) ([]SandboxPair, error) {
 		e = checkSandbox(result[index].Run.Path)
 		if e != nil {
 			return nil, e
+		}
+
+		if PLATFORM_ID == "linux" {
+			e = setAcl(result[index].Compile.Path, "compiler")
+			if e != nil {
+				return nil, e
+			}
+			result[index].Compile.Login, e = subprocess.NewLoginInfo("compiler", "compiler")
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		restrictedUser := "tester" + strconv.Itoa(index)

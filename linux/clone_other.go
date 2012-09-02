@@ -1,13 +1,20 @@
 package linux
 
 import (
+	"encoding/binary"
+	"fmt"
+	"io"
 	"os"
 	"syscall"
-	"fmt"
 )
 
 type StdHandles struct {
 	StdIn, StdOut, StdErr *os.File
+}
+
+type CommStatus struct {
+	What int
+	Err  error
 }
 
 func (s *StdHandles) Close() {
@@ -22,13 +29,37 @@ func (s *StdHandles) Close() {
 	}
 }
 
-//TODO: commreader goroutine
+func commReader(r *os.File, sig chan CommStatus) {
+	defer r.Close()
+	for {
+		var buf [2]int32
+		err := binary.Read(r, binary.LittleEndian, buf[:])
+		if err != nil {
+			if err == io.EOF {
+				close(sig)
+				return
+			}
+			var v CommStatus
+			v.What = 0
+			v.Err = err
+			sig <- v
+			close(sig)
+			return
+		}
+		var v CommStatus
+		v.What = int(buf[0])
+		v.Err = syscall.Errno(buf[1])
+		sig <- v
+	}
+}
 
 func (c *CloneParams) CloneFrozen() (int, error) {
 	pid := callClone(c)
 	// TODO: clone errors?
 	c.CommWriter.Close()
 	c.stdhandles.Close()
+	c.comm = make(chan CommStatus)
+	go commReader(c.CommReader, c.comm)
 
 	var status syscall.WaitStatus
 	for {
@@ -52,5 +83,9 @@ func (c *CloneParams) CloneFrozen() (int, error) {
 
 func (c *CloneParams) Unfreeze(pid int) error {
 	err := syscall.PtraceDetach(pid) // TODO: wait for comm goroutine
-	return err
+	co, ok := <-c.comm
+	if !ok {
+		return err
+	}
+	return co.Err
 }

@@ -1,10 +1,10 @@
 package linux
 
 import (
-	"os"
-	"syscall"
-	"strconv"
 	"bufio"
+	"os"
+	"strconv"
+	"syscall"
 )
 
 const (

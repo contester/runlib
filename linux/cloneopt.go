@@ -14,15 +14,16 @@ import "os"
 import "runtime"
 
 type CloneParams struct {
-	repr C.struct_CloneParams
-	tls, stack []byte
-	args, env []*C.char
-	stdhandles StdHandles
+	repr                   C.struct_CloneParams
+	tls, stack             []byte
+	args, env              []*C.char
+	stdhandles             StdHandles
 	CommReader, CommWriter *os.File
+	comm                   chan CommStatus
 }
 
 func stringsToCchars(source []string) []*C.char {
-	result := make([]*C.char, len(source) + 1)
+	result := make([]*C.char, len(source)+1)
 	for i, v := range source {
 		result[i] = C.CString(v)
 	}
@@ -57,9 +58,9 @@ func CreateCloneParams(filename string, args []string, env *[]string, cwd *strin
 	result.tls = tools.AlignedBuffer(4096, 16)
 	result.stack = tools.AlignedBuffer(4096, 16)
 	result.repr.tls = (*C.char)(unsafe.Pointer(&result.tls[0]))
-	result.repr.stack = (*C.char)(unsafe.Pointer(&result.stack[len(result.stack) - 1]))
+	result.repr.stack = (*C.char)(unsafe.Pointer(&result.stack[len(result.stack)-1]))
 	result.repr.commfd = C.int32_t(result.CommWriter.Fd())
-	
+
 	result.repr.filename = C.CString(filename)
 	if cwd != nil {
 		result.repr.cwd = C.CString(*cwd)
@@ -112,4 +113,3 @@ func freeCloneParams(s *CloneParams) {
 func callClone(c *CloneParams) int {
 	return int(C.Clone(&c.repr))
 }
-

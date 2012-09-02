@@ -449,22 +449,3 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 	sig <- result
 }
 
-func (sub *Subprocess) Execute() (*SubprocessResult, error) {
-	d, err := sub.CreateFrozen()
-	if err != nil {
-		return nil, err
-	}
-
-	if err = d.SetupOnFrozen(); err != nil {
-		return nil, err // we must die here
-	}
-
-	sig := make(chan *SubprocessResult)
-	go sub.BottomHalf(d, sig)
-
-	if err = d.Unfreeze(); err != nil {
-		return nil, err
-	}
-
-	return <-sig, nil
-}

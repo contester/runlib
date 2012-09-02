@@ -33,3 +33,11 @@ func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 
         return os.NewFile(uintptr(h), name), nil
 }
+
+func ReaderDefault() (*os.File, error) {
+	return nil, nil
+}
+
+func WriterDefault() (*os.File, error) {
+	return nil, nil
+}

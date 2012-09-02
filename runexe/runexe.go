@@ -125,6 +125,7 @@ func fillRedirect(x string) *subprocess.Redirect {
 
 func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadLibraryW uintptr) (*subprocess.Subprocess, error) {
 	sub := subprocess.SubprocessCreate()
+	fmt.Println(s)
 
 	sub.Cmd = &subprocess.CommandLine{}
 

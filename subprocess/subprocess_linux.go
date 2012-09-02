@@ -62,7 +62,11 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	if err != nil {
 		return nil, err
 	}
-	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, sub.Login.Uid, stdh)
+	var uid int
+	if sub.Login != nil {
+		uid = sub.Login.Uid
+	}
+	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
 		return nil, err
 	}
@@ -155,15 +159,15 @@ func UpdateRunningUsage(p *PlatformData, result *SubprocessResult) {
 func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult) {
 	result := &SubprocessResult{}
 
-	childChan := make(chan *ChildWaitData)
+	childChan := make(chan *ChildWaitData, 1)
 	go ChildWaitingFunc(d.platformData.Pid, childChan)
 	ticker := time.NewTicker(time.Second / 4)
 	var finished *ChildWaitData
 	var ttLast uint64
-	for result.SuccessCode == 0 {
+W:	for result.SuccessCode == 0 {
 		select {
 		case finished = <-childChan:
-			break
+			break W
 		case _ = <-ticker.C:
 			UpdateRunningUsage(&d.platformData, result)
 			ttLastNew := result.KernelTime + result.UserTime
@@ -183,6 +187,7 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 			}
 		}
 	}
+	ticker.Stop()
 	if finished == nil {
 		result.SuccessCode |= EF_KILLED
 		syscall.Kill(d.platformData.Pid, syscall.SIGKILL)

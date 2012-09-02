@@ -6,7 +6,15 @@ import (
 	"io"
 	"os"
 	"syscall"
+	"strconv"
 )
+
+var childStages = map[int]string{
+	1: "chdir",
+	2: "setuid",
+	3: "ptrace",
+	4: "exec",
+}
 
 type StdHandles struct {
 	StdIn, StdOut, StdErr *os.File
@@ -53,6 +61,14 @@ func commReader(r *os.File, sig chan CommStatus) {
 	}
 }
 
+func childError(c CommStatus) error {
+	w, ok := childStages[c.What]
+	if !ok {
+		w = strconv.Itoa(c.What)
+	}
+	return os.NewSyscallError(w, c.Err)
+}
+
 func (c *CloneParams) CloneFrozen() (int, error) {
 	pid := callClone(c)
 	// TODO: clone errors?
@@ -65,7 +81,7 @@ func (c *CloneParams) CloneFrozen() (int, error) {
 	for {
 		wpid, err := syscall.Wait4(pid, &status, 0, nil) // TODO: rusage
 		if err != nil {
-			return -1, err
+			return -1, os.NewSyscallError("Wait4", err)
 		}
 		if wpid == pid {
 			break
@@ -74,9 +90,16 @@ func (c *CloneParams) CloneFrozen() (int, error) {
 	if status.Stopped() && status.StopSignal() == syscall.SIGTRAP {
 		return pid, nil
 	}
+	if status.Exited() {
+		co, ok := <-c.comm
+		if ok {
+			return -1, childError(co)
+		}
+		return -1, fmt.Errorf("DAFUQ")
+	}
 	err := syscall.Kill(pid, syscall.SIGKILL)
 	if err != nil {
-		return -1, err
+		return -1, os.NewSyscallError("Kill", err)
 	}
 	return -1, fmt.Errorf("traps, signals, dafuq is this")
 }
@@ -87,5 +110,5 @@ func (c *CloneParams) Unfreeze(pid int) error {
 	if !ok {
 		return err
 	}
-	return co.Err
+	return childError(co)
 }

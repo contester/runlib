@@ -25,11 +25,11 @@ type PlatformData struct {
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
 	u, err := user.Lookup(username)
 	if err != nil {
-		return nil, err
+		return nil, NewSubprocessError("NewLoginInfo/user.Lookup", err)
 	}
 	uid, err := strconv.Atoi(u.Uid)
 	if err != nil {
-		return nil, err
+		return nil, NewSubprocessError("NewLoginInfo/strconv.Atoi", err)
 	}
 	return &LoginInfo{
 		Uid: uid,
@@ -53,7 +53,7 @@ func (d *subprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) 
 
 func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	if sub.Cmd.ApplicationName == nil {
-		return nil, fmt.Errorf("Application name must be present")
+		return nil, NewSubprocessError("CreateFrozen/init", fmt.Errorf("Application name must be present"))
 	}
 	d := &subprocessData{}
 	var stdh linux.StdHandles
@@ -68,18 +68,18 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	}
 	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
-		return nil, err
+		return nil, NewSubprocessError("CreateFrozen/CreateCloneParams", err)
 	}
 	syscall.ForkLock.Lock()
 	d.platformData.Pid, err = d.platformData.params.CloneFrozen()
 	closeDescriptors(d.closeAfterStart)
 	syscall.ForkLock.Unlock()
 	if err != nil {
-		return nil, err
+		return nil, NewSubprocessError("CreateFrozen/CloneFrozen", err)
 	}
 	err = SetupControlGroup(sub, d)
 	if err != nil {
-		return nil, err //TODO: clean up
+		return nil, NewSubprocessError("CreateFrozen/SetupControlGroup", err) //TODO: clean up
 	}
 	return d, nil
 }

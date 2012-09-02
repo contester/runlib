@@ -14,9 +14,9 @@ func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 }
 
 func ReaderDefault() (*os.File, error) {
-	return nil, nil
+	return os.Open("/dev/null")
 }
 
 func WriterDefault() (*os.File, error) {
-	return nil, nil
+	return os.Create("/dev/null")
 }

@@ -46,7 +46,7 @@ func (d *subprocessData) SetupPipe(f *os.File) (*os.File, error) {
 
 func (d *subprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, error) {
 	if w == nil {
-		return nil, nil
+		return WriterDefault()
 	}
 
 	switch w.Mode {
@@ -78,7 +78,7 @@ func (d *subprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 
 func (d *subprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	if w == nil {
-		return nil, nil
+		return ReaderDefault()
 	}
 
 	switch w.Mode {

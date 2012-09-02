@@ -132,8 +132,8 @@ func ChildWaitingFunc(pid int, sig chan *ChildWaitData) {
 			break
 		}
 	}
-	result.RusageCpuUser = uint64(rusage.Utime.Nano())
-	result.RusageCpuKernel = uint64(rusage.Stime.Nano())
+	result.RusageCpuUser = uint64(rusage.Utime.Nano()) / 1000
+	result.RusageCpuKernel = uint64(rusage.Stime.Nano()) / 1000
 	sig <- result
 	close(sig)
 }
@@ -143,7 +143,7 @@ func UpdateWallTime(p *PlatformData, result *SubprocessResult) {
 }
 
 func UpdateContainerTime(p *PlatformData, result *SubprocessResult) {
-	result.UserTime = linux.CgGetCpu(strconv.Itoa(p.Pid))
+	result.UserTime = linux.CgGetCpu(strconv.Itoa(p.Pid)) / 1000
 }
 
 func UpdateContainerMemory(p *PlatformData, result *SubprocessResult) {
@@ -194,6 +194,7 @@ W:	for result.SuccessCode == 0 {
 		finished = <-childChan
 	}
 	UpdateRunningUsage(&d.platformData, result)
+	linux.CgRemove(strconv.Itoa(d.platformData.Pid))
 	result.ExitCode = finished.ExitCode
 	result.KernelTime = finished.RusageCpuKernel
 	result.SuccessCode |= finished.SuccessCode

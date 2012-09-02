@@ -191,7 +191,6 @@ func ParseFlags(globals bool, args []string) (pc *ProcessConfig, gc *RunexeConfi
 	return
 }
 
-
 func main() {
 	l4g.Global = l4g.Logger{}
 

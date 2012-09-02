@@ -11,9 +11,15 @@ type StdHandles struct {
 }
 
 func (s *StdHandles) Close() {
-	s.StdIn.Close()
-	s.StdOut.Close()
-	s.StdErr.Close()
+	if s.StdIn != nil {
+		s.StdIn.Close()
+	}
+	if s.StdOut != nil {
+		s.StdOut.Close()
+	}
+	if s.StdErr != nil {
+		s.StdErr.Close()
+	}
 }
 
 //TODO: commreader goroutine

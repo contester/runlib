@@ -105,14 +105,6 @@ func closeDescriptors(closers []io.Closer) {
 	}
 }
 
-func ReaderDefault() (*os.File, error) {
-	return nil, nil
-}
-
-func WriterDefault() (*os.File, error) {
-	return nil, nil
-}
-
 func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 	d, err := sub.CreateFrozen()
 	if err != nil {

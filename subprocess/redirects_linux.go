@@ -12,3 +12,11 @@ func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 	}
 	return os.Create(name)
 }
+
+func ReaderDefault() (*os.File, error) {
+	return nil, nil
+}
+
+func WriterDefault() (*os.File, error) {
+	return nil, nil
+}

@@ -160,15 +160,10 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 		if err != nil {
 			return nil, err
 		}
-		if desktop != nil {
-			sub.Options.Desktop = desktop.DesktopName
-		}
+		setDesktop(sub.Options, desktop)
 	}
 
-	if s.InjectDLL != "" && loadLibraryW != 0 {
-		sub.Options.InjectDLL = s.InjectDLL
-		sub.Options.LoadLibraryW = loadLibraryW
-	}
+	setInject(sub.Options, s.InjectDLL, loadLibraryW)
 	return sub, nil
 }
 
@@ -196,20 +191,6 @@ func ParseFlags(globals bool, args []string) (pc *ProcessConfig, gc *RunexeConfi
 	return
 }
 
-func CreateDesktopIfNeeded(program, interactor *ProcessConfig) (*platform.ContesterDesktop, error) {
-	if !program.NeedLogin() && (interactor != nil && !interactor.NeedLogin()) {
-		return nil, nil
-	}
-
-	return platform.CreateContesterDesktopStruct()
-}
-
-func GetLoadLibraryIfNeeded(program, interactor *ProcessConfig) (uintptr, error) {
-	if program.InjectDLL == "" && (interactor == nil || interactor.InjectDLL == "") {
-		return 0, nil
-	}
-	return platform.GetLoadLibrary()
-}
 
 func main() {
 	l4g.Global = l4g.Logger{}

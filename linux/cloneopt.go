@@ -9,10 +9,20 @@ package linux
 */
 import "C"
 import "unsafe"
-import "runlib/tools""
+import "runlib/tools"
+import "os"
+import "runtime"
+import "syscall"
+import "fmt"
 
 type StdHandles struct {
 	StdIn, StdOut, StdErr *os.File
+}
+
+func (s *StdHandles) Close() {
+	s.StdIn.Close()
+	s.StdOut.Close()
+	s.StdErr.Close()
 }
 
 type CloneParams struct {
@@ -39,6 +49,13 @@ func deallocCchars(what []*C.char) {
 	}
 }
 
+func getFd(f *os.File) C.int32_t {
+	if f != nil {
+		return C.int32_t(f.Fd())
+	}
+	return -1
+}
+
 func CreateCloneParams(filename string, args, env []string, cwd string, suid int, stdhandles StdHandles) (*CloneParams, error) {
 	result := &CloneParams{}
 	var err error
@@ -48,22 +65,24 @@ func CreateCloneParams(filename string, args, env []string, cwd string, suid int
 	}
 	result.tls = tools.AlignedBuffer(4096, 16)
 	result.stack = tools.AlignedBuffer(4096, 16)
-	result.repr.tls = (*C.char)(unsafe.Pointer(&tls[0]))
-	result.repr.stack = (*C.char)(unsafe.Pointer(&stack[len(stack) - 1]))
-	result.repr.commfd = result.CommWriter.Fd()
+	result.repr.tls = (*C.char)(unsafe.Pointer(&result.tls[0]))
+	result.repr.stack = (*C.char)(unsafe.Pointer(&result.stack[len(result.stack) - 1]))
+	result.repr.commfd = C.int32_t(result.CommWriter.Fd())
 	
-	params.repr.filename = C.CString(filename)
+	result.repr.filename = C.CString(filename)
 	if cwd != "" {
-		params.repr.cwd = C.CString(cwd)
+		result.repr.cwd = C.CString(cwd)
 	}
 	result.args = stringsToCchars(args)
 	result.repr.argv = &result.args[0]
 	result.env = stringsToCchars(env)
 	result.repr.envp = &result.env[0]
-	result.repr.suid = suid
-	result.repr.stdhandles[0] = stdhandles.StdIn
-	result.repr.stdhandles[1] = stdhandles.StdOut
-	result.repr.stdhandles[2] = stdhandles.StdErr
+	result.repr.suid = C.uint32_t(suid)
+	result.stdhandles = stdhandles
+
+	result.repr.stdhandles[0] = getFd(result.stdhandles.StdIn)
+	result.repr.stdhandles[1] = getFd(result.stdhandles.StdOut)
+	result.repr.stdhandles[2] = getFd(result.stdhandles.StdErr)
 
 	runtime.SetFinalizer(result, freeCloneParams)
 	return result, nil
@@ -76,17 +95,18 @@ func freeCloneParams(s *CloneParams) {
 	if s.CommReader != nil {
 		s.CommReader.Close()
 	}
+	s.stdhandles.Close()
 	s.repr.tls = nil
 	s.repr.stack = nil
 	s.tls = nil
 	s.stack = nil
 	s.repr.argv = nil
-	deallocChars(s.args)
+	deallocCchars(s.args)
 	s.args = nil
 	s.repr.envp = nil
-	deallocChars(s.env)
+	deallocCchars(s.env)
 	s.env = nil
-	C.free(unsafe.Pointer(s.repr.filename)
+	C.free(unsafe.Pointer(s.repr.filename))
 	s.repr.filename = nil
 	if s.repr.cwd != nil {
 		C.free(unsafe.Pointer(s.repr.cwd))
@@ -94,14 +114,33 @@ func freeCloneParams(s *CloneParams) {
 	}
 }
 
-
 func (c *CloneParams) Clone() (int, error) {
-	pid = C.Clone(&c.repr)
+	pid := int(C.Clone(&c.repr))
 	// TODO: clone errors?
 	c.CommWriter.Close()
+	c.stdhandles.Close()
 	
+	var status syscall.WaitStatus
 	for {
-		var buf [2]int32_t
-		io.ReadFull
+		wpid, err := syscall.Wait4(pid, &status, 0, nil) // TODO: rusage
+		if err != nil {
+			return -1, err
+		}
+		if wpid == pid {
+			break
+		}
 	}
+	if status.Stopped() && status.StopSignal() == syscall.SIGTRAP {
+		// cgroup attach
+		err := syscall.PtraceDetach(pid)
+		if err != nil {
+			// wtf to do here
+		}
+		return pid, nil
+	}
+	err := syscall.Kill(pid, syscall.SIGKILL)
+	if err != nil {
+		return -1, err
+	}
+	return -1, fmt.Errorf("traps, signals, dafuq is this")
 }

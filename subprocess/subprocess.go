@@ -3,7 +3,6 @@ package subprocess
 import (
 	"bytes"
 	"io"
-	"os"
 )
 
 const (

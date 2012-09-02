@@ -107,6 +107,13 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	sandbox.Mutex.Lock()
 	defer sandbox.Mutex.Unlock()
 
+	if request.ApplicationName != nil {
+		err := chmodIfNeeded(*request.ApplicationName, sandbox)
+		if err != nil {
+			return err
+		}
+	}
+
 	sub := subprocess.SubprocessCreate()
 
 	sub.Cmd = &subprocess.CommandLine{

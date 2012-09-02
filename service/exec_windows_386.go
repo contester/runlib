@@ -12,3 +12,6 @@ func (s *Contester) localPlatformSetup(sub *subprocess.Subprocess, request *cont
 	return nil
 }
 
+func chmodIfNeeded(filename string, sandbox *Sandbox) error {
+	return nil
+}

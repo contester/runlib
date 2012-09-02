@@ -62,7 +62,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	if err != nil {
 		return nil, err
 	}
-	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, *sub.Environment, *sub.CurrentDirectory, sub.Login.Uid, stdh)
+	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, sub.Login.Uid, stdh)
 	if err != nil {
 		return nil, err
 	}

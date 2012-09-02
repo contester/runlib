@@ -30,6 +30,9 @@ func stringsToCchars(source []string) []*C.char {
 }
 
 func deallocCchars(what []*C.char) {
+	if what == nil {
+		return
+	}
 	for _, v := range what {
 		if v != nil {
 			C.free(unsafe.Pointer(v))
@@ -44,7 +47,7 @@ func getFd(f *os.File) C.int32_t {
 	return -1
 }
 
-func CreateCloneParams(filename string, args, env []string, cwd string, suid int, stdhandles StdHandles) (*CloneParams, error) {
+func CreateCloneParams(filename string, args []string, env *[]string, cwd *string, suid int, stdhandles StdHandles) (*CloneParams, error) {
 	result := &CloneParams{}
 	var err error
 	result.CommReader, result.CommWriter, err = os.Pipe()
@@ -58,13 +61,17 @@ func CreateCloneParams(filename string, args, env []string, cwd string, suid int
 	result.repr.commfd = C.int32_t(result.CommWriter.Fd())
 	
 	result.repr.filename = C.CString(filename)
-	if cwd != "" {
-		result.repr.cwd = C.CString(cwd)
+	if cwd != nil {
+		result.repr.cwd = C.CString(*cwd)
 	}
-	result.args = stringsToCchars(args)
-	result.repr.argv = &result.args[0]
-	result.env = stringsToCchars(env)
-	result.repr.envp = &result.env[0]
+	if args != nil {
+		result.args = stringsToCchars(args)
+		result.repr.argv = &result.args[0]
+	}
+	if env != nil {
+		result.env = stringsToCchars(*env)
+		result.repr.envp = &result.env[0]
+	}
 	result.repr.suid = C.uint32_t(suid)
 	result.stdhandles = stdhandles
 

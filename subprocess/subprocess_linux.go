@@ -1,12 +1,13 @@
 package subprocess
 
 import (
+	l4g "code.google.com/p/log4go"
 	"fmt"
 	"os/user"
 	"runlib/linux"
 	"strconv"
-	"time"
 	"syscall"
+	"time"
 )
 
 type LoginInfo struct {
@@ -18,7 +19,7 @@ type PlatformOptions struct{}
 type PlatformData struct {
 	Pid       int
 	params    *linux.CloneParams
-	startTime *time.Time
+	startTime time.Time
 }
 
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
@@ -87,12 +88,13 @@ func SetupControlGroup(s *Subprocess, d *subprocessData) error {
 }
 
 func (d *subprocessData) Unfreeze() error {
+	d.platformData.startTime = time.Now()
 	return d.platformData.params.Unfreeze(d.platformData.Pid) // TODO: clean
 }
 
 type ChildWaitData struct {
 	ExitCode                       uint32
-	SuccessCode uint32
+	SuccessCode                    uint32
 	StopSignal                     uint32
 	KillSignal                     uint32
 	RusageCpuUser, RusageCpuKernel uint64
@@ -114,23 +116,26 @@ func ChildWaitingFunc(pid int, sig chan *ChildWaitData) {
 		}
 		if status.Stopped() {
 			result.SuccessCode |= EF_STOPPED
-			result.StopSignal = status.StopSignal()
+			result.StopSignal = uint32(status.StopSignal())
 			syscall.Kill(pid, syscall.SIGKILL)
 		}
 		if status.Signaled() {
 			result.SuccessCode |= EF_KILLED_BY_OTHER
-			result.KillSignal = status.Signal()
+			result.KillSignal = uint32(status.Signal())
+			break
+		}
+		if err != nil {
 			break
 		}
 	}
-	result.RusageCpuUser = rusage.Utime.Nano()
-	result.RusageCpuKernel = rusage.Stime.Nano()
+	result.RusageCpuUser = uint64(rusage.Utime.Nano())
+	result.RusageCpuKernel = uint64(rusage.Stime.Nano())
 	sig <- result
 	close(sig)
 }
 
 func UpdateWallTime(p *PlatformData, result *SubprocessResult) {
-	result.WallTime = time.Since(p.startTime).Nanoseconds() / 1000
+	result.WallTime = uint64(time.Since(p.startTime).Nanoseconds()) / 1000
 }
 
 func UpdateContainerTime(p *PlatformData, result *SubprocessResult) {
@@ -148,20 +153,19 @@ func UpdateRunningUsage(p *PlatformData, result *SubprocessResult) {
 }
 
 func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult) {
-	result = &SubprocessResult{}
+	result := &SubprocessResult{}
 
 	childChan := make(chan *ChildWaitData)
 	go ChildWaitingFunc(d.platformData.Pid, childChan)
 	ticker := time.NewTicker(time.Second / 4)
 	var finished *ChildWaitData
-	var memlimitHit, timelimitHit bool
 	var ttLast uint64
 	for result.SuccessCode == 0 {
 		select {
 		case finished = <-childChan:
 			break
-		case tick := <-ticker.C:
-			UpdateRunningUsage(d.platformData, result)
+		case _ = <-ticker.C:
+			UpdateRunningUsage(&d.platformData, result)
 			ttLastNew := result.KernelTime + result.UserTime
 			if sub.CheckIdleness && (ttLastNew == ttLast) {
 				result.SuccessCode |= EF_INACTIVE
@@ -181,10 +185,10 @@ func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult)
 	}
 	if finished == nil {
 		result.SuccessCode |= EF_KILLED
-		syscall.Kill(d.platformData.Pid, SIGKILL)
+		syscall.Kill(d.platformData.Pid, syscall.SIGKILL)
 		finished = <-childChan
 	}
-	UpdateRunningUsage(d.platformData, result)
+	UpdateRunningUsage(&d.platformData, result)
 	result.ExitCode = finished.ExitCode
 	result.KernelTime = finished.RusageCpuKernel
 	result.SuccessCode |= finished.SuccessCode

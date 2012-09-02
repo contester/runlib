@@ -3,6 +3,7 @@ package subprocess
 import (
 	"bytes"
 	"io"
+	"os"
 )
 
 const (
@@ -18,8 +19,8 @@ const (
 	EF_MEMORY_LIMIT_HIT_POST  = (1 << 9)
 	EF_PROCESS_LIMIT_HIT      = (1 << 10)
 	EF_PROCESS_LIMIT_HIT_POST = (1 << 11)
-	EF_STOPPED = (1 << 12)
-	EF_KILLED_BY_OTHER = (1 << 13)
+	EF_STOPPED                = (1 << 12)
+	EF_KILLED_BY_OTHER        = (1 << 13)
 
 	REDIRECT_NONE   = 0
 	REDIRECT_MEMORY = 1

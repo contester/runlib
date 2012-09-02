@@ -101,3 +101,12 @@ func closeDescriptors(closers []io.Closer) {
 		fd.Close()
 	}
 }
+
+func ReaderDefault() (*os.File, error) {
+	return nil, nil
+}
+
+func WriterDefault() (*os.File, error) {
+	return nil, nil
+}
+

@@ -57,7 +57,7 @@ func (d *subprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 	case REDIRECT_PIPE:
 		return d.SetupPipe(w.Pipe)
 	}
-	return nil, nil
+	return WriterDefault()
 }
 
 func (d *subprocessData) SetupInputMemory(b []byte) (*os.File, error) {
@@ -89,7 +89,7 @@ func (d *subprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	case REDIRECT_FILE:
 		return d.SetupFile(*w.Filename, true)
 	}
-	return nil, nil
+	return ReaderDefault()
 }
 
 func Interconnect(s1, s2 *Subprocess) error {

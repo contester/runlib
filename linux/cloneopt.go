@@ -12,7 +12,6 @@ import "unsafe"
 import "runlib/tools"
 import "os"
 import "runtime"
-import "syscall"
 
 type CloneParams struct {
 	repr C.struct_CloneParams

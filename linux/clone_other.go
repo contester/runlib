@@ -16,6 +16,8 @@ func (s *StdHandles) Close() {
 	s.StdErr.Close()
 }
 
+//TODO: commreader goroutine
+
 func (c *CloneParams) Clone() (int, error) {
 	pid := callClone(c)
 	// TODO: clone errors?

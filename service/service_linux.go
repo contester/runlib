@@ -33,5 +33,6 @@ func setAcl(path, username string) error {
 	cmd := exec.Command("chown", "-R", username, path)
 	cmd.Run()
 	cmd = exec.Command("chmod", "-R", "0700", path)
+	cmd.Run()
 	return nil
 }

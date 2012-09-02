@@ -1,30 +1,30 @@
 package main
 
 import (
-	"fmt"
+	l4g "code.google.com/p/log4go"
 	"flag"
+	"fmt"
 	"os"
 	"strings"
-	l4g "code.google.com/p/log4go"
 
+	"runlib/platform"
 	"runlib/subprocess"
-"runlib/platform"
 )
 
 type ProcessConfig struct {
-	ApplicationName string
-	CommandLine string
+	ApplicationName  string
+	CommandLine      string
 	CurrentDirectory string
 
-	TimeLimit TimeLimitFlag
+	TimeLimit   TimeLimitFlag
 	MemoryLimit MemoryLimitFlag
 	Environment EnvFlag
 
 	LoginName string
-	Password string
+	Password  string
 	InjectDLL string
 
-	StdIn string
+	StdIn  string
 	StdOut string
 	StdErr string
 
@@ -33,17 +33,17 @@ type ProcessConfig struct {
 }
 
 type RunexeConfig struct {
-	Xml bool
-	Interactor string
+	Xml                bool
+	Interactor         string
 	ShowKernelModeTime bool
-	ReturnExitCode bool
-	Logfile string
+	ReturnExitCode     bool
+	Logfile            string
 }
 
 type ProcessType int
 
 const (
-	PROGRAM = ProcessType(0)
+	PROGRAM    = ProcessType(0)
 	INTERACTOR = ProcessType(1)
 )
 
@@ -64,12 +64,12 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	var result ProcessConfig
 	fs := flag.NewFlagSet("subprocess", flag.PanicOnError)
 
-	fs.Var(&result.TimeLimit, "t", "time limit, terminate after <time-limit> seconds, you can\n" +
-				"   add \"ms\" (without quotes) after the number to specify\n" +
-				"   time limit in milliseconds.")
-	fs.Var(&result.MemoryLimit, "m", "memory limit, terminate if anonymous virtual memory of the process\n" +
-				"   exceeds <mem-limit> bytes, you can add K or M to specify\n" +
-				"   memory limit in kilo- or megabytes")
+	fs.Var(&result.TimeLimit, "t", "time limit, terminate after <time-limit> seconds, you can\n"+
+		"   add \"ms\" (without quotes) after the number to specify\n"+
+		"   time limit in milliseconds.")
+	fs.Var(&result.MemoryLimit, "m", "memory limit, terminate if anonymous virtual memory of the process\n"+
+		"   exceeds <mem-limit> bytes, you can add K or M to specify\n"+
+		"   memory limit in kilo- or megabytes")
 	fs.Var(&result.Environment, "D", "environment")
 	fs.StringVar(&result.CurrentDirectory, "d", "", "make <directory> home directory for process")
 	fs.StringVar(&result.LoginName, "l", "", "create process under <login-name>")
@@ -87,11 +87,11 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	var result RunexeConfig
 	fs.BoolVar(&result.Xml, "xml", false, "form xml document with invocation result information")
-	fs.StringVar(&result.Interactor, "interactor", "", "INTERACTOR MODE.\n" +
-				"   Launch another process and cross-connect its stdin&stdout with the main program.\n" +
-				"   Inside this flag, you can specify any process-controlling flags: interactor can have its\n" +
-				"   own limits, credentials, environment, directory. In interactor mode, however, -i and -o\n" +
-				"   have no effects on both main program and interactor.")
+	fs.StringVar(&result.Interactor, "interactor", "", "INTERACTOR MODE.\n"+
+		"   Launch another process and cross-connect its stdin&stdout with the main program.\n"+
+		"   Inside this flag, you can specify any process-controlling flags: interactor can have its\n"+
+		"   own limits, credentials, environment, directory. In interactor mode, however, -i and -o\n"+
+		"   have no effects on both main program and interactor.")
 	fs.StringVar(&result.Logfile, "logfile", "", "Dump extra error info in logfile (DEPRECATED)")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "show user-mode and kernel-mode time")
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "return exit code of the application (NOT IMPLEMENTED)")
@@ -117,7 +117,7 @@ func fillRedirect(x string) *subprocess.Redirect {
 	}
 	return &subprocess.Redirect{
 		Filename: &x,
-		Mode: subprocess.REDIRECT_FILE,
+		Mode:     subprocess.REDIRECT_FILE,
 	}
 }
 
@@ -268,7 +268,7 @@ func main() {
 	var results [2]*RunResult
 
 	for outstanding > 0 {
-		r := <- cs
+		r := <-cs
 		outstanding--
 		results[int(r.T)] = &r
 	}

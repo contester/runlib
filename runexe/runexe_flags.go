@@ -1,20 +1,20 @@
 package main
 
 import (
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type TimeLimitFlag uint64
 
 func (t *TimeLimitFlag) String() string {
-	return strconv.Itoa(int(*t / 1000)) + "ms"
+	return strconv.Itoa(int(*t/1000)) + "ms"
 }
 
 func (t *TimeLimitFlag) Set(v string) error {
 	v = strings.ToLower(v)
 	if strings.HasSuffix(v, "ms") {
-		r, err := strconv.Atoi(v[:len(v) - 2])
+		r, err := strconv.Atoi(v[:len(v)-2])
 		if err != nil {
 			return err
 		}
@@ -22,7 +22,7 @@ func (t *TimeLimitFlag) Set(v string) error {
 		return nil
 	}
 	if strings.HasSuffix(v, "s") {
-		v = v[:len(v) - 1]
+		v = v[:len(v)-1]
 	}
 	r, err := strconv.ParseFloat(v, 32)
 	if err != nil {
@@ -42,12 +42,15 @@ func (t *MemoryLimitFlag) Set(v string) error {
 	v = strings.ToUpper(v)
 	m := 1
 	switch v[len(v)-1] {
-		case 'M': m = 1024*1024
-		case 'K': m = 1024
-		case 'G': m = 1024*1024*1024
+	case 'M':
+		m = 1024 * 1024
+	case 'K':
+		m = 1024
+	case 'G':
+		m = 1024 * 1024 * 1024
 	}
 	if m != 1 {
-		v = v[:len(v) - 1]
+		v = v[:len(v)-1]
 	}
 	r, err := strconv.Atoi(v)
 	if err != nil {

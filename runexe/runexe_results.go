@@ -1,23 +1,23 @@
 package main
 
 import (
-	"runlib/subprocess"
 	"fmt"
-	"strconv"
 	"os"
+	"runlib/subprocess"
+	"strconv"
 	"strings"
 )
 
 type Verdict int
 
 const (
-	SUCCESS = Verdict(0)
-	FAIL = Verdict(1)
-	CRASH = Verdict(2)
-	TIME_LIMIT_EXCEEDED = Verdict(3)
+	SUCCESS               = Verdict(0)
+	FAIL                  = Verdict(1)
+	CRASH                 = Verdict(2)
+	TIME_LIMIT_EXCEEDED   = Verdict(3)
 	MEMORY_LIMIT_EXCEEDED = Verdict(4)
-	IDLE = Verdict(5)
-	SECURITY_VIOLATION = Verdict(6)
+	IDLE                  = Verdict(5)
+	SECURITY_VIOLATION    = Verdict(6)
 )
 
 func (v Verdict) String() string {
@@ -44,13 +44,13 @@ func GetVerdict(r *subprocess.SubprocessResult) Verdict {
 	switch {
 	case r.SuccessCode == 0:
 		return SUCCESS
-	case r.SuccessCode & (subprocess.EF_PROCESS_LIMIT_HIT | subprocess.EF_PROCESS_LIMIT_HIT_POST) != 0:
+	case r.SuccessCode&(subprocess.EF_PROCESS_LIMIT_HIT|subprocess.EF_PROCESS_LIMIT_HIT_POST) != 0:
 		return SECURITY_VIOLATION
-	case r.SuccessCode & (subprocess.EF_INACTIVE | subprocess.EF_TIME_LIMIT_HARD) != 0:
+	case r.SuccessCode&(subprocess.EF_INACTIVE|subprocess.EF_TIME_LIMIT_HARD) != 0:
 		return IDLE
-	case r.SuccessCode & (subprocess.EF_TIME_LIMIT_HIT | subprocess.EF_TIME_LIMIT_HIT_POST) != 0:
+	case r.SuccessCode&(subprocess.EF_TIME_LIMIT_HIT|subprocess.EF_TIME_LIMIT_HIT_POST) != 0:
 		return TIME_LIMIT_EXCEEDED
-	case r.SuccessCode & (subprocess.EF_MEMORY_LIMIT_HIT | subprocess.EF_MEMORY_LIMIT_HIT_POST) != 0:
+	case r.SuccessCode&(subprocess.EF_MEMORY_LIMIT_HIT|subprocess.EF_MEMORY_LIMIT_HIT_POST) != 0:
 		return MEMORY_LIMIT_EXCEEDED
 	default:
 		return CRASH
@@ -67,7 +67,7 @@ func printTag(tag, content string) {
 }
 
 func xmlTime(t uint64) string {
-	return strconv.FormatUint(t / 1000, 10)
+	return strconv.FormatUint(t/1000, 10)
 }
 
 func PrintResultXml(result *RunResult) {
@@ -78,8 +78,8 @@ func PrintResultXml(result *RunResult) {
 		printTag("exitCode", strconv.Itoa(int(result.R.ExitCode)))
 		printTag("processorUserModeTime", xmlTime(result.R.UserTime))
 		printTag("processorKernelModeTime", xmlTime(result.R.KernelTime))
-	printTag("passedTime", xmlTime(result.R.WallTime))
-	printTag("consumedMemory", strconv.Itoa(int(result.R.PeakMemory)))
+		printTag("passedTime", xmlTime(result.R.WallTime))
+		printTag("consumedMemory", strconv.Itoa(int(result.R.PeakMemory)))
 	}
 
 	if result.E != nil {
@@ -89,7 +89,7 @@ func PrintResultXml(result *RunResult) {
 }
 
 func strTime(t uint64) string {
-	return strconv.FormatFloat(float64(t) / 1000000, 'f', 2, 64)
+	return strconv.FormatFloat(float64(t)/1000000, 'f', 2, 64)
 }
 
 func strMemory(t uint64) string {

@@ -3,7 +3,7 @@
 package subprocess
 
 import (
-"os"
+	"os"
 )
 
 func OpenFileForRedirect(name string, read bool) (*os.File, error) {

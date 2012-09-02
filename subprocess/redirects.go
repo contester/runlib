@@ -9,7 +9,7 @@ import (
 type Redirect struct {
 	Mode     int
 	Filename *string
-	Pipe   *os.File
+	Pipe     *os.File
 	Data     []byte
 }
 

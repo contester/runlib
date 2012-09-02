@@ -103,7 +103,7 @@ func configureSandboxes(config *conf.ConfigFile) ([]SandboxPair, error) {
 }
 
 func checkSandbox(path string) error {
-	err := os.MkdirAll(path, os.ModeDir | 0755)
+	err := os.MkdirAll(path, os.ModeDir|0755)
 	if err != nil {
 		return err
 	}

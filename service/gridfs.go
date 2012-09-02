@@ -79,8 +79,10 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 }
 
 func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, response *contester_proto.RepeatedStringEntries) error {
+	var sandbox *Sandbox
 	if request.SandboxId != nil {
-		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
+		var err error
+		sandbox, err = getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {
 			return err
 		}
@@ -100,6 +102,12 @@ func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, 
 		err = gridfsCopy(*item.Source, resolved, s.Mfs, false)
 		if err != nil {
 			return err
+		}
+		if sandbox != nil {
+			err = sandbox.Own(resolved)
+			if err != nil {
+				return err
+			}
 		}
 		response.Entries = append(response.Entries, *item.Source)
 	}

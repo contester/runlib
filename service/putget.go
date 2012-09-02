@@ -46,6 +46,9 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		return err
 	}
 	destination.Close()
+	if sandbox != nil {
+		return sandbox.Own(resolved)
+	}
 
 	return nil
 }

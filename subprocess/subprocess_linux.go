@@ -55,10 +55,28 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	d := &subprocessData{}
 	var stdh linux.StdHandles
 	err := d.wAllRedirects(sub, &stdh)
+	defer stdh.Close()
 	if err != nil {
-		stdh.Close()
 		return nil, err
 	}
 	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, *sub.Environment, *sub.CurrentDirectory, sub.Login.Uid, stdh)
+	if err != nil {
+		return nil, err
+	}
+	syscall.ForkLock.Lock()
+	d.platformData.Pid, err = d.platformData.params.CloneFrozen()
+	closeDescriptors(d.closeAfterStart)
+	syscall.ForkLock.Unlock()
+	if err != nil {
+		return nil, err
+	}
 	return d, nil
+}
+
+func SetupControlGroup(s *Subprocess, d *subprocessData) error {
+}
+
+
+func (d *subprocessData) Unfreeze() error {
+	return d.platformData.params.Unfreeze(d.platformData.params.Pid) // TODO: clean
 }

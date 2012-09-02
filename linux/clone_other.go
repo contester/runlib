@@ -18,7 +18,7 @@ func (s *StdHandles) Close() {
 
 //TODO: commreader goroutine
 
-func (c *CloneParams) Clone() (int, error) {
+func (c *CloneParams) CloneFrozen() (int, error) {
 	pid := callClone(c)
 	// TODO: clone errors?
 	c.CommWriter.Close()
@@ -35,11 +35,6 @@ func (c *CloneParams) Clone() (int, error) {
 		}
 	}
 	if status.Stopped() && status.StopSignal() == syscall.SIGTRAP {
-		// cgroup attach
-		err := syscall.PtraceDetach(pid)
-		if err != nil {
-			// wtf to do here
-		}
 		return pid, nil
 	}
 	err := syscall.Kill(pid, syscall.SIGKILL)
@@ -47,4 +42,9 @@ func (c *CloneParams) Clone() (int, error) {
 		return -1, err
 	}
 	return -1, fmt.Errorf("traps, signals, dafuq is this")
+}
+
+func (c *CloneParams) Unfreeze(pid int) error {
+	err := syscall.PtraceDetach(pid) // TODO: wait for comm goroutine
+	return err
 }

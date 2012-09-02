@@ -18,6 +18,8 @@ const (
 	EF_MEMORY_LIMIT_HIT_POST  = (1 << 9)
 	EF_PROCESS_LIMIT_HIT      = (1 << 10)
 	EF_PROCESS_LIMIT_HIT_POST = (1 << 11)
+	EF_STOPPED = (1 << 12)
+	EF_KILLED_BY_OTHER = (1 << 13)
 
 	REDIRECT_NONE   = 0
 	REDIRECT_MEMORY = 1
@@ -110,3 +112,22 @@ func WriterDefault() (*os.File, error) {
 	return nil, nil
 }
 
+func (sub *Subprocess) Execute() (*SubprocessResult, error) {
+	d, err := sub.CreateFrozen()
+	if err != nil {
+		return nil, err
+	}
+
+	if err = d.SetupOnFrozen(); err != nil {
+		return nil, err // we must die here
+	}
+
+	sig := make(chan *SubprocessResult)
+	go sub.BottomHalf(d, sig)
+
+	if err = d.Unfreeze(); err != nil {
+		return nil, err
+	}
+
+	return <-sig, nil
+}

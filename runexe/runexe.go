@@ -266,7 +266,7 @@ func main() {
 		outstanding--
 		results[int(r.T)] = &r
 		if r.T == PROGRAM && r.R != nil {
-		    programReturnCode = r.R.ExitCode
+		    programReturnCode = int(r.R.ExitCode)
 		}
 	}
 

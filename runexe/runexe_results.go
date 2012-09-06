@@ -23,11 +23,11 @@ const (
 func (v Verdict) String() string {
 	switch v {
 	case SUCCESS:
-		return "SUCCESS"
+		return "SUCCEEDED"
 	case FAIL:
-		return "FAIL"
+		return "FAILED"
 	case CRASH:
-		return "CRASH"
+		return "CRASHED"
 	case TIME_LIMIT_EXCEEDED:
 		return "TIME_LIMIT_EXCEEDED"
 	case MEMORY_LIMIT_EXCEEDED:
@@ -37,7 +37,7 @@ func (v Verdict) String() string {
 	case SECURITY_VIOLATION:
 		return "SECURITY_VIOLATION"
 	}
-	return "CRASH"
+	return "FAILED"
 }
 
 func GetVerdict(r *subprocess.SubprocessResult) Verdict {

@@ -11,6 +11,9 @@ import (
 	"runlib/subprocess"
 )
 
+var version string
+var buildid string
+
 type ProcessConfig struct {
 	ApplicationName  string
 	CommandLine      string

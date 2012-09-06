@@ -82,12 +82,11 @@ func (t *EnvFlag) Set(v string) error {
 }
 
 func PrintUsage() {
+	fmt.Printf("runexe 2.0 version %s build %s\n", version, buildid)
 	fmt.Println(USAGE)
 }
 
 const USAGE = `
-Runexe 2.0
-
 This program runs other program(s) for given period of time with specified
 restrictions.
 

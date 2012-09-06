@@ -376,6 +376,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	waitResult = syscall.WAIT_TIMEOUT
 	var ttLast uint64
 	ttLast = 0
+	var noTimeUsedCount int
 
 	for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
 		waitResult, _ = syscall.WaitForSingleObject(hProcess, sub.TimeQuantum)
@@ -386,7 +387,14 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 		_ = UpdateProcessTimes(&d.platformData, result, false)
 		ttLastNew := result.KernelTime + result.UserTime
 
-		if sub.CheckIdleness && (ttLast == ttLastNew) {
+		if ttLastNew == ttLast {
+			noTimeUsedCount++
+		} else {
+			noTimeUsedCount = 0
+		}
+
+		// TODO: Refactor this loop to be portable, or port it to linux.
+		if sub.CheckIdleness && (noTimeUsedCount >= 6) && (result.WallTime > sub.TimeLimit) {
 			result.SuccessCode |= EF_INACTIVE
 		}
 
@@ -434,7 +442,6 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
 		result.SuccessCode |= EF_MEMORY_LIMIT_HIT_POST
 	}
-	// log.Println("Must collect", len(d.startAfterStart), "redirects")
 	for _ = range d.startAfterStart {
 		err := <-d.bufferChan
 		if err != nil {

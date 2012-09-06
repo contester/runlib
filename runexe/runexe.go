@@ -103,6 +103,11 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 func ParseFlagSet(fs *flag.FlagSet, pc *ProcessConfig, args []string) error {
 	fs.Parse(args)
 
+	if len(fs.Args()) < 1 {
+		PrintUsage()
+		os.Exit(2)
+	}
+
 	ArgsToPc(pc, fs.Args())
 	return nil
 }

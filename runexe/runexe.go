@@ -66,37 +66,29 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	fs := flag.NewFlagSet("subprocess", flag.ExitOnError)
 	fs.Usage = PrintUsage
 
-	fs.Var(&result.TimeLimit, "t", "time limit, terminate after <time-limit> seconds, you can\n"+
-		"   add \"ms\" (without quotes) after the number to specify\n"+
-		"   time limit in milliseconds.")
-	fs.Var(&result.MemoryLimit, "m", "memory limit, terminate if anonymous virtual memory of the process\n"+
-		"   exceeds <mem-limit> bytes, you can add K or M to specify\n"+
-		"   memory limit in kilo- or megabytes")
-	fs.Var(&result.Environment, "D", "environment")
-	fs.StringVar(&result.CurrentDirectory, "d", "", "make <directory> home directory for process")
-	fs.StringVar(&result.LoginName, "l", "", "create process under <login-name>")
-	fs.StringVar(&result.Password, "p", "", "logins user using <password>")
-	fs.StringVar(&result.InjectDLL, "j", "", "injects specified dll file into the process")
-	fs.StringVar(&result.StdIn, "i", "", "redirects standart input stream to the <file>")
-	fs.StringVar(&result.StdOut, "o", "", "redirects standart output stream to the <file>")
-	fs.StringVar(&result.StdErr, "e", "", "redirects standart error stream to the <file>")
-	fs.BoolVar(&result.TrustedMode, "z", false, "run process in trusted mode")
-	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "switch off idleness checking")
+	fs.Var(&result.TimeLimit, "t", "")
+	fs.Var(&result.MemoryLimit, "m", "")
+	fs.Var(&result.Environment, "D", "")
+	fs.StringVar(&result.CurrentDirectory, "d", "", "")
+	fs.StringVar(&result.LoginName, "l", "", "")
+	fs.StringVar(&result.Password, "p", "", "")
+	fs.StringVar(&result.InjectDLL, "j", "", "")
+	fs.StringVar(&result.StdIn, "i", "", "")
+	fs.StringVar(&result.StdOut, "o", "", "")
+	fs.StringVar(&result.StdErr, "e", "", "")
+	fs.BoolVar(&result.TrustedMode, "z", false, "")
+	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "")
 
 	return fs, &result
 }
 
 func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	var result RunexeConfig
-	fs.BoolVar(&result.Xml, "xml", false, "form xml document with invocation result information")
-	fs.StringVar(&result.Interactor, "interactor", "", "INTERACTOR MODE.\n"+
-		"   Launch another process and cross-connect its stdin&stdout with the main program.\n"+
-		"   Inside this flag, you can specify any process-controlling flags: interactor can have its\n"+
-		"   own limits, credentials, environment, directory. In interactor mode, however, -i and -o\n"+
-		"   have no effects on both main program and interactor.")
-	fs.StringVar(&result.Logfile, "logfile", "", "Dump extra error info in logfile (DEPRECATED)")
-	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "show user-mode and kernel-mode time")
-	fs.BoolVar(&result.ReturnExitCode, "x", false, "return exit code of the application (NOT IMPLEMENTED)")
+	fs.BoolVar(&result.Xml, "xml", false, "")
+	fs.StringVar(&result.Interactor, "interactor", "", "")
+	fs.StringVar(&result.Logfile, "logfile", "", "")
+	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "")
+	fs.BoolVar(&result.ReturnExitCode, "x", false, "")
 	return &result
 }
 

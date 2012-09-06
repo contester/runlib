@@ -120,6 +120,11 @@ func PrintResultText(kernelTime bool, result *RunResult) {
 		fmt.Println("Comment:", result.E)
 		fmt.Println()
 		return
+	case FAIL:
+		fmt.Println("Invocation failed:", result.T.String())
+		fmt.Println("Comment:", result.E)
+		fmt.Println()
+		return
 	}
 
 	utime := strTime(result.R.UserTime) + " " + usuffix

@@ -174,7 +174,11 @@ func ExecAndSend(sub *subprocess.Subprocess, c chan RunResult, ptype ProcessType
 	r.S = sub
 	r.R, r.E = sub.Execute()
 	if r.E != nil {
-		r.V = CRASH
+		if subprocess.IsUserError(r.E) {
+			r.V = CRASH
+		} else {
+			r.V = FAIL
+		}
 	} else {
 		r.V = GetVerdict(r.R)
 	}

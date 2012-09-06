@@ -58,7 +58,7 @@ func GetVerdict(r *subprocess.SubprocessResult) Verdict {
 	return CRASH
 }
 
-const XML_HEADER = "<?xml version = \"1.1\" encoding = \"UTF-8\"?>"
+const XML_HEADER = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>"
 const XML_RESULTS_START = "<invocationResults>"
 const XML_RESULTS_END = "</invocationResults>"
 

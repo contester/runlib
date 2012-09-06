@@ -201,6 +201,10 @@ func main() {
 
 	programFlags, globalFlags, err := ParseFlags(true, os.Args[1:])
 
+	if err != nil {
+		Fail(globalFlags.Xml, err)
+	}
+
 	if globalFlags.Logfile != "" {
 		l4g.Global.AddFilter("log", l4g.FINE, l4g.NewFileLogWriter(globalFlags.Logfile, true))
 	}
@@ -209,6 +213,9 @@ func main() {
 
 	if globalFlags.Interactor != "" {
 		interactorFlags, _, err = ParseFlags(false, strings.Split(globalFlags.Interactor, " "))
+		if err != nil {
+			Fail(globalFlags.Xml, err)
+		}
 	}
 
 	if globalFlags.Xml {

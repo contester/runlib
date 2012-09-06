@@ -175,7 +175,11 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	syscall.ForkLock.Unlock()
 
 	if e != nil {
-		return nil, NewSubprocessError(false, "CreateFrozen/CreateProcess", e)
+		var isUser bool
+		if errno, ok := e.(syscall.Errno); ok && errno == syscall.Errno(136) {
+			isUser = true
+		}
+		return nil, NewSubprocessError(isUser, "CreateFrozen/CreateProcess", e)
 	}
 
 	d.platformData.hProcess = pi.Process

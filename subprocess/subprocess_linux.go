@@ -25,11 +25,11 @@ type PlatformData struct {
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
 	u, err := user.Lookup(username)
 	if err != nil {
-		return nil, NewSubprocessError("NewLoginInfo/user.Lookup", err)
+		return nil, NewSubprocessError(false, "NewLoginInfo/user.Lookup", err)
 	}
 	uid, err := strconv.Atoi(u.Uid)
 	if err != nil {
-		return nil, NewSubprocessError("NewLoginInfo/strconv.Atoi", err)
+		return nil, NewSubprocessError(false, "NewLoginInfo/strconv.Atoi", err)
 	}
 	return &LoginInfo{
 		Uid: uid,
@@ -53,14 +53,14 @@ func (d *SubprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) 
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	if sub.Cmd.ApplicationName == nil {
-		return nil, NewSubprocessError("CreateFrozen/init", fmt.Errorf("Application name must be present"))
+		return nil, NewSubprocessError(false, "CreateFrozen/init", fmt.Errorf("Application name must be present"))
 	}
 	d := &SubprocessData{}
 	var stdh linux.StdHandles
 	err := d.wAllRedirects(sub, &stdh)
 	defer stdh.Close()
 	if err != nil {
-		return nil, err
+		return nil, NewSubprocessError(false, "CreateFrozen/Redirects", err)
 	}
 	var uid int
 	if sub.Login != nil {
@@ -68,18 +68,18 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	}
 	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
-		return nil, NewSubprocessError("CreateFrozen/CreateCloneParams", err)
+		return nil, NewSubprocessError(false, "CreateFrozen/CreateCloneParams", err)
 	}
 	syscall.ForkLock.Lock()
 	d.platformData.Pid, err = d.platformData.params.CloneFrozen()
 	closeDescriptors(d.closeAfterStart)
 	syscall.ForkLock.Unlock()
 	if err != nil {
-		return nil, NewSubprocessError("CreateFrozen/CloneFrozen", err)
+		return nil, NewSubprocessError(false, "CreateFrozen/CloneFrozen", err)
 	}
 	err = SetupControlGroup(sub, d)
 	if err != nil {
-		return nil, NewSubprocessError("CreateFrozen/SetupControlGroup", err) //TODO: clean up
+		return nil, NewSubprocessError(false, "CreateFrozen/SetupControlGroup", err)
 	}
 	return d, nil
 }

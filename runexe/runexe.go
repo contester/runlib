@@ -103,10 +103,7 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 func ParseFlagSet(fs *flag.FlagSet, pc *ProcessConfig, args []string) error {
 	fs.Parse(args)
 
-	pc.ApplicationName = fs.Args()[0]
-	pc.CommandLine = strings.Join(fs.Args(), " ")
-	pc.Parameters = fs.Args()
-
+	ArgsToPc(pc, fs.Args())
 	return nil
 }
 

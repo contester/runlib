@@ -3,6 +3,7 @@ package main
 import (
 	"runlib/platform"
 	"runlib/subprocess"
+	"strings"
 )
 
 func CreateDesktopIfNeeded(program, interactor *ProcessConfig) (*platform.ContesterDesktop, error) {
@@ -17,4 +18,10 @@ func setDesktop(p *subprocess.PlatformOptions, desktop *platform.ContesterDeskto
 }
 
 func setInject(p *subprocess.PlatformOptions, injectDll string, loadLibraryW uintptr) {
+}
+
+func ArgsToPc(pc *ProcessConfig, args []string) {
+	pc.ApplicationName = args[0]
+	pc.CommandLine = strings.Join(args, " ")
+	pc.Parameters = args
 }

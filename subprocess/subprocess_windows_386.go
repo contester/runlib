@@ -1,5 +1,3 @@
-// +build windows,386
-
 package subprocess
 
 import (
@@ -15,6 +13,10 @@ type PlatformData struct {
 	hProcess syscall.Handle
 	hThread  syscall.Handle
 	hJob     syscall.Handle
+	
+	hStdIn syscall.Handle
+	hStdOut syscall.Handle
+	hStdErr syscall.Handle
 }
 
 type PlatformOptions struct {
@@ -43,7 +45,7 @@ func NewLoginInfo(username, password string) (*LoginInfo, error) {
 // 4. unfreeze
 // 5. wait
 
-func (d *subprocessData) wOutputRedirect(w *Redirect, b *bytes.Buffer) (syscall.Handle, error) {
+func (d *SubprocessData) wOutputRedirect(w *Redirect, b *bytes.Buffer) (syscall.Handle, error) {
 	f, err := d.SetupOutput(w, b)
 	if err != nil || f == nil {
 		return syscall.InvalidHandle, err
@@ -51,7 +53,7 @@ func (d *subprocessData) wOutputRedirect(w *Redirect, b *bytes.Buffer) (syscall.
 	return syscall.Handle(f.Fd()), nil
 }
 
-func (d *subprocessData) wInputRedirect(w *Redirect) (syscall.Handle, error) {
+func (d *SubprocessData) wInputRedirect(w *Redirect) (syscall.Handle, error) {
 	f, err := d.SetupInput(w)
 	if err != nil || f == nil {
 		return syscall.InvalidHandle, err
@@ -59,7 +61,7 @@ func (d *subprocessData) wInputRedirect(w *Redirect) (syscall.Handle, error) {
 	return syscall.Handle(f.Fd()), nil
 }
 
-func (d *subprocessData) wAllRedirects(s *Subprocess, si *syscall.StartupInfo) error {
+func (d *SubprocessData) wAllRedirects(s *Subprocess, si *syscall.StartupInfo) error {
 	var err error
 
 	if si.StdInput, err = d.wInputRedirect(s.StdIn); err != nil {
@@ -102,8 +104,8 @@ func wSetInherit(si *syscall.StartupInfo) {
 	// TODO: errors
 }
 
-func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
-	d := &subprocessData{}
+func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
+	d := &SubprocessData{}
 
 	si := &syscall.StartupInfo{}
 	si.Cb = uint32(unsafe.Sizeof(*si))
@@ -112,7 +114,10 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	if !sub.NoJob && sub.Options != nil && sub.Options.Desktop != "" {
 		si.Desktop = syscall.StringToUTF16Ptr(sub.Options.Desktop)
 	}
-	d.wAllRedirects(sub, si)
+	e := d.wAllRedirects(sub, si)
+	if e != nil {
+		return nil, e
+	}
 
 	pi := &syscall.ProcessInformation{}
 
@@ -120,8 +125,6 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	commandLine := win32.StringPtrToUTF16Ptr(sub.Cmd.CommandLine)
 	environment := win32.ListToEnvironmentBlock(sub.Environment)
 	currentDirectory := win32.StringPtrToUTF16Ptr(sub.CurrentDirectory)
-
-	var e error
 
 	syscall.ForkLock.Lock()
 	wSetInherit(si)
@@ -172,7 +175,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	syscall.ForkLock.Unlock()
 
 	if e != nil {
-		return nil, e
+		return nil, NewSubprocessError(false, "CreateFrozen/CreateProcess", e)
 	}
 
 	d.platformData.hProcess = pi.Process
@@ -182,7 +185,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	e = InjectDll(sub, d)
 
 	if e != nil {
-		l4g.Error(e)
+		return nil, NewSubprocessError(false, "CreateFrozen/InjectDll", e)
 	}
 
 	if !sub.NoJob {
@@ -202,7 +205,7 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	return d, e
 }
 
-func CreateJob(s *Subprocess, d *subprocessData) error {
+func CreateJob(s *Subprocess, d *SubprocessData) error {
 	var e error
 	d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
 	if e != nil {
@@ -252,7 +255,7 @@ func CreateJob(s *Subprocess, d *subprocessData) error {
 	return e
 }
 
-func InjectDll(s *Subprocess, d *subprocessData) error {
+func InjectDll(s *Subprocess, d *SubprocessData) error {
 	if s.Options.InjectDLL == "" || int(s.Options.LoadLibraryW) == 0 {
 		return nil
 	}
@@ -286,7 +289,7 @@ func InjectDll(s *Subprocess, d *subprocessData) error {
 	return nil
 }
 
-func (d *subprocessData) Unfreeze() error {
+func (d *SubprocessData) Unfreeze() error {
 	// platform
 	hThread := d.platformData.hThread
 	win32.ResumeThread(hThread)
@@ -365,7 +368,7 @@ func UpdateProcessMemory(pdata *PlatformData, result *SubprocessResult) {
 	}
 }
 
-func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult) {
+func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult) {
 	hProcess := d.platformData.hProcess
 	hJob := d.platformData.hJob
 	result := &SubprocessResult{}

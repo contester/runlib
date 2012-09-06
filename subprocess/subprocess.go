@@ -67,7 +67,7 @@ type Subprocess struct {
 	Options *PlatformOptions
 }
 
-type subprocessData struct {
+type SubprocessData struct {
 	bufferChan      chan error     // receives buffer errors
 	startAfterStart []func() error // buffer functions, launch after createFrozen
 	closeAfterStart []io.Closer    // close after createFrozen
@@ -85,7 +85,7 @@ func SubprocessCreate() *Subprocess {
 	return result
 }
 
-func (d *subprocessData) SetupOnFrozen() error {
+func (d *SubprocessData) SetupOnFrozen() error {
 	// portable
 	d.bufferChan = make(chan error, len(d.startAfterStart))
 

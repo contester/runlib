@@ -36,7 +36,7 @@ func NewLoginInfo(username, password string) (*LoginInfo, error) {
 	}, nil
 }
 
-func (d *subprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) error {
+func (d *SubprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) error {
 	var err error
 
 	if result.StdIn, err = d.SetupInput(s.StdIn); err != nil {
@@ -51,11 +51,11 @@ func (d *subprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) 
 	return nil
 }
 
-func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
+func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	if sub.Cmd.ApplicationName == nil {
 		return nil, NewSubprocessError("CreateFrozen/init", fmt.Errorf("Application name must be present"))
 	}
-	d := &subprocessData{}
+	d := &SubprocessData{}
 	var stdh linux.StdHandles
 	err := d.wAllRedirects(sub, &stdh)
 	defer stdh.Close()
@@ -84,14 +84,14 @@ func (sub *Subprocess) CreateFrozen() (*subprocessData, error) {
 	return d, nil
 }
 
-func SetupControlGroup(s *Subprocess, d *subprocessData) error {
+func SetupControlGroup(s *Subprocess, d *SubprocessData) error {
 	cgname := strconv.Itoa(d.platformData.Pid)
 	linux.CgCreate(cgname)
 	linux.CgAttach(cgname, d.platformData.Pid)
 	return nil
 }
 
-func (d *subprocessData) Unfreeze() error {
+func (d *SubprocessData) Unfreeze() error {
 	d.platformData.startTime = time.Now()
 	return d.platformData.params.Unfreeze(d.platformData.Pid) // TODO: clean
 }
@@ -156,7 +156,7 @@ func UpdateRunningUsage(p *PlatformData, result *SubprocessResult) {
 	UpdateContainerMemory(p, result)
 }
 
-func (sub *Subprocess) BottomHalf(d *subprocessData, sig chan *SubprocessResult) {
+func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult) {
 	result := &SubprocessResult{}
 
 	childChan := make(chan *ChildWaitData, 1)

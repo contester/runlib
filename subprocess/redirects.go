@@ -13,10 +13,10 @@ type Redirect struct {
 	Data     []byte
 }
 
-func (d *subprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
+func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, e
+		return nil, NewSubprocessError(false, "SetupOutputMemory/os.Pipe", e)
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
@@ -29,22 +29,22 @@ func (d *subprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	return writer, nil
 }
 
-func (d *subprocessData) SetupFile(filename string, read bool) (*os.File, error) {
+func (d *SubprocessData) SetupFile(filename string, read bool) (*os.File, error) {
 	writer, e := OpenFileForRedirect(filename, read)
 	if e != nil {
-		return nil, e
+		return nil, NewSubprocessError(false, "SetupFile/OpenFile", e)
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
 	return writer, nil
 }
 
-func (d *subprocessData) SetupPipe(f *os.File) (*os.File, error) {
+func (d *SubprocessData) SetupPipe(f *os.File) (*os.File, error) {
 	d.closeAfterStart = append(d.closeAfterStart, f)
 	return f, nil
 }
 
-func (d *subprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, error) {
+func (d *SubprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, error) {
 	if w == nil {
 		return WriterDefault()
 	}
@@ -60,10 +60,10 @@ func (d *subprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 	return WriterDefault()
 }
 
-func (d *subprocessData) SetupInputMemory(b []byte) (*os.File, error) {
+func (d *SubprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, e
+		return nil, NewSubprocessError(false, "SetupInputMemory/os.Pipe", e)
 	}
 	d.closeAfterStart = append(d.closeAfterStart, reader)
 	d.startAfterStart = append(d.startAfterStart, func() error {
@@ -76,7 +76,7 @@ func (d *subprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 	return reader, nil
 }
 
-func (d *subprocessData) SetupInput(w *Redirect) (*os.File, error) {
+func (d *SubprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	if w == nil {
 		return ReaderDefault()
 	}
@@ -95,13 +95,13 @@ func (d *subprocessData) SetupInput(w *Redirect) (*os.File, error) {
 func Interconnect(s1, s2 *Subprocess) error {
 	read1, write1, err := os.Pipe()
 	if err != nil {
-		return err
+		return NewSubprocessError(false, "Interconnect/os.Pipe", err)
 	}
 	read2, write2, err := os.Pipe()
 	if err != nil {
 		read1.Close()
 		read2.Close()
-		return err
+		return NewSubprocessError(false, "Interconnect/os.Pipe", err)
 	}
 
 	s1.StdIn = &Redirect{

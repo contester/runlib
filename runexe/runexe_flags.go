@@ -19,6 +19,9 @@ func (t *TimeLimitFlag) Set(v string) error {
 		if err != nil {
 			return err
 		}
+		if r < 0 {
+			return fmt.Errorf("Invalid time limit %s", v)
+		}
 		*t = TimeLimitFlag(r * 1000)
 		return nil
 	}
@@ -28,6 +31,9 @@ func (t *TimeLimitFlag) Set(v string) error {
 	r, err := strconv.ParseFloat(v, 32)
 	if err != nil {
 		return err
+	}
+	if r < 0 {
+		return fmt.Errorf("Invalid time limit %s", v)
 	}
 	*t = TimeLimitFlag(r * 1000000)
 	return nil
@@ -56,6 +62,9 @@ func (t *MemoryLimitFlag) Set(v string) error {
 	r, err := strconv.Atoi(v)
 	if err != nil {
 		return err
+	}
+	if r < 0 {
+		return fmt.Errorf("Invalid memory limit %s", v)
 	}
 	*t = MemoryLimitFlag(r * m)
 	return nil
@@ -102,7 +111,8 @@ Global options:
 
 Process properties:
   -t <value>    - time limit. Terminate after <value> seconds, you can use
-                  suffix ms to switch to milliseconds.
+                  suffix ms to switch to milliseconds. Suffix "s" (seconds)
+                  can be omitted.
   -m <value>    - memory limit. Terminate if anonymous virtual memory of the
                   process exceeds <value> bytes. Use suffixes K, M, G to
                   specify kilo, mega, gigabytes.

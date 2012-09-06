@@ -259,10 +259,15 @@ func main() {
 
 	var results [2]*RunResult
 
+	var programReturnCode int
+
 	for outstanding > 0 {
 		r := <-cs
 		outstanding--
 		results[int(r.T)] = &r
+		if r.T == PROGRAM && r.R != nil {
+		    programReturnCode = r.R.ExitCode
+		}
 	}
 
 	if globalFlags.Xml {
@@ -279,5 +284,9 @@ func main() {
 
 	if globalFlags.Xml {
 		fmt.Println(XML_RESULTS_END)
+	}
+
+	if globalFlags.ReturnExitCode {
+		os.Exit(programReturnCode)
 	}
 }

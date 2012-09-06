@@ -135,8 +135,8 @@ func PrintResultText(kernelTime bool, result *RunResult) {
 	} else {
 		fmt.Println("  time consumed: " + utime)
 	}
-	fmt.Println("  time passed: " + strTime(result.R.WallTime) + " sec")
-	fmt.Println("  peak memory: " + strMemory(result.R.PeakMemory) + " bytes")
+	fmt.Println("  time passed:  " + strTime(result.R.WallTime) + " sec")
+	fmt.Println("  peak memory:  " + strMemory(result.R.PeakMemory) + " bytes")
 	fmt.Println()
 }
 

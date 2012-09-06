@@ -3,6 +3,7 @@ package main
 import (
 	"strconv"
 	"strings"
+	"fmt"
 )
 
 type TimeLimitFlag uint64
@@ -69,6 +70,10 @@ func (t *EnvFlag) String() string {
 func (t *EnvFlag) Set(v string) error {
 	*t = append(*t, v)
 	return nil
+}
+
+func PrintUsage() {
+	fmt.Println(USAGE)
 }
 
 const USAGE = `

@@ -63,7 +63,8 @@ func (i *ProcessType) String() string {
 
 func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	var result ProcessConfig
-	fs := flag.NewFlagSet("subprocess", flag.PanicOnError)
+	fs := flag.NewFlagSet("subprocess", flag.ExitOnError)
+	fs.Usage = PrintUsage
 
 	fs.Var(&result.TimeLimit, "t", "time limit, terminate after <time-limit> seconds, you can\n"+
 		"   add \"ms\" (without quotes) after the number to specify\n"+

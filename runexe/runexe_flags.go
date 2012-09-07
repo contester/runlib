@@ -107,6 +107,8 @@ Global options:
     interactor can have its own limits, credentials, environment, directory.
     In interactor mode, however, -i and -o have no effects on both main
     program and interactor.
+  -ri=<f>       - in interactor mode, record program input to file <f>.
+  -ro=<f>       - in interactor mode, record program output to file <f>.
 
 Process properties:
   -t <value>    - time limit. Terminate after <value> seconds, you can use

@@ -42,6 +42,8 @@ type RunexeConfig struct {
 	ShowKernelModeTime bool
 	ReturnExitCode     bool
 	Logfile            string
+	RecordProgramInput string
+	RecordProgramOutput string
 }
 
 type ProcessType int
@@ -90,6 +92,8 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	fs.BoolVar(&result.Xml, "xml", false, "")
 	fs.StringVar(&result.Interactor, "interactor", "", "")
 	fs.StringVar(&result.Logfile, "logfile", "", "")
+	fs.StringVar(&result.RecordProgramInput, "ri", "", "")
+	fs.StringVar(&result.RecordProgramOutput, "ro", "", "")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "")
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "")
 	return &result
@@ -241,12 +245,28 @@ func main() {
 		Fail(globalFlags.Xml, err)
 	}
 
+	var recordI, recordO *os.File
+
 	if interactorFlags != nil {
 		interactor, err = SetupSubprocess(interactorFlags, desktop, loadLibrary)
 		if err != nil {
 			Fail(globalFlags.Xml, err)
 		}
-		err = subprocess.Interconnect(program, interactor, nil, nil)
+
+		if globalFlags.RecordProgramInput != "" {
+			recordI, err = os.Create(globalFlags.RecordProgramInput)
+			if err != nil {
+				Fail(globalFlags.Xml, err)
+			}
+		}
+		if globalFlags.RecordProgramOutput != "" {
+			recordO, err = os.Create(globalFlags.RecordProgramOutput)
+			if err != nil {
+				Fail(globalFlags.Xml, err)
+			}
+		}
+
+		err = subprocess.Interconnect(program, interactor, recordI, recordO)
 		if err != nil {
 			Fail(globalFlags.Xml, err)
 		}

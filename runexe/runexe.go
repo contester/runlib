@@ -246,7 +246,7 @@ func main() {
 		if err != nil {
 			Fail(globalFlags.Xml, err)
 		}
-		err = subprocess.Interconnect(program, interactor)
+		err = subprocess.Interconnect(program, interactor, nil, nil)
 		if err != nil {
 			Fail(globalFlags.Xml, err)
 		}

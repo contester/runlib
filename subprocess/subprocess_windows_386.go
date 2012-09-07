@@ -397,6 +397,8 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 			noTimeUsedCount = 0
 		}
 
+		l4g.Debug(ttLast, ttLastNew, noTimeUsedCount, sub.TimeLimit, result.WallTime)
+
 		// TODO: Refactor this loop to be portable, or port it to linux.
 		if sub.CheckIdleness && (noTimeUsedCount >= 6) && (result.WallTime > sub.TimeLimit) {
 			result.SuccessCode |= EF_INACTIVE

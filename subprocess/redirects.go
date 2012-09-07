@@ -92,12 +92,38 @@ func (d *SubprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	return ReaderDefault()
 }
 
-func Interconnect(s1, s2 *Subprocess) error {
-	read1, write1, err := os.Pipe()
+func RecordingPipe(d io.Writer) (*os.File, *os.File, error) {
+	if d == nil {
+		return os.Pipe()
+	}
+
+	r1, w1, e := os.Pipe()
+	if e != nil {
+		return nil, nil, e
+	}
+
+	r2, w2, e := os.Pipe()
+	if e != nil {
+		return nil, nil, e
+	}
+
+	go func(w io.WriteCloser, r io.ReadCloser, t io.Writer) {
+		m := io.MultiWriter(w, t)
+		io.Copy(m, r)
+		w.Close()
+		r.Close()
+	}(w1, r2, d)
+
+	return r1, w2, nil
+}
+
+func Interconnect(s1, s2 *Subprocess, d1, d2 io.Writer) error {
+	read1, write1, err := RecordingPipe(d1)
 	if err != nil {
 		return NewSubprocessError(false, "Interconnect/os.Pipe", err)
 	}
-	read2, write2, err := os.Pipe()
+
+	read2, write2, err := RecordingPipe(d2)
 	if err != nil {
 		read1.Close()
 		read2.Close()

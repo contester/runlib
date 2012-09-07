@@ -143,7 +143,7 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	}
 
 	sub.TimeLimit = uint64(s.TimeLimit)
-	sub.HardTimeLimit = sub.TimeLimit * 10
+	//sub.HardTimeLimit = sub.TimeLimit * 10
 	sub.MemoryLimit = uint64(s.MemoryLimit)
 	sub.CheckIdleness = !s.NoIdleCheck
 	sub.RestrictUi = !s.TrustedMode

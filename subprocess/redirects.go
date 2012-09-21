@@ -92,6 +92,13 @@ func (d *SubprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	return ReaderDefault()
 }
 
+func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer) {
+	m := io.MultiWriter(w, t)
+	io.Copy(m, r)
+	w.Close()
+	r.Close()
+}
+
 func RecordingPipe(d io.Writer) (*os.File, *os.File, error) {
 	if d == nil {
 		return os.Pipe()
@@ -107,12 +114,7 @@ func RecordingPipe(d io.Writer) (*os.File, *os.File, error) {
 		return nil, nil, e
 	}
 
-	go func(w io.WriteCloser, r io.ReadCloser, t io.Writer) {
-		m := io.MultiWriter(w, t)
-		io.Copy(m, r)
-		w.Close()
-		r.Close()
-	}(w1, r2, d)
+	go recordingTee(w1, r2, d)
 
 	return r1, w2, nil
 }

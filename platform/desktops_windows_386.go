@@ -4,6 +4,7 @@ import (
 	"runlib/win32"
 	"syscall"
 	"strconv"
+	"os"
 	l4g "code.google.com/p/log4go"
 )
 
@@ -31,10 +32,12 @@ func CreateContesterDesktopStruct() (*ContesterDesktop, error) {
 func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name string, err error) {
 	origWinsta, err := win32.GetProcessWindowStation()
 	if err != nil {
+		err = os.NewSyscallError("GetProcessWindowStation", err)
 		return
 	}
 	origDesktop, err := win32.GetThreadDesktop(win32.GetCurrentThreadId())
 	if err != nil {
+		err = os.NewSyscallError("GetThreadDesktop", err)
 		return
 	}
 
@@ -42,12 +45,14 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 
 	newWinsta, err := win32.CreateWindowStation(syscall.StringToUTF16Ptr(newName), 0, win32.MAXIMUM_ALLOWED, win32.MakeInheritSa())
 	if err != nil {
+		err = os.NewSyscallError("CreateWindowStation", err)
 		return
 	}
 
 	err = win32.SetProcessWindowStation(newWinsta)
 	if err != nil {
 		win32.CloseWindowStation(newWinsta)
+		err = os.NewSyscallError("SetProcessWindowStation", err)
 		return
 	}
 
@@ -64,7 +69,11 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 
 		if err == nil {
 			name = newWinstaName + "\\" + shortName
+		} else {
+			err = os.NewSyscallError("CreateDesktop", err)
 		}
+	} else {
+		err = os.NewSyscallError("GetUserObjectName", err)
 	}
 
 	win32.SetProcessWindowStation(origWinsta)
@@ -80,6 +89,8 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 		if err != nil {
 			l4g.Error(err)
 		}
+	} else {
+		err = os.NewSyscallError("StringToSid", err)
 	}
 
 	return
@@ -88,11 +99,11 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 func GetLoadLibrary() (uintptr, error) {
 	handle, err := win32.GetModuleHandle(syscall.StringToUTF16Ptr("kernel32"))
 	if err != nil {
-		return 0, err
+		return 0, os.NewSyscallError("GetModuleHandle", err)
 	}
 	addr, err := syscall.GetProcAddress(handle, "LoadLibraryW")
 	if err != nil {
-		return 0, err
+		return 0, os.NewSyscallError("GetProcAddress", err)
 	}
 	return addr, nil
 }

@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"syscall"
 	"unsafe"
+	"os"
 )
 
 func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
@@ -59,7 +60,7 @@ func (s *LoginInfo) Prepare() error {
 		win32.LOGON32_PROVIDER_DEFAULT)
 
 	if err != nil {
-		return err
+		return NewSubprocessError(false, "LoginInfo.Prepare", os.NewSyscallError("LogonUser", err))
 	}
 
 	s.HProfile, err = loadProfile(s.HUser, s.Username)

@@ -100,7 +100,7 @@ func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer) {
 	r.Close()
 }
 
-func RecordingPipe(d io.Writer) (*os.File, *os.File, error) {
+func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
 	l4g.Info(d)
 	if d == nil {
 		l4g.Info("Tee writer ", d)
@@ -122,7 +122,7 @@ func RecordingPipe(d io.Writer) (*os.File, *os.File, error) {
 	return r1, w2, nil
 }
 
-func Interconnect(s1, s2 *Subprocess, d1, d2 io.Writer) error {
+func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File) error {
 	l4g.Info(d1, d2)
 	read1, write1, err := RecordingPipe(d1)
 	if err != nil {

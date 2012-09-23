@@ -1,11 +1,11 @@
 package platform
 
 import (
-	"runlib/win32"
-	"syscall"
-	"strconv"
-	"os"
 	l4g "code.google.com/p/log4go"
+	"os"
+	"runlib/win32"
+	"strconv"
+	"syscall"
 )
 
 type ContesterDesktop struct {
@@ -15,7 +15,7 @@ type ContesterDesktop struct {
 }
 
 type GlobalData struct {
-	Desktop *ContesterDesktop
+	Desktop      *ContesterDesktop
 	LoadLibraryW uintptr
 }
 

@@ -2,13 +2,13 @@ package rpc4
 
 import (
 	"bufio"
+	l4g "code.google.com/p/log4go"
 	"encoding/binary"
 	"fmt"
 	"io"
-	"time"
 	"net"
 	"net/rpc"
-	l4g "code.google.com/p/log4go"
+	"time"
 
 	"code.google.com/p/goprotobuf/proto"
 )

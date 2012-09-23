@@ -1,13 +1,13 @@
 package main
 
 import (
+	l4g "code.google.com/p/log4go"
 	"net/rpc"
+	"runlib/platform"
 	"runlib/rpc4"
 	"runlib/service"
-	"runtime"
-	l4g "code.google.com/p/log4go"
-	"runlib/platform"
 	"runlib/tools"
+	"runtime"
 )
 
 func main() {
@@ -18,7 +18,6 @@ func main() {
 		l4g.Error(err)
 		return
 	}
-
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	go tools.LogMemLoop()

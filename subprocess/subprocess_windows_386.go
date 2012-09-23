@@ -13,8 +13,8 @@ type PlatformData struct {
 	hProcess syscall.Handle
 	hThread  syscall.Handle
 	hJob     syscall.Handle
-	
-	hStdIn syscall.Handle
+
+	hStdIn  syscall.Handle
 	hStdOut syscall.Handle
 	hStdErr syscall.Handle
 }
@@ -464,4 +464,3 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 
 	sig <- result
 }
-

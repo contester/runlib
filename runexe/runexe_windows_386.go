@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-
 func CreateDesktopIfNeeded(program, interactor *ProcessConfig) (*platform.ContesterDesktop, error) {
 	if !program.NeedLogin() && (interactor != nil && !interactor.NeedLogin()) {
 		return nil, nil

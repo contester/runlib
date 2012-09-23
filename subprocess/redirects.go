@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"os"
-	l4g "code.google.com/p/log4go"
 )
 
 type Redirect struct {

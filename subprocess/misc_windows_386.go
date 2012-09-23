@@ -4,11 +4,11 @@ package subprocess
 
 import (
 	l4g "code.google.com/p/log4go"
+	"os"
 	"runlib/win32"
 	"runtime"
 	"syscall"
 	"unsafe"
-	"os"
 )
 
 func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {

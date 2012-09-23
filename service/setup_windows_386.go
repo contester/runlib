@@ -1,12 +1,13 @@
 package service
 
 import (
+	"code.google.com/p/goconf/conf"
 	"os/exec"
 	"strings"
-	"code.google.com/p/goconf/conf"
 )
 
 const PLATFORM_ID = "win32"
+
 var PLATFORM_DISKS = []string{"C:\\"}
 var PLATFORM_PFILES = []string{"C:\\Program Files", "C:\\Program Files (x86)"}
 
@@ -17,8 +18,6 @@ func getPasswords(c *conf.ConfigFile) ([]string, error) {
 	}
 	return strings.Split(passwords, " "), nil
 }
-
-
 
 func setAcl(path, username string) error {
 	cmd := exec.Command("subinacl.exe", "/file", path, "/grant="+username+"=RWC")

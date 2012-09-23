@@ -1,8 +1,8 @@
 package subprocess
 
 type SubprocessError struct {
-	Id string
-	Err error
+	Id        string
+	Err       error
 	UserError bool
 }
 

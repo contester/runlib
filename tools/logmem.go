@@ -1,11 +1,11 @@
 package tools
 
 import (
-	"runtime"
-	"time"
+	l4g "code.google.com/p/log4go"
 	"log"
 	"runlib/contester_proto"
-	l4g "code.google.com/p/log4go"
+	"runtime"
+	"time"
 )
 
 func LogMem() {
@@ -21,11 +21,11 @@ func LogMemLoop() {
 		runtime.GC()
 		runtime.Gosched()
 		runtime.GC()
-		time.Sleep(time.Second*15)
+		time.Sleep(time.Second * 15)
 	}
 }
 
-type lwrapper struct {}
+type lwrapper struct{}
 
 func (lw *lwrapper) Write(p []byte) (n int, err error) {
 	l4g.Log(l4g.ERROR, "compat", string(p))

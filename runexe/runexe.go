@@ -18,7 +18,7 @@ type ProcessConfig struct {
 	ApplicationName  string
 	CommandLine      string
 	CurrentDirectory string
-	Parameters []string
+	Parameters       []string
 
 	TimeLimit   TimeLimitFlag
 	MemoryLimit MemoryLimitFlag
@@ -37,12 +37,12 @@ type ProcessConfig struct {
 }
 
 type RunexeConfig struct {
-	Xml                bool
-	Interactor         string
-	ShowKernelModeTime bool
-	ReturnExitCode     bool
-	Logfile            string
-	RecordProgramInput string
+	Xml                 bool
+	Interactor          string
+	ShowKernelModeTime  bool
+	ReturnExitCode      bool
+	Logfile             string
+	RecordProgramInput  string
 	RecordProgramOutput string
 }
 
@@ -289,7 +289,7 @@ func main() {
 		outstanding--
 		results[int(r.T)] = &r
 		if r.T == PROGRAM && r.R != nil {
-		    programReturnCode = int(r.R.ExitCode)
+			programReturnCode = int(r.R.ExitCode)
 		}
 	}
 

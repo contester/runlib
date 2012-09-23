@@ -164,7 +164,8 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	ticker := time.NewTicker(time.Second / 4)
 	var finished *ChildWaitData
 	var ttLast uint64
-W:	for result.SuccessCode == 0 {
+W:
+	for result.SuccessCode == 0 {
 		select {
 		case finished = <-childChan:
 			break W

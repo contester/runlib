@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
-	"fmt"
 )
 
 type TimeLimitFlag uint64

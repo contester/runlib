@@ -120,12 +120,12 @@ func RecordingPipe(d io.Writer) (*os.File, *os.File, error) {
 }
 
 func Interconnect(s1, s2 *Subprocess, d1, d2 io.Writer) error {
-	read1, write1, err := RecordingPipe(d1)
+	read1, write1, err := os.Pipe() //RecordingPipe(d1)
 	if err != nil {
 		return NewSubprocessError(false, "Interconnect/os.Pipe", err)
 	}
 
-	read2, write2, err := RecordingPipe(d2)
+	read2, write2, err := os.Pipe() //RecordingPipe(d2)
 	if err != nil {
 		read1.Close()
 		read2.Close()

@@ -102,6 +102,7 @@ func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer) {
 
 func RecordingPipe(d io.Writer) (*os.File, *os.File, error) {
 	if d == nil {
+		l4g.Info("Tee writer ", d)
 		return os.Pipe()
 	}
 

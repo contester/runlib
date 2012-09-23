@@ -245,13 +245,15 @@ func main() {
 		Fail(globalFlags.Xml, err)
 	}
 
-	var recordI, recordO *os.File
-
 	if interactorFlags != nil {
 		interactor, err = SetupSubprocess(interactorFlags, desktop, loadLibrary)
 		if err != nil {
 			Fail(globalFlags.Xml, err)
 		}
+
+		var recordI, recordO *os.File
+
+		l4g.Info(recordI, recordO)
 
 		if globalFlags.RecordProgramInput != "" {
 			recordI, err = os.Create(globalFlags.RecordProgramInput)

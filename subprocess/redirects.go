@@ -122,6 +122,7 @@ func RecordingPipe(d io.Writer) (*os.File, *os.File, error) {
 }
 
 func Interconnect(s1, s2 *Subprocess, d1, d2 io.Writer) error {
+	l4g.Info(d1, d2)
 	read1, write1, err := RecordingPipe(d1)
 	if err != nil {
 		return NewSubprocessError(false, "Interconnect/os.Pipe", err)

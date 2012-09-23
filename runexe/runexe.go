@@ -253,8 +253,6 @@ func main() {
 
 		var recordI, recordO *os.File
 
-		l4g.Info(recordI, recordO)
-
 		if globalFlags.RecordProgramInput != "" {
 			recordI, err = os.Create(globalFlags.RecordProgramInput)
 			if err != nil {

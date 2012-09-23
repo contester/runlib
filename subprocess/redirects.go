@@ -100,10 +100,12 @@ func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer) {
 	r.Close()
 }
 
+// In functions below, we are forced to use *os.File instead of, say, io.Writer
+// for the reasons mentioned in http://golang.org/doc/go_faq.html#nil_error
+// I could work around it by using reflection, but why...
+
 func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
-	l4g.Info(d)
 	if d == nil {
-		l4g.Info("Tee writer ", d)
 		return os.Pipe()
 	}
 
@@ -123,12 +125,10 @@ func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
 }
 
 func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File) error {
-	l4g.Info(d1, d2)
 	read1, write1, err := RecordingPipe(d1)
 	if err != nil {
 		return NewSubprocessError(false, "Interconnect/os.Pipe", err)
 	}
-	l4g.Info(read1, write1, err)
 
 	read2, write2, err := RecordingPipe(d2)
 	if err != nil {
@@ -136,7 +136,6 @@ func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File) error {
 		write1.Close()
 		return NewSubprocessError(false, "Interconnect/os.Pipe", err)
 	}
-	l4g.Info(read2, write2, err)
 
 	s1.StdIn = &Redirect{
 		Mode: REDIRECT_PIPE,

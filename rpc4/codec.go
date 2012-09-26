@@ -18,6 +18,7 @@ type ServerCodec struct {
 	w io.WriteCloser
 
 	hasPayload bool
+	Shutdown bool
 
 	headerBuf proto.Buffer
 	dataBlock []byte
@@ -78,6 +79,10 @@ func NewServerCodec(conn net.Conn) *ServerCodec {
 }
 
 func (s *ServerCodec) ReadRequestHeader(req *rpc.Request) error {
+	if s.Shutdown {
+		return fmt.Errorf("Server shutdown requested")
+	}
+
 	var header Header
 	if err := ReadProto(s.r, &header); err != nil {
 		return err

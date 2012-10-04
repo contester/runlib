@@ -150,6 +150,13 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 	return
 }
 
+func chmodRequestIfNeeded(sandbox *Sandbox, request *contester_proto.LocalExecutionParameters) error {
+	if request.ApplicationName != nil {
+		return chmodIfNeeded(*request.ApplicationName, sandbox)
+	}
+	return nil
+}
+
 func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
 	sandbox, err := findSandbox(s.Sandboxes, request)
 	if err != nil {
@@ -159,11 +166,9 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	sandbox.Mutex.Lock()
 	defer sandbox.Mutex.Unlock()
 
-	if request.ApplicationName != nil {
-		err := chmodIfNeeded(*request.ApplicationName, sandbox)
-		if err != nil {
-			return err
-		}
+	err = chmodRequestIfNeeded(sandbox, request)
+	if err != nil {
+		return err
 	}
 
 	sub, err := s.setupSubprocess(request, sandbox, true)
@@ -183,6 +188,85 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	return nil
 }
 
+type runResult struct {
+	second bool
+	r *subprocess.SubprocessResult
+	e error
+}
+
+func execAndSend(sub *subprocess.Subprocess, c chan runResult, second bool) {
+	var r runResult
+	r.second = second
+	r.r, r.e = sub.Execute()
+	c <- r
+}
+
 func (s *Contester) LocalExecuteConnected(request *contester_proto.LocalExecuteConnected, response *contester_proto.LocalExecuteConnectedResult) error {
-	return nil
+	firstSandbox, err := findSandbox(s.Sandboxes, request.First)
+	if err != nil {
+		return err
+	}
+
+	secondSandbox, err := findSandbox(s.Sandboxes, request.Second)
+	if err != nil {
+		return err
+	}
+
+	firstSandbox.Mutex.Lock()
+	defer firstSandbox.Mutex.Unlock()
+
+	secondSandbox.Mutex.Lock()
+	defer secondSandbox.Mutex.Unlock()
+
+	err = chmodRequestIfNeeded(firstSandbox, request.First)
+	if err != nil {
+		return err
+	}
+
+	err = chmodRequestIfNeeded(secondSandbox, request.Second)
+	if err != nil {
+		return err
+	}
+
+	first, err := s.setupSubprocess(request.First, firstSandbox, false)
+	if err != nil {
+		return err
+	}
+
+	second, err := s.setupSubprocess(request.Second, secondSandbox, false)
+	if err != nil {
+		return err
+	}
+
+	err = subprocess.Interconnect(first, second, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	cs := make(chan runResult, 1)
+	outstanding := 2
+
+	go execAndSend(first, cs, false)
+	go execAndSend(second, cs, true)
+
+	for outstanding > 0 {
+		r := <-cs
+		outstanding--
+
+		if r.second {
+			if r.e != nil {
+				err = r.e
+			} else {
+				fillResult(r.r, response.Second)
+			}
+		} else {
+			if r.e != nil {
+				err = r.e
+			} else {
+				fillResult(r.r, response.First)
+			}
+		}
+	}
+
+	return err
 }

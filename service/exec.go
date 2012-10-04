@@ -107,23 +107,8 @@ func fillResult(result *subprocess.SubprocessResult, response *contester_proto.L
 	response.StdErr, _ = contester_proto.NewBlob(result.Error)
 }
 
-func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
-	sandbox, err := findSandbox(s.Sandboxes, request)
-	if err != nil {
-		return err
-	}
-
-	sandbox.Mutex.Lock()
-	defer sandbox.Mutex.Unlock()
-
-	if request.ApplicationName != nil {
-		err := chmodIfNeeded(*request.ApplicationName, sandbox)
-		if err != nil {
-			return err
-		}
-	}
-
-	sub := subprocess.SubprocessCreate()
+func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParameters, sandbox *Sandbox, doRedirects bool) (sub *subprocess.Subprocess, err error) {
+	sub = subprocess.SubprocessCreate()
 
 	sub.Cmd = &subprocess.CommandLine{
 		ApplicationName: request.ApplicationName,
@@ -142,9 +127,11 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 	sub.Environment = fillEnv(request.Environment)
 
-	sub.StdIn = fillRedirect(request.StdIn)
-	sub.StdOut = fillRedirect(request.StdOut)
-	sub.StdErr = fillRedirect(request.StdErr)
+	if (doRedirects) {
+		sub.StdIn = fillRedirect(request.StdIn)
+		sub.StdOut = fillRedirect(request.StdOut)
+		sub.StdErr = fillRedirect(request.StdErr)
+	}
 
 	sub.Options = &subprocess.PlatformOptions{}
 
@@ -152,15 +139,35 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 		sub.Login = sandbox.Login
 	} else {
 		if PLATFORM_ID == "linux" {
-			var err error
 			sub.Login, err = subprocess.NewLoginInfo("compiler", "compiler")
 			if err != nil {
-				return err
+				return
 			}
 		}
 	}
 
 	err = s.localPlatformSetup(sub, request)
+	return
+}
+
+func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
+	sandbox, err := findSandbox(s.Sandboxes, request)
+	if err != nil {
+		return err
+	}
+
+	sandbox.Mutex.Lock()
+	defer sandbox.Mutex.Unlock()
+
+	if request.ApplicationName != nil {
+		err := chmodIfNeeded(*request.ApplicationName, sandbox)
+		if err != nil {
+			return err
+		}
+	}
+
+	sub, err := s.setupSubprocess(request, sandbox, true)
+
 	if err != nil {
 		return err
 	}

@@ -241,6 +241,30 @@ func (this *LocalExecutionParameters) GetSandboxId() string {
 	return ""
 }
 
+type LocalExecuteConnected struct {
+	First            *LocalExecutionParameters `protobuf:"bytes,1,opt,name=first" json:"first,omitempty"`
+	Second           *LocalExecutionParameters `protobuf:"bytes,2,opt,name=second" json:"second,omitempty"`
+	XXX_unrecognized []byte                    `json:"-"`
+}
+
+func (this *LocalExecuteConnected) Reset()         { *this = LocalExecuteConnected{} }
+func (this *LocalExecuteConnected) String() string { return proto.CompactTextString(this) }
+func (*LocalExecuteConnected) ProtoMessage()       {}
+
+func (this *LocalExecuteConnected) GetFirst() *LocalExecutionParameters {
+	if this != nil {
+		return this.First
+	}
+	return nil
+}
+
+func (this *LocalExecuteConnected) GetSecond() *LocalExecutionParameters {
+	if this != nil {
+		return this.Second
+	}
+	return nil
+}
+
 type LocalExecutionResult struct {
 	Flags            *ExecutionResultFlags `protobuf:"bytes,1,opt,name=flags" json:"flags,omitempty"`
 	Time             *ExecutionResultTime  `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
@@ -319,6 +343,30 @@ func (this *LocalExecutionResult) GetStopSignal() int32 {
 		return *this.StopSignal
 	}
 	return 0
+}
+
+type LocalExecuteConnectedResult struct {
+	First            *LocalExecutionResult `protobuf:"bytes,1,opt,name=first" json:"first,omitempty"`
+	Second           *LocalExecutionResult `protobuf:"bytes,2,opt,name=second" json:"second,omitempty"`
+	XXX_unrecognized []byte                `json:"-"`
+}
+
+func (this *LocalExecuteConnectedResult) Reset()         { *this = LocalExecuteConnectedResult{} }
+func (this *LocalExecuteConnectedResult) String() string { return proto.CompactTextString(this) }
+func (*LocalExecuteConnectedResult) ProtoMessage()       {}
+
+func (this *LocalExecuteConnectedResult) GetFirst() *LocalExecutionResult {
+	if this != nil {
+		return this.First
+	}
+	return nil
+}
+
+func (this *LocalExecuteConnectedResult) GetSecond() *LocalExecutionResult {
+	if this != nil {
+		return this.Second
+	}
+	return nil
 }
 
 type LocalExecution struct {

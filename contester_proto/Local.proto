@@ -38,6 +38,11 @@ message LocalExecutionParameters {
     optional string sandbox_id = 17;
 };
 
+message LocalExecuteConnected {
+    optional LocalExecutionParameters first = 1;
+    optional LocalExecutionParameters second = 2;
+};
+
 message LocalExecutionResult {
     optional ExecutionResultFlags flags = 1;
     optional ExecutionResultTime time = 2;
@@ -48,6 +53,11 @@ message LocalExecutionResult {
     optional uint64 total_processes = 7;
     optional int32 kill_signal = 8;
     optional int32 stop_signal = 9;
+};
+
+message LocalExecuteConnectedResult {
+    optional LocalExecutionResult first = 1;
+    optional LocalExecutionResult second = 2;
 };
 
 message LocalExecution {

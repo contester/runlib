@@ -88,20 +88,29 @@ func fillRedirect(r *contester_proto.RedirectParameters) *subprocess.Redirect {
 	return result
 }
 
-func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
-	var sandbox *Sandbox
+func findSandbox(s []SandboxPair, request *contester_proto.LocalExecutionParameters) (*Sandbox, error) {
 	if request.SandboxId != nil {
-		var err error
-		sandbox, err = getSandboxById(s.Sandboxes, request.GetSandboxId())
-		if err != nil {
-			return err
-		}
-	} else {
-		var err error
-		sandbox, err = getSandboxByPath(s.Sandboxes, request.GetCurrentDirectory())
-		if err != nil {
-			return err
-		}
+		return getSandboxById(s, request.GetSandboxId())
+	}
+	return getSandboxByPath(s, request.GetCurrentDirectory())
+}
+
+func fillResult(result *subprocess.SubprocessResult, response *contester_proto.LocalExecutionResult) {
+	if result.TotalProcesses > 0 {
+		response.TotalProcesses = proto.Uint64(result.TotalProcesses)
+	}
+	response.ReturnCode = proto.Uint32(result.ExitCode)
+	response.Flags = parseSuccessCode(result.SuccessCode)
+	response.Time = parseTime(result)
+	response.Memory = proto.Uint64(result.PeakMemory)
+	response.StdOut, _ = contester_proto.NewBlob(result.Output)
+	response.StdErr, _ = contester_proto.NewBlob(result.Error)
+}
+
+func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParameters, response *contester_proto.LocalExecutionResult) error {
+	sandbox, err := findSandbox(s.Sandboxes, request)
+	if err != nil {
+		return err
 	}
 
 	sandbox.Mutex.Lock()
@@ -151,7 +160,7 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 		}
 	}
 
-	err := s.localPlatformSetup(sub, request)
+	err = s.localPlatformSetup(sub, request)
 	if err != nil {
 		return err
 	}
@@ -162,15 +171,11 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 		return err
 	}
 
-	if result.TotalProcesses > 0 {
-		response.TotalProcesses = proto.Uint64(result.TotalProcesses)
-	}
-	response.ReturnCode = proto.Uint32(result.ExitCode)
-	response.Flags = parseSuccessCode(result.SuccessCode)
-	response.Time = parseTime(result)
-	response.Memory = proto.Uint64(result.PeakMemory)
-	response.StdOut, _ = contester_proto.NewBlob(result.Output)
-	response.StdErr, _ = contester_proto.NewBlob(result.Error)
+	fillResult(result, response)
 
+	return nil
+}
+
+func (s *Contester) LocalExecuteConnected(request *contester_proto.LocalExecuteConnected, response *contester_proto.LocalExecuteConnectedResult) error {
 	return nil
 }

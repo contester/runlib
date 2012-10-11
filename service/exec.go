@@ -257,12 +257,14 @@ func (s *Contester) LocalExecuteConnected(request *contester_proto.LocalExecuteC
 			if r.e != nil {
 				err = r.e
 			} else {
+				response.Second = &contester_proto.LocalExecutionResult{}
 				fillResult(r.r, response.Second)
 			}
 		} else {
 			if r.e != nil {
 				err = r.e
 			} else {
+				response.First = &contester_proto.LocalExecutionResult{}
 				fillResult(r.r, response.First)
 			}
 		}

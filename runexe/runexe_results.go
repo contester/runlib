@@ -167,7 +167,7 @@ func Fail(xml bool, err error, state string) {
 
 func FailText(err error, state string) {
 	fmt.Println("Invocation failed")
-	fmt.Println("Comment: (", state, ") " err)
+	fmt.Println("Comment: (", state, ") ", err)
 	fmt.Println()
 	fmt.Println("Use \"runexe -h\" to get help information")
 }

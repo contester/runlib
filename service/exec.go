@@ -130,8 +130,8 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 	if (doRedirects) {
 		sub.StdIn = fillRedirect(request.StdIn)
 		sub.StdOut = fillRedirect(request.StdOut)
-		sub.StdErr = fillRedirect(request.StdErr)
-	}
+        }
+	sub.StdErr = fillRedirect(request.StdErr)
 
 	sub.Options = &subprocess.PlatformOptions{}
 

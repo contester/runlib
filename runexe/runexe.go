@@ -209,7 +209,7 @@ func main() {
 	programFlags, globalFlags, err := ParseFlags(true, os.Args[1:])
 
 	if err != nil {
-		Fail(globalFlags.Xml, err)
+		Fail(globalFlags.Xml, err, "Parse main flags")
 	}
 
 	if globalFlags.Logfile != "" {
@@ -221,7 +221,7 @@ func main() {
 	if globalFlags.Interactor != "" {
 		interactorFlags, _, err = ParseFlags(false, strings.Split(globalFlags.Interactor, " "))
 		if err != nil {
-			Fail(globalFlags.Xml, err)
+			Fail(globalFlags.Xml, err, "Parse interator flags")
 		}
 	}
 
@@ -231,24 +231,24 @@ func main() {
 
 	desktop, err := CreateDesktopIfNeeded(programFlags, interactorFlags)
 	if err != nil {
-		Fail(globalFlags.Xml, err)
+		Fail(globalFlags.Xml, err, "Create desktop if needed")
 	}
 
 	loadLibrary, err := GetLoadLibraryIfNeeded(programFlags, interactorFlags)
 	if err != nil {
-		Fail(globalFlags.Xml, err)
+		Fail(globalFlags.Xml, err, "Load library if needed")
 	}
 
 	var program, interactor *subprocess.Subprocess
 	program, err = SetupSubprocess(programFlags, desktop, loadLibrary)
 	if err != nil {
-		Fail(globalFlags.Xml, err)
+		Fail(globalFlags.Xml, err, "Setup main subprocess")
 	}
 
 	if interactorFlags != nil {
 		interactor, err = SetupSubprocess(interactorFlags, desktop, loadLibrary)
 		if err != nil {
-			Fail(globalFlags.Xml, err)
+			Fail(globalFlags.Xml, err, "Setup interactor subprocess")
 		}
 
 		var recordI, recordO *os.File
@@ -256,19 +256,19 @@ func main() {
 		if globalFlags.RecordProgramInput != "" {
 			recordI, err = os.Create(globalFlags.RecordProgramInput)
 			if err != nil {
-				Fail(globalFlags.Xml, err)
+				Fail(globalFlags.Xml, err, "Create input recorded")
 			}
 		}
 		if globalFlags.RecordProgramOutput != "" {
 			recordO, err = os.Create(globalFlags.RecordProgramOutput)
 			if err != nil {
-				Fail(globalFlags.Xml, err)
+				Fail(globalFlags.Xml, err, "Create output recorder")
 			}
 		}
 
 		err = subprocess.Interconnect(program, interactor, recordI, recordO)
 		if err != nil {
-			Fail(globalFlags.Xml, err)
+			Fail(globalFlags.Xml, err, "Interconnect")
 		}
 	}
 

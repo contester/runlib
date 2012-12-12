@@ -156,27 +156,27 @@ type RunResult struct {
 	T ProcessType
 }
 
-func Fail(xml bool, err error) {
+func Fail(xml bool, err error, state string) {
 	if xml {
-		FailXml(err)
+		FailXml(err, state)
 	} else {
-		FailText(err)
+		FailText(err, state)
 	}
 	os.Exit(3)
 }
 
-func FailText(err error) {
+func FailText(err error, state string) {
 	fmt.Println("Invocation failed")
-	fmt.Println("Comment: ", err)
+	fmt.Println("Comment: (", state, ") " err)
 	fmt.Println()
 	fmt.Println("Use \"runexe -h\" to get help information")
 }
 
-func FailXml(err error) {
+func FailXml(err error, state string) {
 	fmt.Println("<invocationResults>")
 	fmt.Println("<invocationResult id=\"program\">")
 	fmt.Println("<invocationVerdict>FAIL</invocationVerdict>")
-	fmt.Println("<comment>", err, "</comment>")
+	fmt.Println("<comment>(", state, ") ", err, "</comment>")
 	fmt.Println("</invocationResult>")
 	fmt.Println("</invocationResults>")
 }

@@ -10,9 +10,9 @@ func (e *ServiceError) Error() string {
 }
 
 func NewServiceError(id string, err error) *ServiceError {
-	if err == nil {
-		return nil
-	}
+	//if err == nil {
+	//	return nil
+	//}
 
 	e, ok := err.(*ServiceError)
 	if ok {

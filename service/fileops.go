@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"runlib/contester_proto"
+	"crypto/sha1"
+	"io"
 )
 
 func statFile(name string) (*contester_proto.FileStat, error) {
@@ -21,6 +23,26 @@ func statFile(name string) (*contester_proto.FileStat, error) {
 		result.Size = proto.Uint64(uint64(info.Size()))
 	}
 	return result, nil
+}
+
+func hashFile(name string) ([]byte, error) {
+	source, err := os.Open(name)
+	if err != nil {
+		return nil, NewServiceError("source.Open", err)
+	}
+	defer source.Close()
+
+	destination := sha1.New()
+
+	_, err = io.Copy(destination, source)
+	if err != nil {
+		return nil, NewServiceError("io.Copy", err)
+	}
+	if err = source.Close(); err != nil {
+		return nil, NewServiceError("source.Close", err)
+	}
+
+	return destination.Sum(nil), nil
 }
 
 func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.FileStats) error {

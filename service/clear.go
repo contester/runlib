@@ -21,8 +21,7 @@ func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response
 	path := sandbox.Path
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		l4g.Error(err)
-		return err
+		return NewServiceError("ioutil.ReadDir", err)
 	}
 
 	for _, info := range files {
@@ -34,7 +33,7 @@ func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response
 			err = os.RemoveAll(fullpath)
 			if err != nil {
 				// on windows, this is racy. sleep and retry
-				l4g.Error(err)
+				l4g.Error(NewServiceError("os.RemoveAll", err))
 				time.Sleep(time.Second / 5)
 			} else {
 				break

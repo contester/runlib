@@ -13,6 +13,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, true)
 	if err != nil {
+		err = NewServiceError("resolvePath", err)
 		l4g.Error(err)
 		return err
 	}
@@ -29,19 +30,22 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		loop, err := OnOsCreateError(err)
 
 		if err != nil {
-			return err
+			return NewServiceError("os.Create", err)
 		}
 		if !loop {
 			break
 		}
+		l4g.Error("Looping")
 	}
 	data, err := request.Data.Bytes()
 	if err != nil {
+		err = NewServiceError("request.Data.Bytes", err)
 		l4g.Error(err)
 		return err
 	}
 	_, err = destination.Write(data)
 	if err != nil {
+		err = NewServiceError("destination.Write", err)
 		l4g.Error(err)
 		return err
 	}

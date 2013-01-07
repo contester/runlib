@@ -110,6 +110,10 @@ func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, 
 				return NewServiceError("sandbox.Own", err)
 			}
 		}
+		_, err := hashFile(resolved)
+		if err != nil {
+			return NewServiceError("hashFile", err)
+		}
 		response.Entries = append(response.Entries, *item.Source)
 	}
 	return nil

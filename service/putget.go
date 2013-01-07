@@ -54,6 +54,11 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		return sandbox.Own(resolved)
 	}
 
+	_, err := hashFile(resolved)
+	if err != nil {
+		return NewServiceError("hashFile", err)
+	}
+
 	return nil
 }
 

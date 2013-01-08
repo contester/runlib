@@ -20,7 +20,7 @@ func OnOsCreateError(err error) (bool, error) {
 
 func IsFileNotFoundError(err error) bool {
 	if err != nil {
-		if errno, ok := err.(syscall.Errno); ok && errno == syscall.ERROR_FILE_NOT_FOUND {
+		if err == syscall.ERROR_FILE_NOT_FOUND {
 			return true
 		}
 	}

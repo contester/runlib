@@ -17,3 +17,12 @@ func OnOsCreateError(err error) (bool, error) {
 	}
 	return false, nil
 }
+
+func IsFileNotFoundError(err error) bool {
+	if err != nil {
+		if errno, ok := err.(syscall.Errno); ok && errno == syscall.ERROR_PATH_NOT_FOUND {
+			return true
+		}
+	}
+	return false
+}

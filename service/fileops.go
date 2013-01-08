@@ -3,7 +3,6 @@ package service
 import (
 	"code.google.com/p/goprotobuf/proto"
 	"os"
-	"syscall"
 	"path/filepath"
 	"runlib/contester_proto"
 	"crypto/sha1"
@@ -16,10 +15,8 @@ func statFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 	info, err := os.Stat(name)
 	if err != nil {
 		// Handle ERROR_PATH_NOT_FOUND - return no error and nil instead of stat struct
-		if path_err, ok := err.(*os.PathError); ok {
-			if errno, ok := path_err.Err.(syscall.Errno); ok && errno == syscall.Errno(syscall.ERROR_PATH_NOT_FOUND) {
-				return nil, nil
-			}
+		if path_err, ok := err.(*os.PathError); ok && IsFileNotFoundError(path_err) {
+			return nil, nil
 		}
 
 		return nil, NewServiceError("os.Stat", err)

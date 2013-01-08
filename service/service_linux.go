@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/goconf/conf"
 	"os/exec"
 	"strconv"
+	"syscall"
 )
 
 const PLATFORM_ID = "linux"
@@ -35,4 +36,13 @@ func setAcl(path, username string) error {
 	cmd = exec.Command("chmod", "-R", "0700", path)
 	cmd.Run()
 	return nil
+}
+
+func IsFileNotFoundError(err error) bool {
+	if err != nil {
+		if errno, ok := err.(syscall.Errno); ok && errno == syscall.ENOENT {
+			return true
+		}
+	}
+	return false
 }

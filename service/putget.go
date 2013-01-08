@@ -1,7 +1,6 @@
 package service
 
 import (
-	l4g "code.google.com/p/log4go"
 	"os"
 	"runlib/contester_proto"
 )
@@ -13,9 +12,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, true)
 	if err != nil {
-		err = NewServiceError("resolvePath", err)
-		l4g.Error(err)
-		return err
+		return NewServiceError("resolvePath", err)
 	}
 
 	if sandbox != nil {
@@ -35,19 +32,14 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		if !loop {
 			break
 		}
-		l4g.Error("Looping")
 	}
 	data, err := request.Data.Bytes()
 	if err != nil {
-		err = NewServiceError("request.Data.Bytes", err)
-		l4g.Error(err)
-		return err
+		return NewServiceError("request.Data.Bytes", err)
 	}
 	_, err = destination.Write(data)
 	if err != nil {
-		err = NewServiceError("destination.Write", err)
-		l4g.Error(err)
-		return err
+		return NewServiceError("destination.Write", err)
 	}
 	destination.Close()
 	if sandbox != nil {
@@ -65,8 +57,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 func (s *Contester) Get(request *contester_proto.GetRequest, response *contester_proto.FileBlob) error {
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, false)
 	if err != nil {
-		return err
-		l4g.Error(err)
+		return NewServiceError("resolvePath", err)
 	}
 
 	if sandbox != nil {
@@ -76,8 +67,7 @@ func (s *Contester) Get(request *contester_proto.GetRequest, response *contester
 
 	source, err := os.Open(resolved)
 	if err != nil {
-		return err
-		l4g.Error(err)
+		return NewServiceError("os.Open", err)
 	}
 	defer source.Close()
 

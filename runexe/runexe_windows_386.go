@@ -34,6 +34,11 @@ func setInject(p *subprocess.PlatformOptions, injectDll string, loadLibraryW uin
 	}
 }
 
+func newPlatformOptions() *subprocess.PlatformOptions {
+	return &subprocess.PlatformOptions{}
+}
+
+
 func ArgsToPc(pc *ProcessConfig, args []string) {
 	pc.CommandLine = strings.Join(args, " ")
 	pc.Parameters = args

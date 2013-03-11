@@ -160,7 +160,7 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	sub.StdOut = fillRedirect(s.StdOut)
 	sub.StdErr = fillRedirect(s.StdErr)
 
-	sub.Options = &subprocess.PlatformOptions{}
+	sub.Options = newPlatformOptions()
 
 	var err error
 	if s.NeedLogin() {

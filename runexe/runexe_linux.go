@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runlib/linux"
 	"runlib/platform"
 	"runlib/subprocess"
 	"strings"
@@ -18,6 +19,12 @@ func setDesktop(p *subprocess.PlatformOptions, desktop *platform.ContesterDeskto
 }
 
 func setInject(p *subprocess.PlatformOptions, injectDll string, loadLibraryW uintptr) {
+}
+
+func newPlatformOptions() *subprocess.PlatformOptions {
+	return &subprocess.PlatformOptions{
+		Cg: linux.NewCgroups(),
+	}
 }
 
 func ArgsToPc(pc *ProcessConfig, args []string) {

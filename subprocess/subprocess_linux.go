@@ -14,7 +14,9 @@ type LoginInfo struct {
 	Uid int
 }
 
-type PlatformOptions struct{}
+type PlatformOptions struct{
+	Cg *linux.Cgroups
+}
 
 type PlatformData struct {
 	Pid       int
@@ -86,8 +88,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 func SetupControlGroup(s *Subprocess, d *SubprocessData) error {
 	cgname := strconv.Itoa(d.platformData.Pid)
-	linux.CgCreate(cgname)
-	linux.CgAttach(cgname, d.platformData.Pid)
+	s.Options.Cg.Setup(cgname, d.platformData.Pid)
 	return nil
 }
 
@@ -142,18 +143,18 @@ func UpdateWallTime(p *PlatformData, result *SubprocessResult) {
 	result.WallTime = uint64(time.Since(p.startTime).Nanoseconds()) / 1000
 }
 
-func UpdateContainerTime(p *PlatformData, result *SubprocessResult) {
-	result.UserTime = linux.CgGetCpu(strconv.Itoa(p.Pid)) / 1000
+func UpdateContainerTime(p *PlatformData, o *PlatformOptions, result *SubprocessResult) {
+	result.UserTime = o.Cg.GetCpu(strconv.Itoa(p.Pid)) / 1000
 }
 
-func UpdateContainerMemory(p *PlatformData, result *SubprocessResult) {
-	result.PeakMemory = linux.CgGetMemory(strconv.Itoa(p.Pid))
+func UpdateContainerMemory(p *PlatformData, o *PlatformOptions, result *SubprocessResult) {
+	result.PeakMemory = o.Cg.GetMemory(strconv.Itoa(p.Pid))
 }
 
-func UpdateRunningUsage(p *PlatformData, result *SubprocessResult) {
+func UpdateRunningUsage(p *PlatformData, o *PlatformOptions, result *SubprocessResult) {
 	UpdateWallTime(p, result)
-	UpdateContainerTime(p, result)
-	UpdateContainerMemory(p, result)
+	UpdateContainerTime(p, o, result)
+	UpdateContainerMemory(p, o, result)
 }
 
 func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult) {
@@ -194,8 +195,8 @@ W:
 		syscall.Kill(d.platformData.Pid, syscall.SIGKILL)
 		finished = <-childChan
 	}
-	UpdateRunningUsage(&d.platformData, result)
-	linux.CgRemove(strconv.Itoa(d.platformData.Pid))
+	UpdateRunningUsage(&d.platformData, sub.Options, result)
+	sub.Options.Cg.Remove(strconv.Itoa(d.platformData.Pid))
 	result.ExitCode = finished.ExitCode
 	result.KernelTime = finished.RusageCpuKernel
 	result.SuccessCode |= finished.SuccessCode

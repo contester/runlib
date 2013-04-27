@@ -2,8 +2,8 @@ package service
 
 import (
 	"code.google.com/p/goprotobuf/proto"
-	"runlib/contester_proto"
-	"runlib/subprocess"
+	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/subprocess"
 )
 
 func fillEnv(src *contester_proto.LocalEnvironment) *[]string {

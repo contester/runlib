@@ -5,7 +5,7 @@ import (
 	l4g "code.google.com/p/log4go"
 	"fmt"
 	"os"
-	"runlib/win32"
+	"github.com/contester/runlib/win32"
 	"syscall"
 	"unsafe"
 )

@@ -4,7 +4,7 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"os"
 	"path/filepath"
-	"runlib/contester_proto"
+	"github.com/contester/runlib/contester_proto"
 	"crypto/sha1"
 	"io"
 )

@@ -2,8 +2,8 @@ package service
 
 import (
 	"os"
-	"runlib/contester_proto"
-	"runlib/subprocess"
+	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/subprocess"
 	"strings"
 )
 

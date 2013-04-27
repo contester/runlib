@@ -4,7 +4,7 @@ import (
 	l4g "code.google.com/p/log4go"
 	"fmt"
 	"os/user"
-	"runlib/linux"
+	"github.com/contester/runlib/linux"
 	"strconv"
 	"syscall"
 	"time"

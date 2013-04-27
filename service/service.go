@@ -6,9 +6,9 @@ import (
 	"labix.org/v2/mgo"
 	"os"
 	"path/filepath"
-	"runlib/contester_proto"
-	"runlib/platform"
-	"runlib/subprocess"
+	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/platform"
+	"github.com/contester/runlib/subprocess"
 	"strconv"
 	"strings"
 )

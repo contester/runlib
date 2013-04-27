@@ -4,7 +4,7 @@ import (
 	l4g "code.google.com/p/log4go"
 	"log"
 	"os"
-	"runlib/contester_proto"
+	"github.com/contester/runlib/contester_proto"
 	"runtime"
 	"time"
 )

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runlib/subprocess"
+	"github.com/contester/runlib/subprocess"
 	"strconv"
 	"strings"
 	"sync"

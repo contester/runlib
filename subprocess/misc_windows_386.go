@@ -5,7 +5,7 @@ package subprocess
 import (
 	l4g "code.google.com/p/log4go"
 	"os"
-	"runlib/win32"
+	"github.com/contester/runlib/win32"
 	"runtime"
 	"syscall"
 	"unsafe"

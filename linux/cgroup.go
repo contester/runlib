@@ -2,32 +2,23 @@ package linux
 
 import (
 	"bufio"
-	"path/filepath"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 	"syscall"
-)
-
-// Parse /proc/self/cgroup
-
-const (
-	CG = "/sys/fs/cgroup"
-	PROC_SELF_CGROUP = "/proc/self/cgroup"
+	"fmt"
 )
 
 type Cgroups struct {
-	CpuAcct string
-	Memory string
+	cpuacct, memory string
 }
 
-func parseProcCgroups(r io.Reader) (result map[string]string) {
-	result = make(map[string]string)
-	b := bufio.NewReader(r)
-	for {
-		line, err := b.ReadString("\n")
-		if line != "" {
+func parseProcCgroups(r io.Reader) (map[string]string) {
+	result := make(map[string]string)
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+		if line := s.Text(); line != "" {
 			splits := strings.SplitN(line, ":", 3)
 			items := strings.Split(splits[1], ",")
 
@@ -35,38 +26,76 @@ func parseProcCgroups(r io.Reader) (result map[string]string) {
 				result[v] = splits[2]
 			}
 		}
-
-		if err != nil {
-			break
-		}
 	}
-	return
+	if len(result) > 0 {
+		return result
+	}
+	return nil
 }
 
-func cgmapget(m map[string]string, v string) string {
-	if p, ok = m[v]; ok {
-		return CG + "/" + v + p
+func parseProcMounts(r io.Reader, cgroups map[string]string) (map[string]string) {
+	result := make(map[string]string)
+
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+		if line := s.Text(); line != "" {
+			splits := strings.SplitN(line, " ", 6)
+			if splits[2] != "cgroup" {
+				continue
+			}
+			opts := strings.Split(splits[3], ",")
+			for _, opt := range opts {
+				if _, ok := cgroups[opt]; ok {
+					result[opt] = splits[1]
+				}
+			}
+		}
+	}
+	if len(result) > 0 {
+		return result
+	}
+	return nil
+}
+
+func openAndParse(filename string, parser func(io.Reader)map[string]string) (map[string]string, error) {
+	if f, err := os.Open(filename); err == nil {
+		defer f.Close()
+		return parser(f), nil
+	} else {
+		return nil, err
+	}
+}
+
+func combineCgPmap(procmap, cgmap map[string]string, name string) string {
+	if procmap[name] != "" && cgmap[name] != "" {
+		return procmap[name] + cgmap[name]
 	}
 	return ""
 }
 
-func NewCgroups() (*Cgroups) {
-	result := &Cgroups{}
-
-	ifile, err := os.Open("/proc/self/cgroup")
+func NewCgroups() (*Cgroups, error) {
+	cgmap, err := openAndParse("/proc/self/cgroup", parseProcCgroups)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	cgmap := parseProcCgroups(ifile)
-	ifile.Close()
+	procmap, err := openAndParse("/proc/mounts", func (r io.Reader)map[string]string {
+			return parseProcMounts(r, cgmap)
+		})
 
-	if cgmap == nil {
-		return
+	if err != nil {
+		return nil, err
 	}
 
-	result.Memory = cgmapget(cgmap, "memory")
-	result.CpuAcct = cgmapget(cgmap, "cpuacct")
+	var result Cgroups
+	result.memory = combineCgPmap(procmap, cgmap, "memory")
+	result.cpuacct = combineCgPmap(procmap, cgmap, "cpuacct")
+
+	if result.memory != "" || result.cpuacct != "" {
+		return &result, nil
+	}
+
+	return nil, fmt.Errorf("wat")
 }
 
 // check if cgroup exists.
@@ -101,8 +130,8 @@ func cgSetup(name string, pid int) error {
 }
 
 func (c *Cgroups) Setup(name string, pid int) error {
-	errCpu := cgSetup(c.CpuAcct + "/contester/" + name, pid)
-	errMemory := cgSetup(c.Memory + "/contester/" + name, pid)
+	errCpu := cgSetup(c.cpuacct + "/" + name, pid)
+	errMemory := cgSetup(c.memory + "/" + name, pid)
 
 	if errCpu != nil && errMemory != nil {
 		return errCpu
@@ -111,8 +140,8 @@ func (c *Cgroups) Setup(name string, pid int) error {
 }
 
 func (c *Cgroups) Remove(name string) error {
-	errCpu := syscall.Rmdir(c.CpuAcct + "/contester/" + name)
-	errMemory := syscall.Rmdir(c.Memory + "/contester/" + name)
+	errCpu := syscall.Rmdir(c.cpuacct + "/" + name)
+	errMemory := syscall.Rmdir(c.memory + "/" + name)
 	if errCpu != nil && errMemory != nil {
 		return errCpu
 	}
@@ -137,9 +166,9 @@ func cgRead1u64(name, metric string) uint64 {
 }
 
 func (c *Cgroups) GetMemory(name string) uint64 {
-	return cgRead1u64(c.Memory + "/contester/" + name, "memory.max_usage_in_bytes")
+	return cgRead1u64(c.memory + "/" + name, "memory.max_usage_in_bytes")
 }
 
 func (c *Cgroups) GetCpu(name string) uint64 {
-	return cgRead1u64(c.CpuAcct + "/contester/" + name, "cpuacct.usage")
+	return cgRead1u64(c.cpuacct + "/" + name, "cpuacct.usage")
 }

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runlib/contester_proto"
+	"github.com/contester/runlib/contester_proto"
 	"time"
 )
 

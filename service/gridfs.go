@@ -4,7 +4,7 @@ import (
 	"io"
 	"labix.org/v2/mgo"
 	"os"
-	"runlib/contester_proto"
+	"github.com/contester/runlib/contester_proto"
 )
 
 func gridfsCopy(srcname, dstname string, mfs *mgo.GridFS, toGridfs bool) error {

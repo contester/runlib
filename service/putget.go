@@ -2,7 +2,7 @@ package service
 
 import (
 	"os"
-	"runlib/contester_proto"
+	"github.com/contester/runlib/contester_proto"
 )
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.EmptyMessage) error {

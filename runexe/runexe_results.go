@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"runlib/subprocess"
+	"github.com/contester/runlib/subprocess"
 	"strconv"
 	"strings"
 )

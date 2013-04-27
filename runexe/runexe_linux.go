@@ -1,9 +1,9 @@
 package main
 
 import (
-	"runlib/linux"
-	"runlib/platform"
-	"runlib/subprocess"
+	"github.com/contester/runlib/linux"
+	"github.com/contester/runlib/platform"
+	"github.com/contester/runlib/subprocess"
 	"strings"
 )
 

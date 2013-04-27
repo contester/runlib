@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"runlib/platform"
-	"runlib/subprocess"
+	"github.com/contester/runlib/platform"
+	"github.com/contester/runlib/subprocess"
 )
 
 var version string

@@ -4,7 +4,7 @@ package subprocess
 
 import (
 	"os"
-	"runlib/win32"
+	"github.com/contester/runlib/win32"
 	"syscall"
 )
 

@@ -9,7 +9,7 @@ package linux
 */
 import "C"
 import "unsafe"
-import "runlib/tools"
+import "github.com/contester/runlib/tools"
 import "os"
 import "runtime"
 

@@ -24,7 +24,7 @@ func setInject(p *subprocess.PlatformOptions, injectDll string, loadLibraryW uin
 func newPlatformOptions() *subprocess.PlatformOptions {
 	var opts subprocess.PlatformOptions
 	var err error
-	if opts.Cg, err = linux.NewCgroups(); err ! nil {
+	if opts.Cg, err = linux.NewCgroups(); err != nil {
 		return nil
 	}
 	return opts

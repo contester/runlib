@@ -27,7 +27,7 @@ func newPlatformOptions() *subprocess.PlatformOptions {
 	if opts.Cg, err = linux.NewCgroups(); err != nil {
 		return nil
 	}
-	return opts
+	return &opts
 }
 
 func ArgsToPc(pc *ProcessConfig, args []string) {

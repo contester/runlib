@@ -22,9 +22,12 @@ func setInject(p *subprocess.PlatformOptions, injectDll string, loadLibraryW uin
 }
 
 func newPlatformOptions() *subprocess.PlatformOptions {
-	return &subprocess.PlatformOptions{
-		Cg: linux.NewCgroups(),
+	var opts subprocess.PlatformOptions
+	var err error
+	if opts.Cg, err = linux.NewCgroups(); err ! nil {
+		return nil
 	}
+	return opts
 }
 
 func ArgsToPc(pc *ProcessConfig, args []string) {

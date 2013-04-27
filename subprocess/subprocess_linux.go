@@ -171,7 +171,7 @@ W:
 		case finished = <-childChan:
 			break W
 		case _ = <-ticker.C:
-			UpdateRunningUsage(&d.platformData, result)
+			UpdateRunningUsage(&d.platformData, sub.Options, result)
 			ttLastNew := result.KernelTime + result.UserTime
 			if sub.CheckIdleness && (ttLastNew == ttLast) {
 				result.SuccessCode |= EF_INACTIVE

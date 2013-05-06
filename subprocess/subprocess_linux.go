@@ -162,7 +162,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 
 	childChan := make(chan *ChildWaitData, 1)
 	go ChildWaitingFunc(d.platformData.Pid, childChan)
-	ticker := time.NewTicker(time.Second / 4)
+	ticker := time.NewTicker(time.Second / 4) // TODO: constant, tick interval
 	var finished *ChildWaitData
 	var ttLast uint64
 W:
@@ -193,6 +193,7 @@ W:
 	if finished == nil {
 		result.SuccessCode |= EF_KILLED
 		syscall.Kill(d.platformData.Pid, syscall.SIGKILL)
+		// Can block if process is unkillable.
 		finished = <-childChan
 	}
 	UpdateRunningUsage(&d.platformData, sub.Options, result)

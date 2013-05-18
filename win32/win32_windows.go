@@ -69,8 +69,8 @@ const (
 )
 
 type ProcessMemoryCountersEx struct {
-	Cb                         uint32 // DWORD
-	PageFaultCount             uint32 // DWORD
+	Cb                         uint32  // DWORD
+	PageFaultCount             uint32  // DWORD
 	PeakWorkingSetSize         uintptr // SIZE_T
 	WorkingSetSize             uintptr // SIZE_T
 	QuotaPeakPagedPoolUsage    uintptr // SIZE_T
@@ -459,9 +459,9 @@ const (
 )
 
 type IoCounters struct {
-	ReadOperationCount  uint64  // ULONGLONG
-	WriteOperationCount uint64  // ULONGLONG
-	OtherOperationCount uint64  // ULONGLONG
+	ReadOperationCount  uint64 // ULONGLONG
+	WriteOperationCount uint64 // ULONGLONG
+	OtherOperationCount uint64 // ULONGLONG
 	ReadTransferCount   uint64 // ULONGLONG
 	WriteTransferCount  uint64 // ULONGLONG
 	OtherTransferCount  uint64 // ULONGLONG

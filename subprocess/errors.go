@@ -11,16 +11,20 @@ func (e *SubprocessError) Error() string {
 }
 
 func NewSubprocessError(user bool, id string, err error) *SubprocessError {
+	if err == nil {
+		return nil
+	}
+	if e, ok := err.(*SubprocessError); ok {
+		return &SubprocessError{Id: id + "/" + e.Id, Err: e.Err, UserError: user || e.UserError}
+	}
 	return &SubprocessError{Id: id, Err: err, UserError: user}
 }
 
 func IsUserError(err error) bool {
-	if err == nil {
-		return false
-	}
-	e, ok := err.(*SubprocessError)
-	if ok {
-		return e.UserError
+	if err != nil {
+		if e, ok := err.(*SubprocessError); ok {
+			return e.UserError
+		}
 	}
 	return false
 }

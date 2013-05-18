@@ -127,10 +127,10 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 
 	sub.Environment = fillEnv(request.Environment)
 
-	if (doRedirects) {
+	if doRedirects {
 		sub.StdIn = fillRedirect(request.StdIn)
 		sub.StdOut = fillRedirect(request.StdOut)
-        }
+	}
 	sub.StdErr = fillRedirect(request.StdErr)
 
 	sub.Options = &subprocess.PlatformOptions{}
@@ -190,8 +190,8 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 
 type runResult struct {
 	second bool
-	r *subprocess.SubprocessResult
-	e error
+	r      *subprocess.SubprocessResult
+	e      error
 }
 
 func execAndSend(sub *subprocess.Subprocess, c chan runResult, second bool) {

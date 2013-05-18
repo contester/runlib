@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"github.com/contester/runlib/subprocess"
+	"os"
 	"strconv"
 	"strings"
 )

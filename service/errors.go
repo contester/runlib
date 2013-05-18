@@ -1,7 +1,7 @@
 package service
 
 type ServiceError struct {
-	Id string
+	Id  string
 	Err error
 }
 

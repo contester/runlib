@@ -2,10 +2,10 @@ package service
 
 import (
 	l4g "code.google.com/p/log4go"
+	"github.com/contester/runlib/contester_proto"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"github.com/contester/runlib/contester_proto"
 	"time"
 )
 

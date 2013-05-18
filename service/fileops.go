@@ -2,11 +2,11 @@ package service
 
 import (
 	"code.google.com/p/goprotobuf/proto"
+	"crypto/sha1"
+	"github.com/contester/runlib/contester_proto"
+	"io"
 	"os"
 	"path/filepath"
-	"github.com/contester/runlib/contester_proto"
-	"crypto/sha1"
-	"io"
 )
 
 func statFile(name string, hash_it bool) (*contester_proto.FileStat, error) {

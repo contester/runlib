@@ -4,8 +4,8 @@ import (
 	"bytes"
 	l4g "code.google.com/p/log4go"
 	"fmt"
-	"os"
 	"github.com/contester/runlib/win32"
+	"os"
 	"syscall"
 	"unsafe"
 )

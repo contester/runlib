@@ -1,8 +1,8 @@
 package linux
 
 import (
-	"testing"
 	"bytes"
+	"testing"
 )
 
 const PROC_SELF_CGROUP = `9:perf_event:/
@@ -69,19 +69,19 @@ func checkMap(t *testing.T, x map[string]string, length int, items map[string]st
 
 func TestPcgParse(t *testing.T) {
 	parsed := parseProcCgroups(bytes.NewBufferString(PROC_SELF_CGROUP))
-	checkMap(t, parsed, 10, map[string]string {
-			"cpuacct": "/user/stingray/5",
-			"memory": "/user/stingray/5",
-			"devices": "/",
-		})
+	checkMap(t, parsed, 10, map[string]string{
+		"cpuacct": "/user/stingray/5",
+		"memory":  "/user/stingray/5",
+		"devices": "/",
+	})
 }
 
 func TestPmParse(t *testing.T) {
 	pcg := parseProcCgroups(bytes.NewBufferString(PROC_SELF_CGROUP))
 	mp := parseProcMounts(bytes.NewBufferString(PROC_MOUNTS), pcg)
-	checkMap(t, mp, 10, map[string]string {
-			"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
-			"memory": "/sys/fs/cgroup/memory",
-			"devices": "/sys/fs/cgroup/devices",
-		})
+	checkMap(t, mp, 10, map[string]string{
+		"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
+		"memory":  "/sys/fs/cgroup/memory",
+		"devices": "/sys/fs/cgroup/devices",
+	})
 }

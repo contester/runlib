@@ -3,12 +3,12 @@ package service
 import (
 	"code.google.com/p/goconf/conf"
 	"code.google.com/p/goprotobuf/proto"
-	"labix.org/v2/mgo"
-	"os"
-	"path/filepath"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"
+	"labix.org/v2/mgo"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )

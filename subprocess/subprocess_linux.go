@@ -3,8 +3,8 @@ package subprocess
 import (
 	l4g "code.google.com/p/log4go"
 	"fmt"
-	"os/user"
 	"github.com/contester/runlib/linux"
+	"os/user"
 	"strconv"
 	"syscall"
 	"time"
@@ -14,7 +14,7 @@ type LoginInfo struct {
 	Uid int
 }
 
-type PlatformOptions struct{
+type PlatformOptions struct {
 	Cg *linux.Cgroups
 }
 

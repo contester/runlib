@@ -2,11 +2,11 @@ package main
 
 import (
 	l4g "code.google.com/p/log4go"
-	"net/rpc"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/rpc4"
 	"github.com/contester/runlib/service"
 	"github.com/contester/runlib/tools"
+	"net/rpc"
 	"runtime"
 )
 

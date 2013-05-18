@@ -2,19 +2,19 @@ package linux
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 	"syscall"
-	"fmt"
 )
 
 type Cgroups struct {
 	cpuacct, memory string
 }
 
-func parseProcCgroups(r io.Reader) (map[string]string) {
+func parseProcCgroups(r io.Reader) map[string]string {
 	result := make(map[string]string)
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -33,7 +33,7 @@ func parseProcCgroups(r io.Reader) (map[string]string) {
 	return nil
 }
 
-func parseProcMounts(r io.Reader, cgroups map[string]string) (map[string]string) {
+func parseProcMounts(r io.Reader, cgroups map[string]string) map[string]string {
 	result := make(map[string]string)
 
 	s := bufio.NewScanner(r)
@@ -57,7 +57,7 @@ func parseProcMounts(r io.Reader, cgroups map[string]string) (map[string]string)
 	return nil
 }
 
-func openAndParse(filename string, parser func(io.Reader)map[string]string) (map[string]string, error) {
+func openAndParse(filename string, parser func(io.Reader) map[string]string) (map[string]string, error) {
 	if f, err := os.Open(filename); err == nil {
 		defer f.Close()
 		return parser(f), nil
@@ -79,9 +79,9 @@ func NewCgroups() (*Cgroups, error) {
 		return nil, err
 	}
 
-	procmap, err := openAndParse("/proc/mounts", func (r io.Reader)map[string]string {
-			return parseProcMounts(r, cgmap)
-		})
+	procmap, err := openAndParse("/proc/mounts", func(r io.Reader) map[string]string {
+		return parseProcMounts(r, cgmap)
+	})
 
 	if err != nil {
 		return nil, err
@@ -130,8 +130,8 @@ func cgSetup(name string, pid int) error {
 }
 
 func (c *Cgroups) Setup(name string, pid int) error {
-	errCpu := cgSetup(c.cpuacct + "/" + name, pid)
-	errMemory := cgSetup(c.memory + "/" + name, pid)
+	errCpu := cgSetup(c.cpuacct+"/"+name, pid)
+	errMemory := cgSetup(c.memory+"/"+name, pid)
 
 	if errCpu != nil && errMemory != nil {
 		return errCpu
@@ -166,9 +166,9 @@ func cgRead1u64(name, metric string) uint64 {
 }
 
 func (c *Cgroups) GetMemory(name string) uint64 {
-	return cgRead1u64(c.memory + "/" + name, "memory.max_usage_in_bytes")
+	return cgRead1u64(c.memory+"/"+name, "memory.max_usage_in_bytes")
 }
 
 func (c *Cgroups) GetCpu(name string) uint64 {
-	return cgRead1u64(c.cpuacct + "/" + name, "cpuacct.usage")
+	return cgRead1u64(c.cpuacct+"/"+name, "cpuacct.usage")
 }

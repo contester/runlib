@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/contester/runlib/tools"
 )
 
 type Cgroups struct {
@@ -62,7 +64,7 @@ func openAndParse(filename string, parser func(io.Reader) map[string]string) (ma
 		defer f.Close()
 		return parser(f), nil
 	} else {
-		return nil, err
+		return nil, tools.NewComponentError(err, "openAndParse", "os.Open")
 	}
 }
 
@@ -74,6 +76,8 @@ func combineCgPmap(procmap, cgmap map[string]string, name string) string {
 }
 
 func NewCgroups() (*Cgroups, error) {
+	ec := tools.NewContext("NewCgroups")
+
 	cgmap, err := openAndParse("/proc/self/cgroup", parseProcCgroups)
 	if err != nil {
 		return nil, err
@@ -95,7 +99,7 @@ func NewCgroups() (*Cgroups, error) {
 		return &result, nil
 	}
 
-	return nil, fmt.Errorf("wat")
+	return nil,
 }
 
 // check if cgroup exists.

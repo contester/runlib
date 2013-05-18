@@ -76,8 +76,6 @@ func combineCgPmap(procmap, cgmap map[string]string, name string) string {
 }
 
 func NewCgroups() (*Cgroups, error) {
-	ec := tools.NewContext("NewCgroups")
-
 	cgmap, err := openAndParse("/proc/self/cgroup", parseProcCgroups)
 	if err != nil {
 		return nil, err

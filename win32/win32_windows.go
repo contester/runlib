@@ -69,17 +69,17 @@ const (
 )
 
 type ProcessMemoryCountersEx struct {
-	Cb                         uint32
-	PageFaultCount             uint32
-	PeakWorkingSetSize         uint32
-	WorkingSetSize             uint32
-	QuotaPeakPagedPoolUsage    uint32
-	QuotaPagedPoolUsage        uint32
-	QuotaPeakNonPagedPoolUsage uint32
-	QuotaNonPagedPoolUsage     uint32
-	PagefileUsage              uint32
-	PeakPagefileUsage          uint32
-	PrivateUsage               uint32
+	Cb                         uint32 // DWORD
+	PageFaultCount             uint32 // DWORD
+	PeakWorkingSetSize         uintptr // SIZE_T
+	WorkingSetSize             uintptr // SIZE_T
+	QuotaPeakPagedPoolUsage    uintptr // SIZE_T
+	QuotaPagedPoolUsage        uintptr // SIZE_T
+	QuotaPeakNonPagedPoolUsage uintptr // SIZE_T
+	QuotaNonPagedPoolUsage     uintptr // SIZE_T
+	PagefileUsage              uintptr // SIZE_T
+	PeakPagefileUsage          uintptr // SIZE_T
+	PrivateUsage               uintptr // SIZE_T
 }
 
 type ProfileInfo struct {

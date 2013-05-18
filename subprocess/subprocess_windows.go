@@ -347,16 +347,16 @@ func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished 
 	return nil
 }
 
-func GetProcessMemoryUsage(process syscall.Handle) uint32 {
+func GetProcessMemoryUsage(process syscall.Handle) uint64 {
 	pmc, err := win32.GetProcessMemoryInfo(process)
 	if err != nil {
 		return 0
 	}
 
 	if pmc.PeakPagefileUsage > pmc.PrivateUsage {
-		return pmc.PeakPagefileUsage
+		return uint64(pmc.PeakPagefileUsage)
 	}
-	return pmc.PrivateUsage
+	return uint64(pmc.PrivateUsage)
 }
 
 func UpdateProcessMemory(pdata *PlatformData, result *SubprocessResult) {

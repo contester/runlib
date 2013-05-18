@@ -3,6 +3,7 @@ package service
 import (
 	l4g "code.google.com/p/log4go"
 	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/tools"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,9 +11,10 @@ import (
 )
 
 func tryClearPath(path string) (bool, error) {
+	ec := tools.NewContext("tryClearPath")
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return false, NewServiceError("ioutil.ReadDir", err)
+		return false, ec.NewError(err, "ioutil.ReadDir")
 	}
 
 	if len(files) == 0 {
@@ -26,16 +28,17 @@ func tryClearPath(path string) (bool, error) {
 		fullpath := filepath.Join(path, info.Name())
 		err = os.RemoveAll(fullpath)
 		if err != nil {
-			return true, NewServiceError("os.RemoveAll", err)
+			return true, ec.NewError(err, "os.RemoveAll")
 		}
 	}
 	return true, nil
 }
 
 func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response *contester_proto.EmptyMessage) error {
+	ec := tools.NewContext("Clear")
 	sandbox, err := getSandboxById(s.Sandboxes, request.GetSandbox())
 	if err != nil {
-		return err
+		return ec.NewError(err, "getSandboxById")
 	}
 
 	sandbox.Mutex.Lock()
@@ -52,7 +55,7 @@ func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response
 	}
 
 	if err != nil {
-		return NewServiceError("tryClearPath", err)
+		return ec.NewError(err, "tryClearPath")
 	}
 	return nil
 }

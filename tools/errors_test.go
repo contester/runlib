@@ -1,0 +1,22 @@
+package tools
+
+import (
+	"testing"
+	"errors"
+)
+
+func checkErr(t *testing.T, err error, value string, comps ...string) {
+	if err.Error() != value {
+		t.Errorf("Value mismatch: %s vs %s", value, err.Error())
+	}
+}
+
+func TestComponents(t *testing.T) {
+	if NewComponentError(nil, "foo") != nil {
+		t.Errorf("Incorrect nil handling")
+	}
+
+	checkErr(t, NewComponentError(errors.New("foo"), "foo1"), "foo1: foo", "foo1")
+	checkErr(t, NewComponentError(errors.New("foo"), "foo1", "foo2"), "foo1/foo2: foo", "foo1", "foo2")
+	checkErr(t, NewComponentError(NewComponentError(errors.New("foo"), "test1", "test2"), "test0", "test1"), "test0/test1/test2: foo", "test0", "test1", "test2")
+}

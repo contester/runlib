@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"crypto/sha1"
 	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/tools"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,7 +20,7 @@ func statFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 			return nil, nil
 		}
 
-		return nil, NewServiceError("os.Stat", err)
+		return nil, tools.NewComponentError(err, "statFile", "os.Stat")
 	}
 	if info.IsDir() {
 		result.IsDirectory = proto.Bool(true)
@@ -28,7 +29,7 @@ func statFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 		if hash_it {
 			result.Sha1Sum, err = hashFile(name)
 			if err != nil {
-				return nil, NewServiceError("hashFile", err)
+				return nil, tools.NewComponentError(err, "statFile", "hashFile")
 			}
 		}
 	}
@@ -36,9 +37,10 @@ func statFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 }
 
 func hashFile(name string) ([]byte, error) {
+	ec := tools.NewContext("hashFile")
 	source, err := os.Open(name)
 	if err != nil {
-		return nil, NewServiceError("source.Open", err)
+		return nil, ec.NewError(err, "source.Open")
 	}
 	defer source.Close()
 
@@ -46,20 +48,21 @@ func hashFile(name string) ([]byte, error) {
 
 	_, err = io.Copy(destination, source)
 	if err != nil {
-		return nil, NewServiceError("io.Copy", err)
+		return nil, ec.NewError(err, "io.Copy")
 	}
 	if err = source.Close(); err != nil {
-		return nil, NewServiceError("source.Close", err)
+		return nil, ec.NewError(err,"source.Close")
 	}
 
 	return destination.Sum(nil), nil
 }
 
 func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.FileStats) error {
+	ec := tools.NewContext("Stat")
 	if request.SandboxId != nil {
 		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {
-			return NewServiceError("getSandboxById", err)
+			return ec.NewError(err, "getSandboxById")
 		}
 		sandbox.Mutex.RLock()
 		defer sandbox.Mutex.RUnlock()
@@ -69,13 +72,13 @@ func (s *Contester) Stat(request *contester_proto.StatRequest, response *contest
 	for _, name := range request.Name {
 		resolved, _, err := resolvePath(s.Sandboxes, name, false)
 		if err != nil {
-			return NewServiceError("resolvePath", err)
+			return ec.NewError(err, "resolvePath")
 		}
 		var expanded []string
 		if request.GetExpand() {
 			expanded, err = filepath.Glob(resolved)
 			if err != nil {
-				return NewServiceError("filepath.Glob", err)
+				return ec.NewError(err, "filepath.Glob")
 			}
 		} else {
 			expanded = []string{resolved}
@@ -84,7 +87,7 @@ func (s *Contester) Stat(request *contester_proto.StatRequest, response *contest
 		for _, name := range expanded {
 			stat, err := statFile(name, request.GetCalculateSha1())
 			if err != nil {
-				return NewServiceError("statFile", err)
+				return ec.NewError(err, "statFile")
 			}
 			if stat != nil {
 				response.Stats = append(response.Stats, stat)

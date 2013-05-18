@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/tools"
 	"io"
 	"labix.org/v2/mgo"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 func gridfsCopy(srcname, dstname string, mfs *mgo.GridFS, toGridfs bool) error {
 	var err error
+	ec := tools.NewContext("gridfsCopy")
 
 	var source io.ReadCloser
 	var destination io.WriteCloser
@@ -19,7 +21,7 @@ func gridfsCopy(srcname, dstname string, mfs *mgo.GridFS, toGridfs bool) error {
 		source, err = mfs.Open(srcname)
 	}
 	if err != nil {
-		return NewServiceError("source.Open", err)
+		return ec.NewError(err, "source.Open")
 	}
 	defer source.Close()
 
@@ -29,21 +31,21 @@ func gridfsCopy(srcname, dstname string, mfs *mgo.GridFS, toGridfs bool) error {
 		destination, err = os.Create(dstname)
 	}
 	if err != nil {
-		return NewServiceError("destination.Open", err)
+		return ec.NewError(err, "destination.Open")
 	}
 	defer destination.Close()
 
 	_, err = io.Copy(destination, source)
 	if err != nil {
-		return NewServiceError("io.Copy", err)
+		return ec.NewError(err, "io.Copy")
 	}
 
 	if err = destination.Close(); err != nil {
-		return NewServiceError("destination.Close", err)
+		return ec.NewError(err, "destination.Close")
 	}
 
 	if err = source.Close(); err != nil {
-		return NewServiceError("source.Close", err)
+		return ec.NewError(err, "source.Close")
 	}
 
 	return nil
@@ -53,7 +55,7 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 	if request.SandboxId != nil {
 		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {
-			return NewServiceError("getSandboxById", err)
+			return tools.NewComponentError(err, "GridfsGet", "getSandboxById")
 		}
 		sandbox.Mutex.RLock()
 		defer sandbox.Mutex.RUnlock()
@@ -80,12 +82,13 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 }
 
 func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, response *contester_proto.RepeatedStringEntries) error {
+	ec := tools.NewContext("GridfsPut")
 	var sandbox *Sandbox
 	if request.SandboxId != nil {
 		var err error
 		sandbox, err = getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {
-			return NewServiceError("getSandboxById", err)
+			return ec.NewError(err, "getSandboxById")
 		}
 		sandbox.Mutex.Lock()
 		defer sandbox.Mutex.Unlock()
@@ -98,16 +101,16 @@ func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, 
 		}
 		resolved, _, err := resolvePath(s.Sandboxes, *item.Destination, true)
 		if err != nil {
-			return NewServiceError("resolvePath", err)
+			return ec.NewError(err, "resolvePath")
 		}
 		err = gridfsCopy(*item.Source, resolved, s.Mfs, false)
 		if err != nil {
-			return NewServiceError("gridfsCopy", err)
+			return ec.NewError(err, "gridfsCopy")
 		}
 		if sandbox != nil {
 			err = sandbox.Own(resolved)
 			if err != nil {
-				return NewServiceError("sandbox.Own", err)
+				return ec.NewError(err, "sandbox.Own")
 			}
 		}
 		response.Entries = append(response.Entries, *item.Source)

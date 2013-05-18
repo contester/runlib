@@ -2,17 +2,19 @@ package service
 
 import (
 	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/tools"
 	"os"
 )
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.EmptyMessage) error {
+	ec := tools.NewContext("Put")
 	if request.Data != nil {
 		contester_proto.AddBlob(request.Data)
 	}
 
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, true)
 	if err != nil {
-		return NewServiceError("resolvePath", err)
+		return ec.NewError(err, "resolvePath")
 	}
 
 	if sandbox != nil {
@@ -27,7 +29,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		loop, err := OnOsCreateError(err)
 
 		if err != nil {
-			return NewServiceError("os.Create", err)
+			return ec.NewError(err, "os.Create")
 		}
 		if !loop {
 			break
@@ -35,11 +37,11 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 	}
 	data, err := request.Data.Bytes()
 	if err != nil {
-		return NewServiceError("request.Data.Bytes", err)
+		return ec.NewError(err, "request.Data.Bytes")
 	}
 	_, err = destination.Write(data)
 	if err != nil {
-		return NewServiceError("destination.Write", err)
+		return ec.NewError(err, "destination.Write")
 	}
 	destination.Close()
 	if sandbox != nil {
@@ -48,16 +50,17 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 
 	_, err = hashFile(resolved)
 	if err != nil {
-		return NewServiceError("hashFile", err)
+		return ec.NewError(err, "hashFile")
 	}
 
 	return nil
 }
 
 func (s *Contester) Get(request *contester_proto.GetRequest, response *contester_proto.FileBlob) error {
+	ec := tools.NewContext("Get")
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, false)
 	if err != nil {
-		return NewServiceError("resolvePath", err)
+		return ec.NewError(err, "resolvePath")
 	}
 
 	if sandbox != nil {
@@ -67,7 +70,7 @@ func (s *Contester) Get(request *contester_proto.GetRequest, response *contester
 
 	source, err := os.Open(resolved)
 	if err != nil {
-		return NewServiceError("os.Open", err)
+		return ec.NewError(err, "os.Open")
 	}
 	defer source.Close()
 

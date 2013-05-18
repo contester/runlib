@@ -214,7 +214,7 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	var e error
 	d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
 	if e != nil {
-		return e
+		return NewSubprocessError(false, "CreateJob/CreateJobObject", e)
 	}
 
 	if s.RestrictUi {
@@ -231,7 +231,7 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 		e = win32.SetJobObjectBasicUiRestrictions(d.platformData.hJob, &info)
 		if e != nil {
 			l4g.Error("UI", e)
-			return e
+			return NewSubprocessError(false, "CreateJob/SetJobObjectBasicUiRestrictions", e)
 		}
 	}
 
@@ -250,14 +250,17 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	}
 
 	if s.HardMemoryLimit > 0 {
-		einfo.ProcessMemoryLimit = uint32(s.HardMemoryLimit)
-		einfo.JobMemoryLimit = uint32(s.HardMemoryLimit)
-		einfo.BasicLimitInformation.MaximumWorkingSetSize = uint32(s.HardMemoryLimit)
+		einfo.ProcessMemoryLimit = uintptr(s.HardMemoryLimit)
+		einfo.JobMemoryLimit = uintptr(s.HardMemoryLimit)
+		einfo.BasicLimitInformation.MaximumWorkingSetSize = uintptr(s.HardMemoryLimit)
 		einfo.BasicLimitInformation.LimitFlags |= win32.JOB_OBJECT_LIMIT_JOB_MEMORY | win32.JOB_OBJECT_LIMIT_PROCESS_MEMORY | win32.JOB_OBJECT_LIMIT_WORKINGSET
 	}
 
 	e = win32.SetJobObjectExtendedLimitInformation(d.platformData.hJob, &einfo)
-	return e
+	if e != nil {
+		return NewSubprocessError(false, "CreateJob/SetJobObjectExtendedLimitInformation", e)
+	}
+	return nil
 }
 
 func InjectDll(s *Subprocess, d *SubprocessData) error {

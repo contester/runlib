@@ -436,15 +436,15 @@ func GetJobObjectBasicAccountingInformation(job syscall.Handle) (*JobObjectBasic
 }
 
 type JobObjectBasicLimitInformation struct {
-	PerProcessUserTimeLimit uint64
-	PerJobUserTimeLimit     uint64
-	LimitFlags              uint32
-	MinimumWorkingSetSize   uint32 //size_t
-	MaximumWorkingSetSize   uint32 //size_t
-	ActiveProcessLimit      uint32
-	Affinity                uintptr
-	PriorityClass           uint32
-	SchedulingClass         uint32
+	PerProcessUserTimeLimit uint64  // LARGE_INTEGER
+	PerJobUserTimeLimit     uint64  // LARGE_INTEGER
+	LimitFlags              uint32  // DWORD
+	MinimumWorkingSetSize   uintptr // SIZE_T
+	MaximumWorkingSetSize   uintptr // SIZE_T
+	ActiveProcessLimit      uint32  // DWORD
+	Affinity                uintptr // ULONG_PTR
+	PriorityClass           uint32  // DWORD
+	SchedulingClass         uint32  // DWORD
 }
 
 const (
@@ -459,22 +459,22 @@ const (
 )
 
 type IoCounters struct {
-	ReadOperationCount  uint64
-	WriteOperationCount uint64
-	OtherOperationCount uint64
-	ReadTransferCount   uint64
-	WriteTransferCount  uint64
-	OtherTransferCount  uint64
+	ReadOperationCount  uint64  // ULONGLONG
+	WriteOperationCount uint64  // ULONGLONG
+	OtherOperationCount uint64  // ULONGLONG
+	ReadTransferCount   uint64 // ULONGLONG
+	WriteTransferCount  uint64 // ULONGLONG
+	OtherTransferCount  uint64 // ULONGLONG
 }
 
 type JobObjectExtendedLimitInformation struct {
 	BasicLimitInformation JobObjectBasicLimitInformation
-	align1                uint32
+	// align1                uint32
 	IoInfo                IoCounters
-	ProcessMemoryLimit    uint32 // size_t
-	JobMemoryLimit        uint32 //
-	PeakProcessMemoryUsed uint32
-	PeakJobMemoryUsed     uint32
+	ProcessMemoryLimit    uintptr // SIZE_T
+	JobMemoryLimit        uintptr // SIZE_T
+	PeakProcessMemoryUsed uintptr // SIZE_T
+	PeakJobMemoryUsed     uintptr // SIZE_T
 }
 
 func GetJobObjectExtendedLimitInformation(job syscall.Handle) (*JobObjectExtendedLimitInformation, error) {

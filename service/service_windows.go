@@ -1,5 +1,3 @@
-// +build windows,386
-
 package service
 
 import (

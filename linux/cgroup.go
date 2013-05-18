@@ -99,7 +99,7 @@ func NewCgroups() (*Cgroups, error) {
 		return &result, nil
 	}
 
-	return nil,
+	return nil, fmt.Errorf("Cannot attach to cpuacct and memory cgroups")
 }
 
 // check if cgroup exists.

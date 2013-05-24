@@ -123,3 +123,46 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 
 	return <-sig, nil
 }
+
+type runningState struct {
+	lastTimeUsed uint64
+	noTimeUsedCount uint
+}
+
+func (r *runningState) Update(sub *Subprocess, result *SubprocessResult) {
+	ttLastNew := result.KernelTime + result.UserTime
+
+	if ttLastNew == r.lastTimeUsed {
+		r.noTimeUsedCount++
+	} else {
+		r.noTimeUsedCount = 0
+	}
+
+	if sub.CheckIdleness && (r.noTimeUsedCount >= 6) && (result.WallTime > sub.TimeLimit) {
+		result.SuccessCode |= EF_INACTIVE
+	}
+
+	if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
+		result.SuccessCode |= EF_TIME_LIMIT_HIT
+	}
+
+	if (sub.HardTimeLimit > 0) && (result.WallTime > sub.HardTimeLimit) {
+		result.SuccessCode |= EF_TIME_LIMIT_HARD
+	}
+
+	r.lastTimeUsed = ttLastNew
+
+	if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
+		result.SuccessCode |= EF_MEMORY_LIMIT_HIT
+	}
+}
+
+func (sub *Subprocess) SetPostLimits(result *SubprocessResult) {
+	if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
+		result.SuccessCode |= EF_TIME_LIMIT_HIT_POST
+	}
+
+	if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
+		result.SuccessCode |= EF_MEMORY_LIMIT_HIT_POST
+	}
+}

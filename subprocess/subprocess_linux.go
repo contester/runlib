@@ -164,7 +164,8 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	go ChildWaitingFunc(d.platformData.Pid, childChan)
 	ticker := time.NewTicker(time.Second / 4) // TODO: constant, tick interval
 	var finished *ChildWaitData
-	var ttLast uint64
+	var runState runningState
+
 W:
 	for result.SuccessCode == 0 {
 		select {
@@ -172,21 +173,7 @@ W:
 			break W
 		case _ = <-ticker.C:
 			UpdateRunningUsage(&d.platformData, sub.Options, result)
-			ttLastNew := result.KernelTime + result.UserTime
-			if sub.CheckIdleness && (ttLastNew == ttLast) {
-				result.SuccessCode |= EF_INACTIVE
-			}
-			ttLast = ttLastNew
-			if sub.TimeLimit > 0 && (result.UserTime > sub.TimeLimit) {
-				result.SuccessCode |= EF_TIME_LIMIT_HIT
-			}
-			if sub.HardTimeLimit > 0 && (result.WallTime > sub.HardTimeLimit) {
-				result.SuccessCode |= EF_TIME_LIMIT_HARD
-			}
-
-			if sub.MemoryLimit > 0 && (result.PeakMemory > sub.MemoryLimit) {
-				result.SuccessCode |= EF_MEMORY_LIMIT_HIT
-			}
+			runState.Update(sub, result)
 		}
 	}
 	ticker.Stop()
@@ -201,14 +188,7 @@ W:
 	result.ExitCode = finished.ExitCode
 	result.KernelTime = finished.RusageCpuKernel
 	result.SuccessCode |= finished.SuccessCode
-
-	if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
-		result.SuccessCode |= EF_TIME_LIMIT_HIT_POST
-	}
-
-	if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
-		result.SuccessCode |= EF_MEMORY_LIMIT_HIT_POST
-	}
+	sub.SetPostLimits(result)
 
 	for _ = range d.startAfterStart {
 		err := <-d.bufferChan

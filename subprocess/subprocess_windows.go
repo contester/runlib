@@ -382,9 +382,8 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	result := &SubprocessResult{}
 	var waitResult uint32
 	waitResult = syscall.WAIT_TIMEOUT
-	var ttLast uint64
-	ttLast = 0
-	var noTimeUsedCount int
+
+	var runState runningState
 
 	for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
 		waitResult, _ = syscall.WaitForSingleObject(hProcess, sub.TimeQuantum)
@@ -393,35 +392,11 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 		}
 
 		_ = UpdateProcessTimes(&d.platformData, result, false)
-		ttLastNew := result.KernelTime + result.UserTime
-
-		if ttLastNew == ttLast {
-			noTimeUsedCount++
-		} else {
-			noTimeUsedCount = 0
-		}
-
-		// TODO: Refactor this loop to be portable, or port it to linux.
-		if sub.CheckIdleness && (noTimeUsedCount >= 6) && (result.WallTime > sub.TimeLimit) {
-			result.SuccessCode |= EF_INACTIVE
-		}
-
-		if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
-			result.SuccessCode |= EF_TIME_LIMIT_HIT
-		}
-
-		if (sub.HardTimeLimit > 0) && (result.WallTime > sub.HardTimeLimit) {
-			result.SuccessCode |= EF_TIME_LIMIT_HARD
-		}
-
-		ttLast = ttLastNew
-
 		if sub.MemoryLimit > 0 {
 			UpdateProcessMemory(&d.platformData, result)
-			if result.PeakMemory > sub.MemoryLimit {
-				result.SuccessCode |= EF_MEMORY_LIMIT_HIT
-			}
 		}
+
+		runState.Update(sub, result)
 	}
 
 	switch waitResult {
@@ -443,13 +418,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 		syscall.CloseHandle(hJob)
 	}
 
-	if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
-		result.SuccessCode |= EF_TIME_LIMIT_HIT_POST
-	}
-
-	if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
-		result.SuccessCode |= EF_MEMORY_LIMIT_HIT_POST
-	}
+	sub.SetPostLimits(result)
 	for _ = range d.startAfterStart {
 		err := <-d.bufferChan
 		if err != nil {

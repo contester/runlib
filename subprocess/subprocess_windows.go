@@ -7,6 +7,7 @@ import (
 	"github.com/contester/runlib/win32"
 	"os"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -239,8 +240,8 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	einfo.BasicLimitInformation.LimitFlags = win32.JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION | win32.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
 
 	if s.HardTimeLimit > 0 {
-		einfo.BasicLimitInformation.PerJobUserTimeLimit = s.HardTimeLimit
-		einfo.BasicLimitInformation.PerProcessUserTimeLimit = s.HardTimeLimit
+		einfo.BasicLimitInformation.PerJobUserTimeLimit = uint64(s.HardTimeLimit.Nanoseconds() / 100)
+		einfo.BasicLimitInformation.PerProcessUserTimeLimit = uint64(s.HardTimeLimit.Nanoseconds() / 100)
 		einfo.BasicLimitInformation.LimitFlags |= win32.JOB_OBJECT_LIMIT_PROCESS_TIME | win32.JOB_OBJECT_LIMIT_JOB_TIME
 	}
 
@@ -305,8 +306,12 @@ func (d *SubprocessData) Unfreeze() error {
 	return nil
 }
 
-func FiletimeToUint64(ft *syscall.Filetime) uint64 {
-	return uint64(ft.HighDateTime)<<32 + uint64(ft.LowDateTime)
+func ns100toDuration(ns100 uint64) time.Duration {
+	return time.Nanosecond * time.Duration(ns100 * 100)
+}
+
+func filetimeToDuration(ft *syscall.Filetime) time.Duration {
+	return ns100toDuration(uint64(ft.HighDateTime)<<32 + uint64(ft.LowDateTime))
 }
 
 func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished bool) error {
@@ -324,7 +329,7 @@ func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished 
 		syscall.GetSystemTimeAsFileTime(end)
 	}
 
-	result.WallTime = (FiletimeToUint64(end) / 10) - (FiletimeToUint64(creation) / 10)
+	result.WallTime = filetimeToDuration(end) - filetimeToDuration(creation)
 
 	var jinfo *win32.JobObjectBasicAccountingInformation
 
@@ -336,12 +341,12 @@ func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished 
 	}
 
 	if jinfo != nil {
-		result.UserTime = jinfo.TotalUserTime / 10
-		result.KernelTime = jinfo.TotalKernelTime / 10
+		result.UserTime = ns100toDuration(jinfo.TotalUserTime)
+		result.KernelTime = ns100toDuration(jinfo.TotalKernelTime)
 		result.TotalProcesses = uint64(jinfo.TotalProcesses)
 	} else {
-		result.UserTime = FiletimeToUint64(user) / 10
-		result.KernelTime = FiletimeToUint64(kernel) / 10
+		result.UserTime = filetimeToDuration(user)
+		result.KernelTime = filetimeToDuration(kernel)
 	}
 
 	return nil
@@ -386,7 +391,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	var runState runningState
 
 	for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
-		waitResult, _ = syscall.WaitForSingleObject(hProcess, sub.TimeQuantum)
+		waitResult, _ = syscall.WaitForSingleObject(hProcess, uint32(GetMicros(sub.TimeQuantum)))
 		if waitResult != syscall.WAIT_TIMEOUT {
 			break
 		}

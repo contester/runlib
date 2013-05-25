@@ -59,13 +59,13 @@ func parseTime(r *subprocess.SubprocessResult) *contester_proto.ExecutionResultT
 	result := &contester_proto.ExecutionResultTime{}
 
 	if r.UserTime != 0 {
-		result.UserTimeMicros = proto.Uint64(r.UserTime)
+		result.UserTimeMicros = proto.Uint64(subprocess.GetMicros(r.UserTime))
 	}
 	if r.KernelTime != 0 {
-		result.KernelTimeMicros = proto.Uint64(r.KernelTime)
+		result.KernelTimeMicros = proto.Uint64(subprocess.GetMicros(r.KernelTime))
 	}
 	if r.WallTime != 0 {
-		result.WallTimeMicros = proto.Uint64(r.WallTime)
+		result.WallTimeMicros = proto.Uint64(subprocess.GetMicros(r.WallTime))
 	}
 	return result
 }
@@ -118,8 +118,8 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 
 	sub.CurrentDirectory = request.CurrentDirectory
 
-	sub.TimeLimit = request.GetTimeLimitMicros()
-	sub.HardTimeLimit = request.GetTimeLimitHardMicros()
+	sub.TimeLimit = subprocess.DuFromMicros(request.GetTimeLimitMicros())
+	sub.HardTimeLimit = subprocess.DuFromMicros(request.GetTimeLimitHardMicros())
 	sub.MemoryLimit = request.GetMemoryLimit()
 	sub.CheckIdleness = request.GetCheckIdleness()
 	sub.RestrictUi = request.GetRestrictUi()

@@ -3,6 +3,7 @@ package subprocess
 import (
 	"bytes"
 	"io"
+	"time"
 )
 
 const (
@@ -27,12 +28,22 @@ const (
 	REDIRECT_PIPE   = 3
 )
 
+func GetMicros(d time.Duration) uint64 {
+	return uint64(d / time.Microsecond)
+}
+
+func DuFromMicros(ms uint64) time.Duration {
+	return time.Microsecond * time.Duration(ms)
+}
+
+type TimeStats struct {
+	UserTime, KernelTime, WallTime time.Duration
+}
+
 type SubprocessResult struct {
 	SuccessCode    uint32
 	ExitCode       uint32
-	UserTime       uint64
-	KernelTime     uint64
-	WallTime       uint64
+	TimeStats
 	PeakMemory     uint64
 	TotalProcesses uint64
 
@@ -54,11 +65,11 @@ type Subprocess struct {
 	ProcessLimit  uint32
 	CheckIdleness bool
 
-	TimeLimit       uint64
-	HardTimeLimit   uint64
+	TimeLimit       time.Duration
+	HardTimeLimit   time.Duration
 	MemoryLimit     uint64
 	HardMemoryLimit uint64
-	TimeQuantum     uint32
+	TimeQuantum     time.Duration
 
 	Cmd                   *CommandLine
 	Login                 *LoginInfo
@@ -125,7 +136,7 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 }
 
 type runningState struct {
-	lastTimeUsed uint64
+	lastTimeUsed time.Duration
 	noTimeUsedCount uint
 }
 

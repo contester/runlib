@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Verdict int
@@ -66,8 +67,8 @@ func printTag(tag, content string) {
 	fmt.Printf("<%s>%s</%s>\n", tag, content, tag)
 }
 
-func xmlTime(t uint64) string {
-	return strconv.FormatUint(t/1000, 10)
+func xmlTime(t time.Duration) string {
+	return strconv.FormatUint(uint64(t.Nanoseconds() / 1000000), 10)
 }
 
 func PrintResultXml(result *RunResult) {
@@ -88,8 +89,8 @@ func PrintResultXml(result *RunResult) {
 	fmt.Println("</invocationResult>")
 }
 
-func strTime(t uint64) string {
-	return strconv.FormatFloat(float64(t)/1000000, 'f', 2, 64)
+func strTime(t time.Duration) string {
+	return strconv.FormatFloat(t.Seconds(), 'f', 2, 64)
 }
 
 func strMemory(t uint64) string {

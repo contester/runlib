@@ -102,7 +102,7 @@ type ChildWaitData struct {
 	SuccessCode                    uint32
 	StopSignal                     uint32
 	KillSignal                     uint32
-	RusageCpuUser, RusageCpuKernel uint64
+	RusageCpuUser, RusageCpuKernel time.Duration
 }
 
 func ChildWaitingFunc(pid int, sig chan *ChildWaitData) {
@@ -133,28 +133,16 @@ func ChildWaitingFunc(pid int, sig chan *ChildWaitData) {
 			break
 		}
 	}
-	result.RusageCpuUser = uint64(rusage.Utime.Nano()) / 1000
-	result.RusageCpuKernel = uint64(rusage.Stime.Nano()) / 1000
+	result.RusageCpuUser = time.Nanosecond * rusage.Utime.Nano()
+	result.RusageCpuKernel = time.Nanosecond * rusage.Stime.Nano()
 	sig <- result
 	close(sig)
 }
 
-func UpdateWallTime(p *PlatformData, result *SubprocessResult) {
-	result.WallTime = uint64(time.Since(p.startTime).Nanoseconds()) / 1000
-}
-
-func UpdateContainerTime(p *PlatformData, o *PlatformOptions, result *SubprocessResult) {
-	result.UserTime = o.Cg.GetCpu(strconv.Itoa(p.Pid)) / 1000
-}
-
-func UpdateContainerMemory(p *PlatformData, o *PlatformOptions, result *SubprocessResult) {
-	result.PeakMemory = o.Cg.GetMemory(strconv.Itoa(p.Pid))
-}
-
 func UpdateRunningUsage(p *PlatformData, o *PlatformOptions, result *SubprocessResult) {
-	UpdateWallTime(p, result)
-	UpdateContainerTime(p, o, result)
-	UpdateContainerMemory(p, o, result)
+	result.WallTime = time.Since(p.startTime)
+	result.UserTime = time.Nanosecond * o.Cg.GetCpu(strconv.Itoa(p.Pid))
+	result.PeakMemory = o.Cg.GetMemory(strconv.Itoa(p.Pid))
 }
 
 func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult) {
@@ -162,7 +150,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 
 	childChan := make(chan *ChildWaitData, 1)
 	go ChildWaitingFunc(d.platformData.Pid, childChan)
-	ticker := time.NewTicker(time.Second / 4) // TODO: constant, tick interval
+	ticker := time.NewTicker(sub.TimeQuantum)
 	var finished *ChildWaitData
 	var runState runningState
 

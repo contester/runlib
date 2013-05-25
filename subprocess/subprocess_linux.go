@@ -133,15 +133,15 @@ func ChildWaitingFunc(pid int, sig chan *ChildWaitData) {
 			break
 		}
 	}
-	result.RusageCpuUser = time.Nanosecond * rusage.Utime.Nano()
-	result.RusageCpuKernel = time.Nanosecond * rusage.Stime.Nano()
+	result.RusageCpuUser = time.Nanosecond * time.Duration(rusage.Utime.Nano())
+	result.RusageCpuKernel = time.Nanosecond * time.Duration(rusage.Stime.Nano())
 	sig <- result
 	close(sig)
 }
 
 func UpdateRunningUsage(p *PlatformData, o *PlatformOptions, result *SubprocessResult) {
 	result.WallTime = time.Since(p.startTime)
-	result.UserTime = time.Nanosecond * o.Cg.GetCpu(strconv.Itoa(p.Pid))
+	result.UserTime = time.Nanosecond * time.Duration(o.Cg.GetCpu(strconv.Itoa(p.Pid)))
 	result.PeakMemory = o.Cg.GetMemory(strconv.Itoa(p.Pid))
 }
 

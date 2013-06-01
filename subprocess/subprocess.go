@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"time"
+	"runtime"
 )
 
 const (
@@ -91,7 +92,7 @@ type SubprocessData struct {
 
 func SubprocessCreate() *Subprocess {
 	result := &Subprocess{}
-	result.TimeQuantum = 250
+	result.TimeQuantum = time.Second / 4
 
 	return result
 }
@@ -116,6 +117,8 @@ func closeDescriptors(closers []io.Closer) {
 }
 
 func (sub *Subprocess) Execute() (*SubprocessResult, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	d, err := sub.CreateFrozen()
 	if err != nil {
 		return nil, err

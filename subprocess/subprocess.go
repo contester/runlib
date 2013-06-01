@@ -117,8 +117,11 @@ func closeDescriptors(closers []io.Closer) {
 }
 
 func (sub *Subprocess) Execute() (*SubprocessResult, error) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
+	// Locking of the OS thread is needed on linux, because PtraceDetach will not work if you do it from the
+	// different thread.
+	maybeLockOSThread()
+	defer maybeUnlockOSThread()
+
 	d, err := sub.CreateFrozen()
 	if err != nil {
 		return nil, err

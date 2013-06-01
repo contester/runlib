@@ -440,3 +440,9 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 
 	sig <- result
 }
+
+func maybeLockOSThread() {
+}
+
+func maybeUnlockOSThread() {
+}

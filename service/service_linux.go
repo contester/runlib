@@ -38,11 +38,3 @@ func setAcl(path, username string) error {
 	return nil
 }
 
-func IsFileNotFoundError(err error) bool {
-	if err != nil {
-		if errno, ok := err.(syscall.Errno); ok && errno == syscall.ENOENT {
-			return true
-		}
-	}
-	return false
-}

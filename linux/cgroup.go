@@ -118,24 +118,14 @@ func cgAttach(name string, pid int) error {
 	return nil
 }
 
-func isEnoent(err error) bool {
-	if perr, ok1 := err.(*os.PathError); ok1 {
-		if errno, ok2 := perr.Err.(syscall.Errno); ok2 && errno == syscall.ENOENT {
-			return true
-		}
-	}
-	return false
-}
-
 func cgSetup(name string, pid int) error {
 	_, err := os.Stat(name)
-	if err != nil && isEnoent(err) {
+	if tools.IsStatErrorFileNotFound(err) {
 		err = os.MkdirAll(name, os.ModeDir | 0755)
 		if err != nil {
 			l4g.Error(err)
 			return err
 		}
-		return cgAttach(name, pid)
 	}
 	return cgAttach(name, pid)
 }

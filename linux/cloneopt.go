@@ -3,7 +3,8 @@ package linux
 // +build linux
 
 /*
-#cgo LDFLAGS: -lclonehelper
+#cgo linux,386 LDFLAGS: /usr/lib/libclonehelper.a -lpthread -lrt -lcap
+#cgo linux,amd64 LDFLAGS: /usr/lib64/libclonehelper.a -lpthread -lrt -lcap
 #include <stdlib.h>
 #include "clone_helper.h"
 */

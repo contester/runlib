@@ -159,7 +159,7 @@ func (r *runningState) Update(sub *Subprocess, result *SubprocessResult) {
 		result.SuccessCode |= EF_INACTIVE
 	}
 
-	l4g.Debug("User time: %s, limit: %s.", result.UserTime, sub.TimeLimit)
+	l4g.Info("User time: %s, limit: %s.", result.UserTime, sub.TimeLimit)
 
 	if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
 		result.SuccessCode |= EF_TIME_LIMIT_HIT

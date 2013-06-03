@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"time"
-	l4g "code.google.com/p/log4go"
 )
 
 const (
@@ -158,8 +157,6 @@ func (r *runningState) Update(sub *Subprocess, result *SubprocessResult) {
 	if sub.CheckIdleness && (r.noTimeUsedCount >= 6) && (result.WallTime > sub.TimeLimit) {
 		result.SuccessCode |= EF_INACTIVE
 	}
-
-	l4g.Info("User time: %s, limit: %s.", result.UserTime, sub.TimeLimit)
 
 	if (sub.TimeLimit > 0) && (result.UserTime > sub.TimeLimit) {
 		result.SuccessCode |= EF_TIME_LIMIT_HIT

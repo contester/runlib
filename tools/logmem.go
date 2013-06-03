@@ -1,12 +1,12 @@
 package tools
 
 import (
-	l4g "code.google.com/p/log4go"
-	"github.com/contester/runlib/contester_proto"
 	"log"
-	"os"
 	"runtime"
 	"time"
+
+	l4g "code.google.com/p/log4go"
+	"github.com/contester/runlib/contester_proto"
 )
 
 func LogMem() {

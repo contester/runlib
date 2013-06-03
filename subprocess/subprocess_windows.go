@@ -391,6 +391,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	var runState runningState
 
 	for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
+		l4g.Info("Will wait for %d micros", uint32(GetMicros(sub.TimeQuantum)))
 		waitResult, _ = syscall.WaitForSingleObject(hProcess, uint32(GetMicros(sub.TimeQuantum)))
 		if waitResult != syscall.WAIT_TIMEOUT {
 			break

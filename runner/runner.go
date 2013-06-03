@@ -20,7 +20,7 @@ func main() {
 	}
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	// go tools.LogMemLoop()
+	go tools.LogMemLoop()
 
 	c, err := service.NewContester("server.ini", globalData)
 	if err != nil {

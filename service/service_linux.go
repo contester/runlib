@@ -4,7 +4,6 @@ import (
 	"code.google.com/p/goconf/conf"
 	"os/exec"
 	"strconv"
-	"syscall"
 )
 
 const PLATFORM_ID = "linux"

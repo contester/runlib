@@ -20,27 +20,27 @@ type RedirectParameters struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *RedirectParameters) Reset()         { *this = RedirectParameters{} }
-func (this *RedirectParameters) String() string { return proto.CompactTextString(this) }
-func (*RedirectParameters) ProtoMessage()       {}
+func (m *RedirectParameters) Reset()         { *m = RedirectParameters{} }
+func (m *RedirectParameters) String() string { return proto.CompactTextString(m) }
+func (*RedirectParameters) ProtoMessage()    {}
 
-func (this *RedirectParameters) GetFilename() string {
-	if this != nil && this.Filename != nil {
-		return *this.Filename
+func (m *RedirectParameters) GetFilename() string {
+	if m != nil && m.Filename != nil {
+		return *m.Filename
 	}
 	return ""
 }
 
-func (this *RedirectParameters) GetMemory() bool {
-	if this != nil && this.Memory != nil {
-		return *this.Memory
+func (m *RedirectParameters) GetMemory() bool {
+	if m != nil && m.Memory != nil {
+		return *m.Memory
 	}
 	return false
 }
 
-func (this *RedirectParameters) GetBuffer() *Blob {
-	if this != nil {
-		return this.Buffer
+func (m *RedirectParameters) GetBuffer() *Blob {
+	if m != nil {
+		return m.Buffer
 	}
 	return nil
 }
@@ -62,97 +62,97 @@ type ExecutionResultFlags struct {
 	XXX_unrecognized   []byte `json:"-"`
 }
 
-func (this *ExecutionResultFlags) Reset()         { *this = ExecutionResultFlags{} }
-func (this *ExecutionResultFlags) String() string { return proto.CompactTextString(this) }
-func (*ExecutionResultFlags) ProtoMessage()       {}
+func (m *ExecutionResultFlags) Reset()         { *m = ExecutionResultFlags{} }
+func (m *ExecutionResultFlags) String() string { return proto.CompactTextString(m) }
+func (*ExecutionResultFlags) ProtoMessage()    {}
 
-func (this *ExecutionResultFlags) GetKilled() bool {
-	if this != nil && this.Killed != nil {
-		return *this.Killed
+func (m *ExecutionResultFlags) GetKilled() bool {
+	if m != nil && m.Killed != nil {
+		return *m.Killed
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetTimeLimitHit() bool {
-	if this != nil && this.TimeLimitHit != nil {
-		return *this.TimeLimitHit
+func (m *ExecutionResultFlags) GetTimeLimitHit() bool {
+	if m != nil && m.TimeLimitHit != nil {
+		return *m.TimeLimitHit
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetMemoryLimitHit() bool {
-	if this != nil && this.MemoryLimitHit != nil {
-		return *this.MemoryLimitHit
+func (m *ExecutionResultFlags) GetMemoryLimitHit() bool {
+	if m != nil && m.MemoryLimitHit != nil {
+		return *m.MemoryLimitHit
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetInactive() bool {
-	if this != nil && this.Inactive != nil {
-		return *this.Inactive
+func (m *ExecutionResultFlags) GetInactive() bool {
+	if m != nil && m.Inactive != nil {
+		return *m.Inactive
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetTimeLimitHard() bool {
-	if this != nil && this.TimeLimitHard != nil {
-		return *this.TimeLimitHard
+func (m *ExecutionResultFlags) GetTimeLimitHard() bool {
+	if m != nil && m.TimeLimitHard != nil {
+		return *m.TimeLimitHard
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetStdoutOverflow() bool {
-	if this != nil && this.StdoutOverflow != nil {
-		return *this.StdoutOverflow
+func (m *ExecutionResultFlags) GetStdoutOverflow() bool {
+	if m != nil && m.StdoutOverflow != nil {
+		return *m.StdoutOverflow
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetStderrOverflow() bool {
-	if this != nil && this.StderrOverflow != nil {
-		return *this.StderrOverflow
+func (m *ExecutionResultFlags) GetStderrOverflow() bool {
+	if m != nil && m.StderrOverflow != nil {
+		return *m.StderrOverflow
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetStdpipeTimeout() bool {
-	if this != nil && this.StdpipeTimeout != nil {
-		return *this.StdpipeTimeout
+func (m *ExecutionResultFlags) GetStdpipeTimeout() bool {
+	if m != nil && m.StdpipeTimeout != nil {
+		return *m.StdpipeTimeout
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetTimeLimitHitPost() bool {
-	if this != nil && this.TimeLimitHitPost != nil {
-		return *this.TimeLimitHitPost
+func (m *ExecutionResultFlags) GetTimeLimitHitPost() bool {
+	if m != nil && m.TimeLimitHitPost != nil {
+		return *m.TimeLimitHitPost
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetMemoryLimitHitPost() bool {
-	if this != nil && this.MemoryLimitHitPost != nil {
-		return *this.MemoryLimitHitPost
+func (m *ExecutionResultFlags) GetMemoryLimitHitPost() bool {
+	if m != nil && m.MemoryLimitHitPost != nil {
+		return *m.MemoryLimitHitPost
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetProcessLimitHit() bool {
-	if this != nil && this.ProcessLimitHit != nil {
-		return *this.ProcessLimitHit
+func (m *ExecutionResultFlags) GetProcessLimitHit() bool {
+	if m != nil && m.ProcessLimitHit != nil {
+		return *m.ProcessLimitHit
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetStoppedBySignal() bool {
-	if this != nil && this.StoppedBySignal != nil {
-		return *this.StoppedBySignal
+func (m *ExecutionResultFlags) GetStoppedBySignal() bool {
+	if m != nil && m.StoppedBySignal != nil {
+		return *m.StoppedBySignal
 	}
 	return false
 }
 
-func (this *ExecutionResultFlags) GetKilledBySignal() bool {
-	if this != nil && this.KilledBySignal != nil {
-		return *this.KilledBySignal
+func (m *ExecutionResultFlags) GetKilledBySignal() bool {
+	if m != nil && m.KilledBySignal != nil {
+		return *m.KilledBySignal
 	}
 	return false
 }
@@ -164,27 +164,27 @@ type ExecutionResultTime struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *ExecutionResultTime) Reset()         { *this = ExecutionResultTime{} }
-func (this *ExecutionResultTime) String() string { return proto.CompactTextString(this) }
-func (*ExecutionResultTime) ProtoMessage()       {}
+func (m *ExecutionResultTime) Reset()         { *m = ExecutionResultTime{} }
+func (m *ExecutionResultTime) String() string { return proto.CompactTextString(m) }
+func (*ExecutionResultTime) ProtoMessage()    {}
 
-func (this *ExecutionResultTime) GetUserTimeMicros() uint64 {
-	if this != nil && this.UserTimeMicros != nil {
-		return *this.UserTimeMicros
+func (m *ExecutionResultTime) GetUserTimeMicros() uint64 {
+	if m != nil && m.UserTimeMicros != nil {
+		return *m.UserTimeMicros
 	}
 	return 0
 }
 
-func (this *ExecutionResultTime) GetKernelTimeMicros() uint64 {
-	if this != nil && this.KernelTimeMicros != nil {
-		return *this.KernelTimeMicros
+func (m *ExecutionResultTime) GetKernelTimeMicros() uint64 {
+	if m != nil && m.KernelTimeMicros != nil {
+		return *m.KernelTimeMicros
 	}
 	return 0
 }
 
-func (this *ExecutionResultTime) GetWallTimeMicros() uint64 {
-	if this != nil && this.WallTimeMicros != nil {
-		return *this.WallTimeMicros
+func (m *ExecutionResultTime) GetWallTimeMicros() uint64 {
+	if m != nil && m.WallTimeMicros != nil {
+		return *m.WallTimeMicros
 	}
 	return 0
 }

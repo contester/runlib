@@ -106,20 +106,20 @@ type TestRun struct {
 	XXX_unrecognized []byte          `json:"-"`
 }
 
-func (this *TestRun) Reset()         { *this = TestRun{} }
-func (this *TestRun) String() string { return proto.CompactTextString(this) }
-func (*TestRun) ProtoMessage()       {}
+func (m *TestRun) Reset()         { *m = TestRun{} }
+func (m *TestRun) String() string { return proto.CompactTextString(m) }
+func (*TestRun) ProtoMessage()    {}
 
-func (this *TestRun) GetSolution() *LocalExecution {
-	if this != nil {
-		return this.Solution
+func (m *TestRun) GetSolution() *LocalExecution {
+	if m != nil {
+		return m.Solution
 	}
 	return nil
 }
 
-func (this *TestRun) GetTester() *LocalExecution {
-	if this != nil {
-		return this.Tester
+func (m *TestRun) GetTester() *LocalExecution {
+	if m != nil {
+		return m.Tester
 	}
 	return nil
 }
@@ -132,34 +132,34 @@ type ComputedTestResult struct {
 	XXX_unrecognized []byte        `json:"-"`
 }
 
-func (this *ComputedTestResult) Reset()         { *this = ComputedTestResult{} }
-func (this *ComputedTestResult) String() string { return proto.CompactTextString(this) }
-func (*ComputedTestResult) ProtoMessage()       {}
+func (m *ComputedTestResult) Reset()         { *m = ComputedTestResult{} }
+func (m *ComputedTestResult) String() string { return proto.CompactTextString(m) }
+func (*ComputedTestResult) ProtoMessage()    {}
 
-func (this *ComputedTestResult) GetResult() TestRun_Code {
-	if this != nil && this.Result != nil {
-		return *this.Result
+func (m *ComputedTestResult) GetResult() TestRun_Code {
+	if m != nil && m.Result != nil {
+		return *m.Result
 	}
 	return 0
 }
 
-func (this *ComputedTestResult) GetTime() uint32 {
-	if this != nil && this.Time != nil {
-		return *this.Time
+func (m *ComputedTestResult) GetTime() uint32 {
+	if m != nil && m.Time != nil {
+		return *m.Time
 	}
 	return 0
 }
 
-func (this *ComputedTestResult) GetMemory() uint32 {
-	if this != nil && this.Memory != nil {
-		return *this.Memory
+func (m *ComputedTestResult) GetMemory() uint32 {
+	if m != nil && m.Memory != nil {
+		return *m.Memory
 	}
 	return 0
 }
 
-func (this *ComputedTestResult) GetReturnCode() uint32 {
-	if this != nil && this.ReturnCode != nil {
-		return *this.ReturnCode
+func (m *ComputedTestResult) GetReturnCode() uint32 {
+	if m != nil && m.ReturnCode != nil {
+		return *m.ReturnCode
 	}
 	return 0
 }
@@ -170,15 +170,22 @@ type Compilation struct {
 	XXX_unrecognized []byte                `json:"-"`
 }
 
-func (this *Compilation) Reset()         { *this = Compilation{} }
-func (this *Compilation) String() string { return proto.CompactTextString(this) }
-func (*Compilation) ProtoMessage()       {}
+func (m *Compilation) Reset()         { *m = Compilation{} }
+func (m *Compilation) String() string { return proto.CompactTextString(m) }
+func (*Compilation) ProtoMessage()    {}
 
-func (this *Compilation) GetFailure() bool {
-	if this != nil && this.Failure != nil {
-		return *this.Failure
+func (m *Compilation) GetFailure() bool {
+	if m != nil && m.Failure != nil {
+		return *m.Failure
 	}
 	return false
+}
+
+func (m *Compilation) GetResultSteps() []*Compilation_Result {
+	if m != nil {
+		return m.ResultSteps
+	}
+	return nil
 }
 
 type Compilation_Result struct {
@@ -188,27 +195,27 @@ type Compilation_Result struct {
 	XXX_unrecognized []byte          `json:"-"`
 }
 
-func (this *Compilation_Result) Reset()         { *this = Compilation_Result{} }
-func (this *Compilation_Result) String() string { return proto.CompactTextString(this) }
-func (*Compilation_Result) ProtoMessage()       {}
+func (m *Compilation_Result) Reset()         { *m = Compilation_Result{} }
+func (m *Compilation_Result) String() string { return proto.CompactTextString(m) }
+func (*Compilation_Result) ProtoMessage()    {}
 
-func (this *Compilation_Result) GetStepName() string {
-	if this != nil && this.StepName != nil {
-		return *this.StepName
+func (m *Compilation_Result) GetStepName() string {
+	if m != nil && m.StepName != nil {
+		return *m.StepName
 	}
 	return ""
 }
 
-func (this *Compilation_Result) GetExecution() *LocalExecution {
-	if this != nil {
-		return this.Execution
+func (m *Compilation_Result) GetExecution() *LocalExecution {
+	if m != nil {
+		return m.Execution
 	}
 	return nil
 }
 
-func (this *Compilation_Result) GetFailure() bool {
-	if this != nil && this.Failure != nil {
-		return *this.Failure
+func (m *Compilation_Result) GetFailure() bool {
+	if m != nil && m.Failure != nil {
+		return *m.Failure
 	}
 	return false
 }
@@ -219,13 +226,20 @@ type CompileRequest struct {
 	XXX_unrecognized []byte    `json:"-"`
 }
 
-func (this *CompileRequest) Reset()         { *this = CompileRequest{} }
-func (this *CompileRequest) String() string { return proto.CompactTextString(this) }
-func (*CompileRequest) ProtoMessage()       {}
+func (m *CompileRequest) Reset()         { *m = CompileRequest{} }
+func (m *CompileRequest) String() string { return proto.CompactTextString(m) }
+func (*CompileRequest) ProtoMessage()    {}
 
-func (this *CompileRequest) GetSourceModule() *Module {
-	if this != nil {
-		return this.SourceModule
+func (m *CompileRequest) GetSourceModule() *Module {
+	if m != nil {
+		return m.SourceModule
+	}
+	return nil
+}
+
+func (m *CompileRequest) GetExtraModules() []*Module {
+	if m != nil {
+		return m.ExtraModules
 	}
 	return nil
 }
@@ -237,27 +251,27 @@ type CompileResponse struct {
 	XXX_unrecognized []byte       `json:"-"`
 }
 
-func (this *CompileResponse) Reset()         { *this = CompileResponse{} }
-func (this *CompileResponse) String() string { return proto.CompactTextString(this) }
-func (*CompileResponse) ProtoMessage()       {}
+func (m *CompileResponse) Reset()         { *m = CompileResponse{} }
+func (m *CompileResponse) String() string { return proto.CompactTextString(m) }
+func (*CompileResponse) ProtoMessage()    {}
 
-func (this *CompileResponse) GetCompileResult() *Compilation {
-	if this != nil {
-		return this.CompileResult
+func (m *CompileResponse) GetCompileResult() *Compilation {
+	if m != nil {
+		return m.CompileResult
 	}
 	return nil
 }
 
-func (this *CompileResponse) GetCompiledModule() *Module {
-	if this != nil {
-		return this.CompiledModule
+func (m *CompileResponse) GetCompiledModule() *Module {
+	if m != nil {
+		return m.CompiledModule
 	}
 	return nil
 }
 
-func (this *CompileResponse) GetGeneralFailure() string {
-	if this != nil && this.GeneralFailure != nil {
-		return *this.GeneralFailure
+func (m *CompileResponse) GetGeneralFailure() string {
+	if m != nil && m.GeneralFailure != nil {
+		return *m.GeneralFailure
 	}
 	return ""
 }
@@ -269,27 +283,27 @@ type ProblemHandle struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *ProblemHandle) Reset()         { *this = ProblemHandle{} }
-func (this *ProblemHandle) String() string { return proto.CompactTextString(this) }
-func (*ProblemHandle) ProtoMessage()       {}
+func (m *ProblemHandle) Reset()         { *m = ProblemHandle{} }
+func (m *ProblemHandle) String() string { return proto.CompactTextString(m) }
+func (*ProblemHandle) ProtoMessage()    {}
 
-func (this *ProblemHandle) GetUrl() string {
-	if this != nil && this.Url != nil {
-		return *this.Url
+func (m *ProblemHandle) GetUrl() string {
+	if m != nil && m.Url != nil {
+		return *m.Url
 	}
 	return ""
 }
 
-func (this *ProblemHandle) GetRevision() uint32 {
-	if this != nil && this.Revision != nil {
-		return *this.Revision
+func (m *ProblemHandle) GetRevision() uint32 {
+	if m != nil && m.Revision != nil {
+		return *m.Revision
 	}
 	return 0
 }
 
-func (this *ProblemHandle) GetHost() string {
-	if this != nil && this.Host != nil {
-		return *this.Host
+func (m *ProblemHandle) GetHost() string {
+	if m != nil && m.Host != nil {
+		return *m.Host
 	}
 	return ""
 }
@@ -300,20 +314,20 @@ type SanitizeRequest struct {
 	XXX_unrecognized []byte         `json:"-"`
 }
 
-func (this *SanitizeRequest) Reset()         { *this = SanitizeRequest{} }
-func (this *SanitizeRequest) String() string { return proto.CompactTextString(this) }
-func (*SanitizeRequest) ProtoMessage()       {}
+func (m *SanitizeRequest) Reset()         { *m = SanitizeRequest{} }
+func (m *SanitizeRequest) String() string { return proto.CompactTextString(m) }
+func (*SanitizeRequest) ProtoMessage()    {}
 
-func (this *SanitizeRequest) GetProblem() *ProblemHandle {
-	if this != nil {
-		return this.Problem
+func (m *SanitizeRequest) GetProblem() *ProblemHandle {
+	if m != nil {
+		return m.Problem
 	}
 	return nil
 }
 
-func (this *SanitizeRequest) GetPdb() string {
-	if this != nil && this.Pdb != nil {
-		return *this.Pdb
+func (m *SanitizeRequest) GetPdb() string {
+	if m != nil && m.Pdb != nil {
+		return *m.Pdb
 	}
 	return ""
 }
@@ -325,20 +339,27 @@ type ProblemManifest struct {
 	XXX_unrecognized []byte                       `json:"-"`
 }
 
-func (this *ProblemManifest) Reset()         { *this = ProblemManifest{} }
-func (this *ProblemManifest) String() string { return proto.CompactTextString(this) }
-func (*ProblemManifest) ProtoMessage()       {}
+func (m *ProblemManifest) Reset()         { *m = ProblemManifest{} }
+func (m *ProblemManifest) String() string { return proto.CompactTextString(m) }
+func (*ProblemManifest) ProtoMessage()    {}
 
-func (this *ProblemManifest) GetProblemXml() *Blob {
-	if this != nil {
-		return this.ProblemXml
+func (m *ProblemManifest) GetProblemXml() *Blob {
+	if m != nil {
+		return m.ProblemXml
 	}
 	return nil
 }
 
-func (this *ProblemManifest) GetCheckerHash() []byte {
-	if this != nil {
-		return this.CheckerHash
+func (m *ProblemManifest) GetCheckerHash() []byte {
+	if m != nil {
+		return m.CheckerHash
+	}
+	return nil
+}
+
+func (m *ProblemManifest) GetTestHashes() []*ProblemManifest_TestEntry {
+	if m != nil {
+		return m.TestHashes
 	}
 	return nil
 }
@@ -350,27 +371,27 @@ type ProblemManifest_TestEntry struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *ProblemManifest_TestEntry) Reset()         { *this = ProblemManifest_TestEntry{} }
-func (this *ProblemManifest_TestEntry) String() string { return proto.CompactTextString(this) }
-func (*ProblemManifest_TestEntry) ProtoMessage()       {}
+func (m *ProblemManifest_TestEntry) Reset()         { *m = ProblemManifest_TestEntry{} }
+func (m *ProblemManifest_TestEntry) String() string { return proto.CompactTextString(m) }
+func (*ProblemManifest_TestEntry) ProtoMessage()    {}
 
-func (this *ProblemManifest_TestEntry) GetTestId() uint32 {
-	if this != nil && this.TestId != nil {
-		return *this.TestId
+func (m *ProblemManifest_TestEntry) GetTestId() uint32 {
+	if m != nil && m.TestId != nil {
+		return *m.TestId
 	}
 	return 0
 }
 
-func (this *ProblemManifest_TestEntry) GetInputHash() []byte {
-	if this != nil {
-		return this.InputHash
+func (m *ProblemManifest_TestEntry) GetInputHash() []byte {
+	if m != nil {
+		return m.InputHash
 	}
 	return nil
 }
 
-func (this *ProblemManifest_TestEntry) GetAnswerHash() []byte {
-	if this != nil {
-		return this.AnswerHash
+func (m *ProblemManifest_TestEntry) GetAnswerHash() []byte {
+	if m != nil {
+		return m.AnswerHash
 	}
 	return nil
 }
@@ -384,41 +405,41 @@ type TestHandle struct {
 	XXX_unrecognized []byte         `json:"-"`
 }
 
-func (this *TestHandle) Reset()         { *this = TestHandle{} }
-func (this *TestHandle) String() string { return proto.CompactTextString(this) }
-func (*TestHandle) ProtoMessage()       {}
+func (m *TestHandle) Reset()         { *m = TestHandle{} }
+func (m *TestHandle) String() string { return proto.CompactTextString(m) }
+func (*TestHandle) ProtoMessage()    {}
 
-func (this *TestHandle) GetPdb() string {
-	if this != nil && this.Pdb != nil {
-		return *this.Pdb
+func (m *TestHandle) GetPdb() string {
+	if m != nil && m.Pdb != nil {
+		return *m.Pdb
 	}
 	return ""
 }
 
-func (this *TestHandle) GetProblem() *ProblemHandle {
-	if this != nil {
-		return this.Problem
+func (m *TestHandle) GetProblem() *ProblemHandle {
+	if m != nil {
+		return m.Problem
 	}
 	return nil
 }
 
-func (this *TestHandle) GetTestId() uint32 {
-	if this != nil && this.TestId != nil {
-		return *this.TestId
+func (m *TestHandle) GetTestId() uint32 {
+	if m != nil && m.TestId != nil {
+		return *m.TestId
 	}
 	return 0
 }
 
-func (this *TestHandle) GetTimeLimitMs() uint32 {
-	if this != nil && this.TimeLimitMs != nil {
-		return *this.TimeLimitMs
+func (m *TestHandle) GetTimeLimitMs() uint32 {
+	if m != nil && m.TimeLimitMs != nil {
+		return *m.TimeLimitMs
 	}
 	return 0
 }
 
-func (this *TestHandle) GetMemoryLimitBytes() uint32 {
-	if this != nil && this.MemoryLimitBytes != nil {
-		return *this.MemoryLimitBytes
+func (m *TestHandle) GetMemoryLimitBytes() uint32 {
+	if m != nil && m.MemoryLimitBytes != nil {
+		return *m.MemoryLimitBytes
 	}
 	return 0
 }
@@ -432,41 +453,41 @@ type TestData struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *TestData) Reset()         { *this = TestData{} }
-func (this *TestData) String() string { return proto.CompactTextString(this) }
-func (*TestData) ProtoMessage()       {}
+func (m *TestData) Reset()         { *m = TestData{} }
+func (m *TestData) String() string { return proto.CompactTextString(m) }
+func (*TestData) ProtoMessage()    {}
 
-func (this *TestData) GetInput() *Blob {
-	if this != nil {
-		return this.Input
+func (m *TestData) GetInput() *Blob {
+	if m != nil {
+		return m.Input
 	}
 	return nil
 }
 
-func (this *TestData) GetOutput() *Blob {
-	if this != nil {
-		return this.Output
+func (m *TestData) GetOutput() *Blob {
+	if m != nil {
+		return m.Output
 	}
 	return nil
 }
 
-func (this *TestData) GetChecked() *Module {
-	if this != nil {
-		return this.Checked
+func (m *TestData) GetChecked() *Module {
+	if m != nil {
+		return m.Checked
 	}
 	return nil
 }
 
-func (this *TestData) GetTimeLimitMs() uint32 {
-	if this != nil && this.TimeLimitMs != nil {
-		return *this.TimeLimitMs
+func (m *TestData) GetTimeLimitMs() uint32 {
+	if m != nil && m.TimeLimitMs != nil {
+		return *m.TimeLimitMs
 	}
 	return 0
 }
 
-func (this *TestData) GetMemoryLimitBytes() uint32 {
-	if this != nil && this.MemoryLimitBytes != nil {
-		return *this.MemoryLimitBytes
+func (m *TestData) GetMemoryLimitBytes() uint32 {
+	if m != nil && m.MemoryLimitBytes != nil {
+		return *m.MemoryLimitBytes
 	}
 	return 0
 }
@@ -477,20 +498,20 @@ type TestRequest struct {
 	XXX_unrecognized []byte      `json:"-"`
 }
 
-func (this *TestRequest) Reset()         { *this = TestRequest{} }
-func (this *TestRequest) String() string { return proto.CompactTextString(this) }
-func (*TestRequest) ProtoMessage()       {}
+func (m *TestRequest) Reset()         { *m = TestRequest{} }
+func (m *TestRequest) String() string { return proto.CompactTextString(m) }
+func (*TestRequest) ProtoMessage()    {}
 
-func (this *TestRequest) GetModule() *Module {
-	if this != nil {
-		return this.Module
+func (m *TestRequest) GetModule() *Module {
+	if m != nil {
+		return m.Module
 	}
 	return nil
 }
 
-func (this *TestRequest) GetTestHandle() *TestHandle {
-	if this != nil {
-		return this.TestHandle
+func (m *TestRequest) GetTestHandle() *TestHandle {
+	if m != nil {
+		return m.TestHandle
 	}
 	return nil
 }
@@ -501,20 +522,20 @@ type TestResponse struct {
 	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (this *TestResponse) Reset()         { *this = TestResponse{} }
-func (this *TestResponse) String() string { return proto.CompactTextString(this) }
-func (*TestResponse) ProtoMessage()       {}
+func (m *TestResponse) Reset()         { *m = TestResponse{} }
+func (m *TestResponse) String() string { return proto.CompactTextString(m) }
+func (*TestResponse) ProtoMessage()    {}
 
-func (this *TestResponse) GetTestResult() *TestRun {
-	if this != nil {
-		return this.TestResult
+func (m *TestResponse) GetTestResult() *TestRun {
+	if m != nil {
+		return m.TestResult
 	}
 	return nil
 }
 
-func (this *TestResponse) GetTestNotFound() bool {
-	if this != nil && this.TestNotFound != nil {
-		return *this.TestNotFound
+func (m *TestResponse) GetTestNotFound() bool {
+	if m != nil && m.TestNotFound != nil {
+		return *m.TestNotFound
 	}
 	return false
 }
@@ -527,34 +548,34 @@ type JudgeRequest struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *JudgeRequest) Reset()         { *this = JudgeRequest{} }
-func (this *JudgeRequest) String() string { return proto.CompactTextString(this) }
-func (*JudgeRequest) ProtoMessage()       {}
+func (m *JudgeRequest) Reset()         { *m = JudgeRequest{} }
+func (m *JudgeRequest) String() string { return proto.CompactTextString(m) }
+func (*JudgeRequest) ProtoMessage()    {}
 
-func (this *JudgeRequest) GetModule() *Module {
-	if this != nil {
-		return this.Module
+func (m *JudgeRequest) GetModule() *Module {
+	if m != nil {
+		return m.Module
 	}
 	return nil
 }
 
-func (this *JudgeRequest) GetContestId() int32 {
-	if this != nil && this.ContestId != nil {
-		return *this.ContestId
+func (m *JudgeRequest) GetContestId() int32 {
+	if m != nil && m.ContestId != nil {
+		return *m.ContestId
 	}
 	return 0
 }
 
-func (this *JudgeRequest) GetProblemId() string {
-	if this != nil && this.ProblemId != nil {
-		return *this.ProblemId
+func (m *JudgeRequest) GetProblemId() string {
+	if m != nil && m.ProblemId != nil {
+		return *m.ProblemId
 	}
 	return ""
 }
 
-func (this *JudgeRequest) GetSchoolMode() bool {
-	if this != nil && this.SchoolMode != nil {
-		return *this.SchoolMode
+func (m *JudgeRequest) GetSchoolMode() bool {
+	if m != nil && m.SchoolMode != nil {
+		return *m.SchoolMode
 	}
 	return false
 }
@@ -565,20 +586,20 @@ type JudgeResponse struct {
 	XXX_unrecognized []byte `json:"-"`
 }
 
-func (this *JudgeResponse) Reset()         { *this = JudgeResponse{} }
-func (this *JudgeResponse) String() string { return proto.CompactTextString(this) }
-func (*JudgeResponse) ProtoMessage()       {}
+func (m *JudgeResponse) Reset()         { *m = JudgeResponse{} }
+func (m *JudgeResponse) String() string { return proto.CompactTextString(m) }
+func (*JudgeResponse) ProtoMessage()    {}
 
-func (this *JudgeResponse) GetProblemNotFound() bool {
-	if this != nil && this.ProblemNotFound != nil {
-		return *this.ProblemNotFound
+func (m *JudgeResponse) GetProblemNotFound() bool {
+	if m != nil && m.ProblemNotFound != nil {
+		return *m.ProblemNotFound
 	}
 	return false
 }
 
-func (this *JudgeResponse) GetCompileFailed() bool {
-	if this != nil && this.CompileFailed != nil {
-		return *this.CompileFailed
+func (m *JudgeResponse) GetCompileFailed() bool {
+	if m != nil && m.CompileFailed != nil {
+		return *m.CompileFailed
 	}
 	return false
 }
@@ -590,27 +611,27 @@ type ContestMapping struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *ContestMapping) Reset()         { *this = ContestMapping{} }
-func (this *ContestMapping) String() string { return proto.CompactTextString(this) }
-func (*ContestMapping) ProtoMessage()       {}
+func (m *ContestMapping) Reset()         { *m = ContestMapping{} }
+func (m *ContestMapping) String() string { return proto.CompactTextString(m) }
+func (*ContestMapping) ProtoMessage()    {}
 
-func (this *ContestMapping) GetLocalId() uint32 {
-	if this != nil && this.LocalId != nil {
-		return *this.LocalId
+func (m *ContestMapping) GetLocalId() uint32 {
+	if m != nil && m.LocalId != nil {
+		return *m.LocalId
 	}
 	return 0
 }
 
-func (this *ContestMapping) GetPolygonId() uint32 {
-	if this != nil && this.PolygonId != nil {
-		return *this.PolygonId
+func (m *ContestMapping) GetPolygonId() uint32 {
+	if m != nil && m.PolygonId != nil {
+		return *m.PolygonId
 	}
 	return 0
 }
 
-func (this *ContestMapping) GetSchoolMode() bool {
-	if this != nil && this.SchoolMode != nil {
-		return *this.SchoolMode
+func (m *ContestMapping) GetSchoolMode() bool {
+	if m != nil && m.SchoolMode != nil {
+		return *m.SchoolMode
 	}
 	return false
 }

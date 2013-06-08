@@ -99,11 +99,12 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 }
 
 func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
+	fmt.Println(filepath.Glob(root + "Task.*"))
 	problems, err := filepath.Glob(root + "Task.*")
 	if err != nil {
 		return err
 	}
-
+    fmt.Println(problems)
 	for _, problem := range problems {
 		fmt.Println(problem)
 		ext := filepath.Ext(problem)

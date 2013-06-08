@@ -3,53 +3,9 @@ package service
 import (
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"io"
-	"labix.org/v2/mgo"
-	"os"
+	"github.com/contester/runlib/mongotools"
 )
 
-func gridfsCopy(srcname, dstname string, mfs *mgo.GridFS, toGridfs bool) error {
-	var err error
-	ec := tools.NewContext("gridfsCopy")
-
-	var source io.ReadCloser
-	var destination io.WriteCloser
-
-	if toGridfs {
-		source, err = os.Open(srcname)
-	} else {
-		source, err = mfs.Open(srcname)
-	}
-	if err != nil {
-		return ec.NewError(err, "source.Open")
-	}
-	defer source.Close()
-
-	if toGridfs {
-		destination, err = mfs.Create(dstname)
-	} else {
-		destination, err = os.Create(dstname)
-	}
-	if err != nil {
-		return ec.NewError(err, "destination.Open")
-	}
-	defer destination.Close()
-
-	_, err = io.Copy(destination, source)
-	if err != nil {
-		return ec.NewError(err, "io.Copy")
-	}
-
-	if err = destination.Close(); err != nil {
-		return ec.NewError(err, "destination.Close")
-	}
-
-	if err = source.Close(); err != nil {
-		return ec.NewError(err, "source.Close")
-	}
-
-	return nil
-}
 
 func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, response *contester_proto.RepeatedStringEntries) error {
 	if request.SandboxId != nil {
@@ -72,7 +28,7 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 		if err != nil {
 			continue
 		}
-		err = gridfsCopy(resolved, *item.Destination, s.Mfs, true)
+		err = mongotools.GridfsCopy(resolved, *item.Destination, s.Mfs, true)
 		if err != nil {
 			continue
 		}
@@ -103,7 +59,7 @@ func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, 
 		if err != nil {
 			return ec.NewError(err, "resolvePath")
 		}
-		err = gridfsCopy(*item.Source, resolved, s.Mfs, false)
+		err = mongotools.GridfsCopy(*item.Source, resolved, s.Mfs, false)
 		if err != nil {
 			return ec.NewError(err, "gridfsCopy")
 		}

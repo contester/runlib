@@ -85,6 +85,7 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 
 	memlimitString, err := ioutil.ReadFile(filepath.Join(root, "memlimit"))
 	if err == nil {
+		fmt.Println(string(memlimitString))
 		manifest.MemoryLimit, err = strconv.ParseInt(string(memlimitString), 10, 64)
 	} else {
 		fmt.Println(err)
@@ -92,6 +93,7 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 
 	timexString, err := ioutil.ReadFile(filepath.Join(root, "timex"))
 	if err == nil {
+		fmt.Println(string(timexString))
 		timex, err := strconv.ParseFloat(string(timexString), 64)
 		if err == nil {
 			manifest.TimeLimitMicros = int64(timex * 1000000)

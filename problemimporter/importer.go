@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -104,6 +105,7 @@ func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 	}
 
 	for _, problem := range problems {
+		fmt.Println(problem)
 		ext := filepath.Ext(problem)
 
 		if len(ext) < 2 {

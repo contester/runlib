@@ -97,7 +97,7 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 
 	fmt.Println(manifest)
 
-	return mdb.C("problems").Insert(&manifest)
+	return mdb.C("manifest").Insert(&manifest)
 }
 
 func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {

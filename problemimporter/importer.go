@@ -95,18 +95,17 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 		}
 	}
 
+	fmt.Println(manifest)
+
 	return mdb.C("problems").Insert(&manifest)
 }
 
 func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
-	fmt.Println(filepath.Glob(root + "Task.*"))
-	problems, err := filepath.Glob(root + "Task.*")
+	problems, err := filepath.Glob(filepath.Join(root, "Task.*"))
 	if err != nil {
 		return err
 	}
-    fmt.Println(problems)
 	for _, problem := range problems {
-		fmt.Println(problem)
 		ext := filepath.Ext(problem)
 
 		if len(ext) < 2 {
@@ -118,7 +117,7 @@ func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 			continue
 		}
 
-		err = importProblem(strconv.FormatUint(problemId, 10), problem, "problem/moodle/" + strconv.FormatUint(problemId, 10), mdb, mfs)
+		err = importProblem(strconv.FormatUint(problemId, 10), problem, "problem/moodle/" + strconv.FormatUint(problemId, 10) + "/", mdb, mfs)
 		if err != nil {
 			return err
 		}

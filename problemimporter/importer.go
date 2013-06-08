@@ -10,7 +10,6 @@ import (
 	"labix.org/v2/mgo"
 	"strconv"
 	"github.com/contester/runlib/mongotools"
-	"io/ioutil"
 	"log"
 	"sort"
 )

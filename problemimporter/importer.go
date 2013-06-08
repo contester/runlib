@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"bufio"
 
 	"labix.org/v2/mgo"
 	"strconv"
@@ -36,6 +37,21 @@ func storeIfExists(mfs *mgo.GridFS, filename, gridname string) error {
 		return err
 	}
 	return nil
+}
+
+func readFirstLine(filename string) (string, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	r := bufio.NewScanner(f)
+
+	if r.Scan() {
+		return r.Text(), nil
+	}
+	return "", nil
 }
 
 func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.GridFS) error {
@@ -83,20 +99,25 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 
 	manifest.TesterName = "tester.exe"
 
-	memlimitString, err := ioutil.ReadFile(filepath.Join(root, "memlimit"))
+	memlimitString, err := readFirstLine(filepath.Join(root, "memlimit"))
 	if err == nil {
-		fmt.Println(string(memlimitString))
+		fmt.Println(memlimitString)
 		manifest.MemoryLimit, err = strconv.ParseInt(string(memlimitString), 10, 64)
+		if err != nil {
+			fmt.Println(err)
+		}
 	} else {
 		fmt.Println(err)
 	}
 
-	timexString, err := ioutil.ReadFile(filepath.Join(root, "timex"))
+	timexString, err := readFirstLine(filepath.Join(root, "timex"))
 	if err == nil {
-		fmt.Println(string(timexString))
+		fmt.Println(timexString)
 		timex, err := strconv.ParseFloat(string(timexString), 64)
 		if err == nil {
 			manifest.TimeLimitMicros = int64(timex * 1000000)
+		} else {
+			fmt.Println(err)
 		}
 	} else {
 		fmt.Println(err)

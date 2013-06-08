@@ -49,7 +49,7 @@ func readFirstLine(filename string) (string, error) {
 	r := bufio.NewScanner(f)
 
 	if r.Scan() {
-		return strings.Trim(r.Text()), nil
+		return strings.TrimSpace(r.Text()), nil
 	}
 	return "", nil
 }

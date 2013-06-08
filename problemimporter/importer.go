@@ -12,6 +12,7 @@ import (
 	"github.com/contester/runlib/mongotools"
 	"log"
 	"sort"
+	"strings"
 )
 
 type ProblemManifest struct {
@@ -48,7 +49,7 @@ func readFirstLine(filename string) (string, error) {
 	r := bufio.NewScanner(f)
 
 	if r.Scan() {
-		return r.Text(), nil
+		return strings.Trim(r.Text()), nil
 	}
 	return "", nil
 }

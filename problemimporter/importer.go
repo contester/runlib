@@ -11,6 +11,7 @@ import (
 	"github.com/contester/runlib/mongotools"
 	"io/ioutil"
 	"log"
+	"sort"
 )
 
 type ProblemManifest struct {
@@ -93,6 +94,10 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 		if err == nil {
 			manifest.TimeLimitMicros = int64(timex * 1000000)
 		}
+	}
+
+	if manifest.Answers != nil {
+		sort.Ints(manifest.Answers)
 	}
 
 	fmt.Println(manifest)

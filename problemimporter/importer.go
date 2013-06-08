@@ -88,7 +88,7 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 			manifest.Answers = append(manifest.Answers, int(testId))
 		}
 
-		if int(testId) < manifest.TestCount {
+		if int(testId) > manifest.TestCount {
 			manifest.TestCount = int(testId)
 		}
 	}

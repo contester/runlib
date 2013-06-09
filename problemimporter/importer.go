@@ -15,6 +15,10 @@ import (
 	"strings"
 )
 
+var (
+	fixMemlimit = flag.Bool("fixMemlimit", true, "Fix memlimit")
+)
+
 type ProblemManifest struct {
 	Id string
 	Revision int
@@ -105,6 +109,9 @@ func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.Grid
 		manifest.MemoryLimit, err = strconv.ParseInt(string(memlimitString), 10, 64)
 		if err != nil {
 			fmt.Println(err)
+		}
+		if manifest.MemoryLimit < 16 * 1024 * 1024 {
+			manifest.MemoryLimit = 16 * 1024 * 1024
 		}
 	} else {
 		fmt.Println(err)

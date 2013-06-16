@@ -33,11 +33,10 @@ type Contester struct {
 }
 
 func getHostname() string {
-	result, err := os.Hostname()
-	if err != nil {
-		return "undefined"
+	if result, err := os.Hostname(); err == nil {
+		return result
 	}
-	return result
+	return "undefined"
 }
 
 func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {

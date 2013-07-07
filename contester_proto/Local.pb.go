@@ -408,30 +408,6 @@ func (m *LocalExecution) GetResult() *LocalExecutionResult {
 	return nil
 }
 
-type OwnerInfo struct {
-	Uid              *uint32  `protobuf:"varint,1,opt,name=uid" json:"uid,omitempty"`
-	Pathname         []string `protobuf:"bytes,2,rep,name=pathname" json:"pathname,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
-}
-
-func (m *OwnerInfo) Reset()         { *m = OwnerInfo{} }
-func (m *OwnerInfo) String() string { return proto.CompactTextString(m) }
-func (*OwnerInfo) ProtoMessage()    {}
-
-func (m *OwnerInfo) GetUid() uint32 {
-	if m != nil && m.Uid != nil {
-		return *m.Uid
-	}
-	return 0
-}
-
-func (m *OwnerInfo) GetPathname() []string {
-	if m != nil {
-		return m.Pathname
-	}
-	return nil
-}
-
 type BinaryTypeRequest struct {
 	Pathname         *string `protobuf:"bytes,1,opt,name=pathname" json:"pathname,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`

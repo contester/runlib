@@ -5,28 +5,6 @@ package contester.proto;
 
 option java_package = "org.stingray.contester.proto";
 
-message TestRun {
-    enum Code {
-        Accepted = 10;
-        TimeLimitExceeded = 11;
-        RuntimeError = 12;
-        WrongAnswer = 13;
-        PresentationError = 14;
-        MemoryLimitExceeded = 15;
-        TestingError = 16;
-    }
-
-    optional LocalExecution solution = 1;
-    optional LocalExecution tester = 2;
-}
-
-message ComputedTestResult {
-    optional TestRun.Code result = 1;
-    optional uint32 time = 2;
-    optional uint32 memory = 3;
-    optional uint32 return_code = 4;
-}
-
 message Compilation {
     enum Code {
         Success = 1;
@@ -42,80 +20,3 @@ message Compilation {
     optional bool failure = 1;
     repeated Result result_steps = 2;
 };
-
-message CompileRequest {
-    required Module source_module = 1;
-    repeated Module extra_modules = 2;
-};
-
-message CompileResponse {
-    optional Compilation compile_result = 1;
-    optional Module compiled_module = 2;
-    optional string general_failure = 3;
-};
-
-message ProblemHandle {
-    required string url = 1;
-    optional uint32 revision = 2;
-    optional string host = 3;
-};
-
-message SanitizeRequest {
-    optional ProblemHandle problem = 1;
-    optional string pdb = 2;
-};
-
-message ProblemManifest {
-    message TestEntry {
-        optional uint32 test_id = 1;
-        optional bytes input_hash = 2;
-        optional bytes answer_hash = 3;
-    };
-    optional Blob problemXml = 1;
-    optional bytes checker_hash = 2;
-    repeated TestEntry test_hashes = 3;
-};
-
-message TestHandle {
-    optional string pdb = 1;
-    optional ProblemHandle problem = 2;
-    optional uint32 test_id = 3;
-    optional uint32 time_limit_ms = 4;
-    optional uint32 memory_limit_bytes = 5;
-};
-
-message TestData {
-    optional Blob input = 1;
-    optional Blob output = 2;
-    optional Module checked = 3;
-    optional uint32 time_limit_ms = 4;
-    optional uint32 memory_limit_bytes = 5;
-};
-
-message TestRequest {
-    required Module module = 1;
-    optional TestHandle test_handle = 2;
-};
-
-message TestResponse {
-    optional TestRun test_result = 1;
-    optional bool test_not_found = 2;
-}
-
-message JudgeRequest {
-    optional Module module = 1;
-    optional int32 contest_id = 2;
-    optional string problem_id = 3;
-    optional bool school_mode = 4;
-};
-
-message JudgeResponse {
-    optional bool problem_not_found = 1;
-    optional bool compile_failed = 2;
-};
-
-message ContestMapping {
-    optional uint32 local_id = 1;
-    optional uint32 polygon_id = 2;
-    optional bool school_mode = 3;
-}

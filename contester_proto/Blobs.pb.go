@@ -107,8 +107,8 @@ func (m *Blob_CompressionInfo) GetOriginalSize() uint32 {
 
 type Module struct {
 	Name             *string `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Data             *Blob   `protobuf:"bytes,2,req,name=data" json:"data,omitempty"`
-	Type             *string `protobuf:"bytes,1,req,name=type" json:"type,omitempty"`
+	Data             *Blob   `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
+	Type             *string `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 

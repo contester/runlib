@@ -585,7 +585,7 @@ func SetInheritHandle(h syscall.Handle, inherit bool) error {
 func SetProcessAffinityMask(process syscall.Handle, mask uint64) error {
 	r1, _, e1 := procSetProcessAffinityMask.Call(
 		uintptr(process),
-		uintptr(unsafe.Pointer(&mask)))
+		uintptr(mask))
 
 	if int(r1) == 0 {
 		return e1

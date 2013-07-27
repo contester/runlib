@@ -208,6 +208,13 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		}
 	}
 
+	if d.platformData.hJob == syscall.InvalidHandle {
+		e = win32.SetProcessAffinityMask(d.platformData.hProcess, sub.ProcessAffinityMask)
+		if e != nil {
+			return nil, NewSubprocessError(false, "CreateFrozen/SetProcessAffinityMask", e)
+		}
+	}
+
 	return d, e
 }
 
@@ -255,6 +262,11 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 		einfo.JobMemoryLimit = uintptr(s.HardMemoryLimit)
 		einfo.BasicLimitInformation.MaximumWorkingSetSize = uintptr(s.HardMemoryLimit)
 		einfo.BasicLimitInformation.LimitFlags |= win32.JOB_OBJECT_LIMIT_JOB_MEMORY | win32.JOB_OBJECT_LIMIT_PROCESS_MEMORY | win32.JOB_OBJECT_LIMIT_WORKINGSET
+	}
+
+	// If we don't create job then we need to set process affinity on the process handle after its creation.
+	if s.ProcessAffinityMask != 0 {
+		einfo.BasicLimitInformation.Affinity = uintptr(s.ProcessAffinityMask)
 	}
 
 	e = win32.SetJobObjectExtendedLimitInformation(d.platformData.hJob, &einfo)

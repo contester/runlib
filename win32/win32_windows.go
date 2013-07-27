@@ -458,6 +458,7 @@ const (
 	JOB_OBJECT_LIMIT_PROCESS_MEMORY             = 0x100
 	JOB_OBJECT_LIMIT_PROCESS_TIME               = 2
 	JOB_OBJECT_LIMIT_WORKINGSET                 = 1
+	JOB_OBJECT_LIMIT_AFFINITY = 0x00000010
 )
 
 type IoCounters struct {

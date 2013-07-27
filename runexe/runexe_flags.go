@@ -20,9 +20,10 @@ func (t *ProcessAffinityFlag) Set(v string) error {
 	base := 10
 	if v[0] == '0' {
 		base = 2
+		v = v[1:]
 	}
 
-	r, err := strconv.ParseUint(v[1:], base, 64)
+	r, err := strconv.ParseUint(v, base, 64)
 	if err != nil {
 		return err
 	}

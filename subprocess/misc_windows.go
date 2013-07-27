@@ -10,6 +10,7 @@ import (
 	"unsafe"
 )
 
+// Loads user profile, using handle and username.
 func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
 	ec := tools.NewContext("loadProfile")
 	var pinfo win32.ProfileInfo
@@ -23,11 +24,13 @@ func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
 
 	err = win32.LoadUserProfile(user, &pinfo)
 	if err != nil {
+		l4g.Trace("Error loading profile for %d/%s", user, username)
 		return syscall.InvalidHandle, ec.NewError(err, "LoadUserProfile")
 	}
 	return pinfo.Profile, nil
 }
 
+// Log user out, unloading profiles if necessary.
 func realLogout(s *LoginInfo) {
 	if s.HProfile != syscall.Handle(0) && s.HProfile != syscall.InvalidHandle {
 		for {
@@ -46,10 +49,12 @@ func realLogout(s *LoginInfo) {
 	}
 }
 
+// Finalizer, calls realLogout in goroutine.
 func logout(s *LoginInfo) {
 	go realLogout(s)
 }
 
+// Login and load user profile. Also, set finalizer on s to logout() above.
 func (s *LoginInfo) Prepare() error {
 	var err error
 	if s.Username == "" {

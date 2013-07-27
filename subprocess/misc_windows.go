@@ -3,6 +3,7 @@ package subprocess
 import (
 	l4g "code.google.com/p/log4go"
 	"github.com/contester/runlib/win32"
+	"github.com/contester/runlib/tools"
 	"os"
 	"runtime"
 	"syscall"
@@ -10,14 +11,19 @@ import (
 )
 
 func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
+	ec := tools.NewContext("loadProfile")
 	var pinfo win32.ProfileInfo
+	var err error
 	pinfo.Size = uint32(unsafe.Sizeof(pinfo))
 	pinfo.Flags = win32.PI_NOUI
-	pinfo.Username = syscall.StringToUTF16Ptr(username)
+	pinfo.Username, err = syscall.UTF16PtrFromString(username)
+	if err != nil {
+		return syscall.InvalidHandle, ec.NewError(err, ERR_USER, "UTF16PtrFromString")
+	}
 
-	err := win32.LoadUserProfile(user, &pinfo)
-	if err == nil {
-		return syscall.InvalidHandle, err
+	err = win32.LoadUserProfile(user, &pinfo)
+	if err != nil {
+		return syscall.InvalidHandle, ec.NewError(err, "LoadUserProfile")
 	}
 	return pinfo.Profile, nil
 }
@@ -50,6 +56,8 @@ func (s *LoginInfo) Prepare() error {
 		return nil
 	}
 
+	ec := tools.NewContext("LoginInfo.Prepare")
+
 	s.HUser, err = win32.LogonUser(
 		syscall.StringToUTF16Ptr(s.Username),
 		syscall.StringToUTF16Ptr("."),
@@ -58,7 +66,7 @@ func (s *LoginInfo) Prepare() error {
 		win32.LOGON32_PROVIDER_DEFAULT)
 
 	if err != nil {
-		return NewSubprocessError(false, "LoginInfo.Prepare", os.NewSyscallError("LogonUser", err))
+		return ec.NewError(os.NewSyscallError("LogonUser", err))
 	}
 
 	s.HProfile, err = loadProfile(s.HUser, s.Username)
@@ -66,7 +74,7 @@ func (s *LoginInfo) Prepare() error {
 	if err != nil {
 		syscall.CloseHandle(s.HUser)
 		s.HUser = syscall.InvalidHandle
-		return err
+		return ec.NewError(err)
 	}
 
 	runtime.SetFinalizer(s, logout)

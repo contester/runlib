@@ -5,6 +5,7 @@ import (
 	l4g "code.google.com/p/log4go"
 	"fmt"
 	"github.com/contester/runlib/win32"
+	"github.com/contester/runlib/tools"
 	"os"
 	"syscall"
 	"time"
@@ -134,6 +135,9 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	if !sub.NoJob && sub.Options != nil && sub.Options.Desktop != "" {
 		si.Desktop = syscall.StringToUTF16Ptr(sub.Options.Desktop)
 	}
+
+	ec := tools.NewContext("CreateFrozen")
+
 	e := d.wAllRedirects(sub, si)
 	if e != nil {
 		return nil, e
@@ -146,11 +150,14 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	environment := win32.ListToEnvironmentBlock(sub.Environment)
 	currentDirectory := win32.StringPtrToUTF16Ptr(sub.CurrentDirectory)
 
+	var syscallName string
+
 	syscall.ForkLock.Lock()
 	wSetInherit(si)
 
 	if sub.Login != nil {
 		if sub.NoJob {
+			syscallName = "CreateProcessWithLogonW"
 			e = win32.CreateProcessWithLogonW(
 				syscall.StringToUTF16Ptr(sub.Login.Username),
 				syscall.StringToUTF16Ptr("."),
@@ -164,6 +171,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				si,
 				pi)
 		} else {
+			syscallName = "CreateProcessAsUser"
 			e = win32.CreateProcessAsUser(
 				sub.Login.HUser,
 				applicationName,
@@ -179,6 +187,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				pi)
 		}
 	} else {
+		syscallName = "CreateProcess"
 		e = syscall.CreateProcess(
 			applicationName,
 			commandLine,
@@ -197,11 +206,10 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	syscall.ForkLock.Unlock()
 
 	if e != nil {
-		var isUser bool
 		if errno, ok := e.(syscall.Errno); ok && errno == syscall.Errno(136) {
-			isUser = true
+			e = tools.NewComponentError(e, ERR_USER)
 		}
-		return nil, NewSubprocessError(isUser, "CreateFrozen/CreateProcess", e)
+		return nil, ec.NewError(e, syscallName)
 	}
 
 	d.platformData.hProcess = pi.Process
@@ -213,7 +221,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	if e != nil {
 		// Terminate process/thread here.
 		d.platformData.terminateAndClose()
-		return nil, NewSubprocessError(false, "CreateFrozen/InjectDll", e)
+		return nil, ec.NewError(e, "InjectDll")
 	}
 
 	if !sub.NoJob {
@@ -222,7 +230,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 			if sub.FailOnJobCreationFailure {
 				d.platformData.terminateAndClose()
 
-				return nil, NewSubprocessError(false, "CreateFrozen/CreateJob", e)
+				return nil, ec.NewError(e, "CreateJob")
 			}
 			l4g.Error("CreateFrozen/CreateJob: %s", e)
 		} else {
@@ -233,7 +241,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				if sub.FailOnJobCreationFailure {
 					d.platformData.terminateAndClose()
 
-					return nil, NewSubprocessError(false, "CreateFrozen/AssignProcessToJobObject", e)
+					return nil, ec.NewError(e, "AssignProcessToJobObject")
 				}
 				l4g.Error("CreateFrozen/AssignProcessToJobObject: %s", e)
 			}
@@ -245,7 +253,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		if e != nil {
 			d.platformData.terminateAndClose()
 
-			return nil, NewSubprocessError(false, "CreateFrozen/SetProcessAffinityMask", e)
+			return nil, ec.NewError(e, "SetProcessAffinityMask")
 		}
 	}
 
@@ -254,9 +262,10 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 func CreateJob(s *Subprocess, d *SubprocessData) error {
 	var e error
+	ec := tools.NewContext("CreateJob")
 	d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
 	if e != nil {
-		return NewSubprocessError(false, "CreateJob/CreateJobObject", e)
+		return ec.NewError(e, "CreateJobObject")
 	}
 
 	if s.RestrictUi {
@@ -272,8 +281,7 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 
 		e = win32.SetJobObjectBasicUiRestrictions(d.platformData.hJob, &info)
 		if e != nil {
-			l4g.Error("UI", e)
-			return NewSubprocessError(false, "CreateJob/SetJobObjectBasicUiRestrictions", e)
+			return ec.NewError(e, "SetJobObjectBasicUiRestrictions")
 		}
 	}
 
@@ -306,7 +314,7 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 
 	e = win32.SetJobObjectExtendedLimitInformation(d.platformData.hJob, &einfo)
 	if e != nil {
-		return NewSubprocessError(false, "CreateJob/SetJobObjectExtendedLimitInformation", e)
+		return ec.NewError(e, "SetJobObjectExtendedLimitInformation")
 	}
 	return nil
 }
@@ -316,30 +324,35 @@ func InjectDll(s *Subprocess, d *SubprocessData) error {
 		return nil
 	}
 
-	l4g.Info("Injecting", s.Options.InjectDLL, s.Options.LoadLibraryW)
-	name := syscall.StringToUTF16(s.Options.InjectDLL)
+	ec := tools.NewContext("InjectDll")
+
+	l4g.Trace("InjectDll: Injecting library %s with call to %d", s.Options.InjectDLL, s.Options.LoadLibraryW)
+	name, err := syscall.UTF16FromString(s.Options.InjectDLL)
+	if err != nil {
+		return ec.NewError(err, ERR_USER, "UTF16FromString")
+	}
 	nameLen := uint32((len(name) + 1) * 2)
 	remoteName, err := win32.VirtualAllocEx(d.platformData.hProcess, 0, nameLen, win32.MEM_COMMIT, win32.PAGE_READWRITE)
 	if err != nil {
-		return NewSubprocessError(false, "InjectDll", os.NewSyscallError("VirtualAllocEx", err))
+		return ec.NewError(os.NewSyscallError("VirtualAllocEx", err))
 	}
 	defer win32.VirtualFreeEx(d.platformData.hProcess, remoteName, 0, win32.MEM_RELEASE)
 
 	_, err = win32.WriteProcessMemory(d.platformData.hProcess, remoteName, unsafe.Pointer(&name[0]), nameLen)
 	if err != nil {
-		return NewSubprocessError(false, "InjectDll", os.NewSyscallError("WriteProcessMemory", err))
+		return ec.NewError(os.NewSyscallError("WriteProcessMemory", err))
 	}
 	thread, _, err := win32.CreateRemoteThread(d.platformData.hProcess, win32.MakeInheritSa(), 0, s.Options.LoadLibraryW, remoteName, 0)
 	if err != nil {
-		return NewSubprocessError(false, "InjectDll", os.NewSyscallError("CreateRemoteThread", err))
+		return ec.NewError(os.NewSyscallError("CreateRemoteThread", err))
 	}
 	defer syscall.CloseHandle(thread)
 	wr, err := syscall.WaitForSingleObject(thread, syscall.INFINITE)
 	if err != nil {
-		return NewSubprocessError(false, "InjectDll", os.NewSyscallError("WaitForSingleObject", err))
+		return ec.NewError(os.NewSyscallError("WaitForSingleObject", err))
 	}
 	if wr != syscall.WAIT_OBJECT_0 {
-		return NewSubprocessError(false, "InjectDll", fmt.Errorf("Unexpected wait result %s", wr))
+		return ec.NewError(fmt.Errorf("Unexpected wait result %s", wr))
 	}
 
 	return nil

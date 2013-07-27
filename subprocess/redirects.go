@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 	"os"
+
+	"github.com/contester/runlib/tools"
 )
 
 type Redirect struct {
@@ -16,7 +18,7 @@ type Redirect struct {
 func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, NewSubprocessError(false, "SetupOutputMemory/os.Pipe", e)
+		return nil, tools.NewComponentError(e, "SetupOutputMemory", "os.Pipe")
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
@@ -32,7 +34,7 @@ func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 func (d *SubprocessData) SetupFile(filename string, read bool) (*os.File, error) {
 	writer, e := OpenFileForRedirect(filename, read)
 	if e != nil {
-		return nil, NewSubprocessError(false, "SetupFile/OpenFile", e)
+		return nil, tools.NewComponentError(e, "SetupFile", "OpenFile")
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
@@ -63,7 +65,7 @@ func (d *SubprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 func (d *SubprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, NewSubprocessError(false, "SetupInputMemory/os.Pipe", e)
+		return nil, tools.NewComponentError(e, "SetupInputMemory", "os.Pipe")
 	}
 	d.closeAfterStart = append(d.closeAfterStart, reader)
 	d.startAfterStart = append(d.startAfterStart, func() error {
@@ -124,16 +126,18 @@ func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
 }
 
 func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File) error {
+	ec := tools.NewContext("Interconnect")
+
 	read1, write1, err := RecordingPipe(d1)
 	if err != nil {
-		return NewSubprocessError(false, "Interconnect/os.Pipe", err)
+		return ec.NewError(err, "RecordingPipe")
 	}
 
 	read2, write2, err := RecordingPipe(d2)
 	if err != nil {
 		read1.Close()
 		write1.Close()
-		return NewSubprocessError(false, "Interconnect/os.Pipe", err)
+		return ec.NewError(err, "RecordingPipe")
 	}
 
 	s1.StdIn = &Redirect{

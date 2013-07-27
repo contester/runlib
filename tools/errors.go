@@ -44,6 +44,17 @@ func GetErrorComponents(err error) []string {
 	return nil
 }
 
+func HasErrorComponent(err error, component string) bool {
+	if c := GetErrorComponents(err); len(c) != 0 {
+		for _, v := range c {
+			if component == v {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 type ErrorContext struct {
 	Context string
 }

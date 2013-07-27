@@ -6,6 +6,30 @@ import (
 	"strings"
 )
 
+type ProcessAffinityFlag uint64
+
+func (t *ProcessAffinityFlag) String() string {
+	return "0" + strconv.FormatUint(uint64(*t), 2)
+}
+
+func (t *ProcessAffinityFlag) Set(v string) error {
+	if len(v) == 0 {
+		return nil
+	}
+
+	base := 10
+	if v[0] == '0' {
+		base = 2
+	}
+
+	r, err := strconv.ParseUint(v[1:], base, 64)
+	if err != nil {
+		return err
+	}
+	*t = ProcessAffinityFlag(r)
+	return nil
+}
+
 type TimeLimitFlag uint64
 
 func (t *TimeLimitFlag) String() string {
@@ -129,4 +153,7 @@ Process properties:
   -e <filename> - redirect standard error to <filename>.
   -z            - run process in trusted mode.
   -no-idleness-check - switch off idleness checking.
+  -a <value>	- set process affinity to <value>. You can either specify it
+  				  as plain int, or as a bit mask starting with 0, so 2 and
+  				  010 are equivalent.
 `

@@ -70,6 +70,7 @@ type Subprocess struct {
 	MemoryLimit     uint64
 	HardMemoryLimit uint64
 	TimeQuantum     time.Duration
+	ProcessAffinityMask uint64
 
 	Cmd                   *CommandLine
 	Login                 *LoginInfo

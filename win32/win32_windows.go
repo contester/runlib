@@ -37,6 +37,8 @@ var (
 	procGetModuleHandleW          = kernel32.NewProc("GetModuleHandleW")
 	procCreateRemoteThread        = kernel32.NewProc("CreateRemoteThread")
 	procVirtualFreeEx             = kernel32.NewProc("VirtualFreeEx")
+	procSetProcessAffinityMask    = kernel32.NewProc("SetProcessAffinityMask")
+	procGetProcessAffinityMask    = kernel32.NewProc("GetProcessAffinityMask")
 )
 
 const (
@@ -578,4 +580,27 @@ func SetInheritHandle(h syscall.Handle, inherit bool) error {
 		v = syscall.HANDLE_FLAG_INHERIT
 	}
 	return syscall.SetHandleInformation(syscall.Handle(h), syscall.HANDLE_FLAG_INHERIT, v)
+}
+
+func SetProcessAffinityMask(process syscall.Handle, mask uint64) error {
+	r1, _, e1 := procSetProcessAffinityMask.Call(
+		uintptr(process),
+		uintptr(unsafe.Pointer(&mask)))
+
+	if int(r1) == 0 {
+		return e1
+	}
+	return nil
+}
+
+func GetProcessAffinityMask(process syscall.Handle) (processMask, systemMask uint64, err error) {
+	r1, _, e1 := procGetProcessAffinityMask.Call(
+		uintptr(process),
+		uintptr(unsafe.Pointer(&processMask)),
+		uintptr(unsafe.Pointer(&systemMask)))
+
+	if int(r1) == 0 {
+		err = e1
+	}
+	return
 }

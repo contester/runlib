@@ -105,10 +105,10 @@ func (c *CloneParams) CloneFrozen() (int, error) {
 }
 
 func (c *CloneParams) Unfreeze(pid int) error {
-	err := syscall.PtraceDetach(pid) // TODO: wait for comm goroutine
+	err := syscall.PtraceDetach(pid)
 	co, ok := <-c.comm
 	if !ok {
-		return err
+		return os.NewSyscallError("PtraceDetach", err)
 	}
 	return childError(co)
 }

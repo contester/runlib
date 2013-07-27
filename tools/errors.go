@@ -7,6 +7,10 @@ type componentError struct {
 	components []string
 }
 
+/*
+Create a nested component error. Will take err, and create a new one with the list of components
+that's supposed to tell you where it has occured.
+ */
 func NewComponentError(err error, c ...string) error {
 	if err != nil {
 		if e, ok := err.(*componentError); ok {

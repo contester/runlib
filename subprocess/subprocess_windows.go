@@ -405,7 +405,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	var runState runningState
 
 	for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
-		waitResult, _ = syscall.WaitForSingleObject(hProcess, uint32(GetMicros(sub.TimeQuantum)))
+		waitResult, _ = syscall.WaitForSingleObject(hProcess, uint32(sub.TimeQuantum.Nanoseconds() / 1000000))
 		if waitResult != syscall.WAIT_TIMEOUT {
 			break
 		}
@@ -453,4 +453,10 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	}
 
 	sig <- result
+}
+
+func maybeLockOSThread() {
+}
+
+func maybeUnlockOSThread() {
 }

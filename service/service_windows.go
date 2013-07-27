@@ -16,11 +16,3 @@ func OnOsCreateError(err error) (bool, error) {
 	return false, nil
 }
 
-func IsFileNotFoundError(err error) bool {
-	if err != nil {
-		if err == syscall.ERROR_FILE_NOT_FOUND {
-			return true
-		}
-	}
-	return false
-}

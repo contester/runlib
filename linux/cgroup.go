@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/contester/runlib/tools"
+	l4g "code.google.com/p/log4go"
 )
 
 type Cgroups struct {
@@ -101,16 +102,17 @@ func NewCgroups() (*Cgroups, error) {
 }
 
 // check if cgroup exists.
-//
 
 func cgAttach(name string, pid int) error {
 	f, err := os.Create(name + "/tasks")
 	if err != nil {
+		l4g.Error("Can't attach to cgroup %s, pid %d: %s", name, pid, err)
 		return err
 	}
 	defer f.Close()
 	_, err = f.WriteString(strconv.Itoa(pid) + "\n")
 	if err != nil {
+                l4g.Error("Can't attach to cgroup %s, pid %d: %s", name, pid, err)
 		return err
 	}
 	return nil
@@ -118,15 +120,12 @@ func cgAttach(name string, pid int) error {
 
 func cgSetup(name string, pid int) error {
 	_, err := os.Stat(name)
-	if err != nil {
-		if errno, ok := err.(syscall.Errno); ok && errno == syscall.ENOENT {
-			err = os.MkdirAll(name, os.ModeDir)
-			if err != nil {
-				return err
-			}
-			return cgAttach(name, pid)
+	if tools.IsStatErrorFileNotFound(err) {
+		err = os.MkdirAll(name, os.ModeDir | 0755)
+		if err != nil {
+			l4g.Error(err)
+			return err
 		}
-		return err
 	}
 	return cgAttach(name, pid)
 }

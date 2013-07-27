@@ -1,12 +1,12 @@
 package tools
 
 import (
-	l4g "code.google.com/p/log4go"
-	"github.com/contester/runlib/contester_proto"
 	"log"
-	"os"
 	"runtime"
 	"time"
+
+	l4g "code.google.com/p/log4go"
+	"github.com/contester/runlib/contester_proto"
 )
 
 func LogMem() {
@@ -16,9 +16,9 @@ func LogMem() {
 		m.Alloc, m.Sys, m.HeapAlloc, m.HeapIdle, m.NextGC, time.Now().Sub(time.Unix(0, int64(m.LastGC))), m.NumGC, contester_proto.BlobCount())
 
 	// TODO: Instead of os.Exit, properly lame duck/close connection.
-	if m.Sys > 384*1024*1024 {
-		os.Exit(1)
-	}
+	// if m.Sys > 384*1024*1024 {
+	//	os.Exit(1)
+	// }
 }
 
 func LogMemLoop() {

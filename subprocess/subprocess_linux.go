@@ -1,13 +1,15 @@
 package subprocess
 
 import (
-	l4g "code.google.com/p/log4go"
 	"fmt"
-	"github.com/contester/runlib/linux"
 	"os/user"
 	"strconv"
 	"syscall"
 	"time"
+	"runtime"
+
+	"github.com/contester/runlib/linux"
+	l4g "code.google.com/p/log4go"
 )
 
 type LoginInfo struct {
@@ -193,4 +195,12 @@ W:
 	}
 	sig <- result
 	close(sig)
+}
+
+func maybeLockOSThread() {
+	runtime.LockOSThread()
+}
+
+func maybeUnlockOSThread() {
+	runtime.UnlockOSThread()
 }

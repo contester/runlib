@@ -56,27 +56,27 @@ type Blob struct {
 	XXX_unrecognized []byte                `json:"-"`
 }
 
-func (this *Blob) Reset()         { *this = Blob{} }
-func (this *Blob) String() string { return proto.CompactTextString(this) }
-func (*Blob) ProtoMessage()       {}
+func (m *Blob) Reset()         { *m = Blob{} }
+func (m *Blob) String() string { return proto.CompactTextString(m) }
+func (*Blob) ProtoMessage()    {}
 
-func (this *Blob) GetData() []byte {
-	if this != nil {
-		return this.Data
+func (m *Blob) GetData() []byte {
+	if m != nil {
+		return m.Data
 	}
 	return nil
 }
 
-func (this *Blob) GetCompression() *Blob_CompressionInfo {
-	if this != nil {
-		return this.Compression
+func (m *Blob) GetCompression() *Blob_CompressionInfo {
+	if m != nil {
+		return m.Compression
 	}
 	return nil
 }
 
-func (this *Blob) GetSha1() []byte {
-	if this != nil {
-		return this.Sha1
+func (m *Blob) GetSha1() []byte {
+	if m != nil {
+		return m.Sha1
 	}
 	return nil
 }
@@ -87,52 +87,52 @@ type Blob_CompressionInfo struct {
 	XXX_unrecognized []byte                                `json:"-"`
 }
 
-func (this *Blob_CompressionInfo) Reset()         { *this = Blob_CompressionInfo{} }
-func (this *Blob_CompressionInfo) String() string { return proto.CompactTextString(this) }
-func (*Blob_CompressionInfo) ProtoMessage()       {}
+func (m *Blob_CompressionInfo) Reset()         { *m = Blob_CompressionInfo{} }
+func (m *Blob_CompressionInfo) String() string { return proto.CompactTextString(m) }
+func (*Blob_CompressionInfo) ProtoMessage()    {}
 
-func (this *Blob_CompressionInfo) GetMethod() Blob_CompressionInfo_CompressionType {
-	if this != nil && this.Method != nil {
-		return *this.Method
+func (m *Blob_CompressionInfo) GetMethod() Blob_CompressionInfo_CompressionType {
+	if m != nil && m.Method != nil {
+		return *m.Method
 	}
 	return 0
 }
 
-func (this *Blob_CompressionInfo) GetOriginalSize() uint32 {
-	if this != nil && this.OriginalSize != nil {
-		return *this.OriginalSize
+func (m *Blob_CompressionInfo) GetOriginalSize() uint32 {
+	if m != nil && m.OriginalSize != nil {
+		return *m.OriginalSize
 	}
 	return 0
 }
 
 type Module struct {
 	Name             *string `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Data             *Blob   `protobuf:"bytes,2,req,name=data" json:"data,omitempty"`
-	Type             *string `protobuf:"bytes,1,req,name=type" json:"type,omitempty"`
+	Data             *Blob   `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
+	Type             *string `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *Module) Reset()         { *this = Module{} }
-func (this *Module) String() string { return proto.CompactTextString(this) }
-func (*Module) ProtoMessage()       {}
+func (m *Module) Reset()         { *m = Module{} }
+func (m *Module) String() string { return proto.CompactTextString(m) }
+func (*Module) ProtoMessage()    {}
 
-func (this *Module) GetName() string {
-	if this != nil && this.Name != nil {
-		return *this.Name
+func (m *Module) GetName() string {
+	if m != nil && m.Name != nil {
+		return *m.Name
 	}
 	return ""
 }
 
-func (this *Module) GetData() *Blob {
-	if this != nil {
-		return this.Data
+func (m *Module) GetData() *Blob {
+	if m != nil {
+		return m.Data
 	}
 	return nil
 }
 
-func (this *Module) GetType() string {
-	if this != nil && this.Type != nil {
-		return *this.Type
+func (m *Module) GetType() string {
+	if m != nil && m.Type != nil {
+		return *m.Type
 	}
 	return ""
 }
@@ -143,20 +143,20 @@ type FileBlob struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (this *FileBlob) Reset()         { *this = FileBlob{} }
-func (this *FileBlob) String() string { return proto.CompactTextString(this) }
-func (*FileBlob) ProtoMessage()       {}
+func (m *FileBlob) Reset()         { *m = FileBlob{} }
+func (m *FileBlob) String() string { return proto.CompactTextString(m) }
+func (*FileBlob) ProtoMessage()    {}
 
-func (this *FileBlob) GetName() string {
-	if this != nil && this.Name != nil {
-		return *this.Name
+func (m *FileBlob) GetName() string {
+	if m != nil && m.Name != nil {
+		return *m.Name
 	}
 	return ""
 }
 
-func (this *FileBlob) GetData() *Blob {
-	if this != nil {
-		return this.Data
+func (m *FileBlob) GetData() *Blob {
+	if m != nil {
+		return m.Data
 	}
 	return nil
 }

@@ -16,7 +16,7 @@ func statFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 	info, err := os.Stat(name)
 	if err != nil {
 		// Handle ERROR_FILE_NOT_FOUND - return no error and nil instead of stat struct
-		if path_err, ok := err.(*os.PathError); ok && IsFileNotFoundError(path_err.Err) {
+		if tools.IsStatErrorFileNotFound(err) {
 			return nil, nil
 		}
 

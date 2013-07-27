@@ -65,11 +65,6 @@ message LocalExecution {
     optional LocalExecutionResult result = 2;
 };
 
-message OwnerInfo {
-    optional uint32 uid = 1;
-    repeated string pathname = 2;
-};
-
 message BinaryTypeRequest {
     optional string pathname = 1;
 };
@@ -113,8 +108,6 @@ message IdentifyResponse {
     repeated string disks = 6;
     repeated string programFiles = 7;
 };
-
-// Glob and Stat
 
 // Glob and Stat
 

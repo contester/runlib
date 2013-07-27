@@ -207,7 +207,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 	if e != nil {
 		if errno, ok := e.(syscall.Errno); ok && errno == syscall.Errno(136) {
-			e = tools.NewComponentError(e, ERR_USER)
+			e = tools.NewError(e, ERR_USER)
 		}
 		return nil, ec.NewError(e, syscallName)
 	}

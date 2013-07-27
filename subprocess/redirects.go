@@ -18,7 +18,7 @@ type Redirect struct {
 func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, tools.NewComponentError(e, "SetupOutputMemory", "os.Pipe")
+		return nil, tools.NewError(e, "SetupOutputMemory", "os.Pipe")
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
@@ -34,7 +34,7 @@ func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 func (d *SubprocessData) SetupFile(filename string, read bool) (*os.File, error) {
 	writer, e := OpenFileForRedirect(filename, read)
 	if e != nil {
-		return nil, tools.NewComponentError(e, "SetupFile", "OpenFile")
+		return nil, tools.NewError(e, "SetupFile", "OpenFile")
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
@@ -65,7 +65,7 @@ func (d *SubprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 func (d *SubprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, tools.NewComponentError(e, "SetupInputMemory", "os.Pipe")
+		return nil, tools.NewError(e, "SetupInputMemory", "os.Pipe")
 	}
 	d.closeAfterStart = append(d.closeAfterStart, reader)
 	d.startAfterStart = append(d.startAfterStart, func() error {

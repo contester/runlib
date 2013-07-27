@@ -5,5 +5,5 @@ import "github.com/contester/runlib/tools"
 const ERR_USER = "HANDS"
 
 func IsUserError(err error) bool {
-	return tools.HasErrorComponent(err, ERR_USER)
+	return tools.HasAnnotation(err, ERR_USER)
 }

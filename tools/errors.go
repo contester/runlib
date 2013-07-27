@@ -1,51 +1,60 @@
 package tools
 
-import "strings"
+import (
+	"strings"
+	"os"
+)
 
-type componentError struct {
+type annotatedError struct {
 	error
 	components []string
+}
+
+func mergePrevious(current, previous []string) []string {
+	if len(previous) > 0 && previous[0] == current[len(current) - 1] {
+		previous = previous[1:]
+	}
+	return append(current, previous...)
 }
 
 /*
 Create a nested component error. Will take err, and create a new one with the list of components
 that's supposed to tell you where it has occured.
  */
-func NewComponentError(err error, c ...string) error {
+func NewError(err error, c ...string) error {
 	if err != nil {
-		if e, ok := err.(*componentError); ok {
-			prev := e.components
-			if len(prev) > 0 && prev[0] == c[len(c) - 1] {
-				prev = prev[1:]
-			}
-			return &componentError{
-				error: e.error,
-				components: append(c, prev...),
-			}
+		var result annotatedError
+
+		switch e := err.(type) {
+		case nil:
+			return nil
+		case *annotatedError:
+			result.error, result.components = e.error, mergePrevious(c, e.components)
+		case *os.SyscallError:
+			result.error, result.components = e.Err, mergePrevious(c, []string{"syscall:" + e.Syscall,})
+		default:
+			result.error, result.components = err, c
 		}
-		return &componentError{
-			error: err,
-			components: c,
-		}
+		return &result
 	}
 	return err
 }
 
-func (e *componentError) Error() string {
+func (e *annotatedError) Error() string {
 	return strings.Join(e.components, "/") + ": " + e.error.Error()
 }
 
-func GetErrorComponents(err error) []string {
+func GetAnnotations(err error) []string {
 	if err != nil {
-		if e, ok := err.(*componentError); ok {
+		if e, ok := err.(*annotatedError); ok {
 			return e.components
 		}
 	}
 	return nil
 }
 
-func HasErrorComponent(err error, component string) bool {
-	if c := GetErrorComponents(err); len(c) != 0 {
+func HasAnnotation(err error, component string) bool {
+	if c := GetAnnotations(err); len(c) != 0 {
 		for _, v := range c {
 			if component == v {
 				return true
@@ -64,5 +73,5 @@ func NewContext(s string) *ErrorContext {
 }
 
 func (c *ErrorContext) NewError(err error, s ...string) error {
-	return NewComponentError(err, append([]string{c.Context,}, s...)...)
+	return NewError(err, append([]string{c.Context,}, s...)...)
 }

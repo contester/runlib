@@ -106,6 +106,24 @@ func wSetInherit(si *syscall.StartupInfo) {
 	// TODO: errors
 }
 
+func terminateProcessLoop(process syscall.Handle) error {
+	for waitResult := uint32(syscall.WAIT_TIMEOUT); waitResult == syscall.WAIT_TIMEOUT; {
+		syscall.TerminateProcess(process, 0)
+		waitResult, _ = syscall.WaitForSingleObject(process, 100)
+	}
+	return nil
+}
+
+func (d *PlatformData) terminateAndClose() (err error) {
+	if err = terminateProcessLoop(d.hProcess); err != nil {
+		return
+	}
+	syscall.CloseHandle(d.hThread)
+	syscall.CloseHandle(d.hProcess)
+	return
+}
+
+
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d := &SubprocessData{}
 
@@ -153,7 +171,8 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				nil,
 				nil,
 				true,
-				win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
+				win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|
+					syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
 				environment,
 				currentDirectory,
 				si,
@@ -166,7 +185,8 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 			nil,
 			nil,
 			true,
-			win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
+			win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|
+				syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
 			environment,
 			currentDirectory,
 			si,
@@ -191,32 +211,45 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	e = InjectDll(sub, d)
 
 	if e != nil {
+		// Terminate process/thread here.
+		d.platformData.terminateAndClose()
 		return nil, NewSubprocessError(false, "CreateFrozen/InjectDll", e)
 	}
 
 	if !sub.NoJob {
 		e = CreateJob(sub, d)
 		if e != nil {
-			l4g.Error(e)
+			if sub.FailOnJobCreationFailure {
+				d.platformData.terminateAndClose()
+
+				return nil, NewSubprocessError(false, "CreateFrozen/CreateJob", e)
+			}
+			l4g.Error("CreateFrozen/CreateJob: %s", e)
 		} else {
 			e = win32.AssignProcessToJobObject(d.platformData.hJob, d.platformData.hProcess)
 			if e != nil {
-				l4g.Error(e)
 				syscall.CloseHandle(d.platformData.hJob)
 				d.platformData.hJob = syscall.InvalidHandle
+				if sub.FailOnJobCreationFailure {
+					d.platformData.terminateAndClose()
+
+					return nil, NewSubprocessError(false, "CreateFrozen/AssignProcessToJobObject", e)
+				}
+				l4g.Error("CreateFrozen/AssignProcessToJobObject: %s", e)
 			}
 		}
-		e = nil
 	}
 
 	if d.platformData.hJob == syscall.InvalidHandle {
 		e = win32.SetProcessAffinityMask(d.platformData.hProcess, sub.ProcessAffinityMask)
 		if e != nil {
+			d.platformData.terminateAndClose()
+
 			return nil, NewSubprocessError(false, "CreateFrozen/SetProcessAffinityMask", e)
 		}
 	}
 
-	return d, e
+	return d, nil
 }
 
 func CreateJob(s *Subprocess, d *SubprocessData) error {

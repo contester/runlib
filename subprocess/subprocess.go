@@ -56,6 +56,8 @@ type CommandLine struct {
 	Parameters                   []string
 }
 
+// This structure defines all flags and options for starting a subprocess. It is not supposed to be modified by any
+// of the execution machinery - there's SubprocessData for that.
 type Subprocess struct {
 	CurrentDirectory *string
 	Environment      *[]string
@@ -63,10 +65,11 @@ type Subprocess struct {
 	NoJob         bool
 	RestrictUi    bool
 	ProcessLimit  uint32
-	CheckIdleness bool
+	FailOnJobCreationFailure bool
 
 	TimeLimit       time.Duration
 	HardTimeLimit   time.Duration
+	CheckIdleness bool
 	MemoryLimit     uint64
 	HardMemoryLimit uint64
 	TimeQuantum     time.Duration
@@ -79,6 +82,7 @@ type Subprocess struct {
 	Options *PlatformOptions
 }
 
+// State for the running subprocess.
 type SubprocessData struct {
 	bufferChan      chan error     // receives buffer errors
 	startAfterStart []func() error // buffer functions, launch after createFrozen
@@ -97,7 +101,7 @@ func SubprocessCreate() *Subprocess {
 	return result
 }
 
-func (d *SubprocessData) SetupOnFrozen() error {
+func (d *SubprocessData) SetupRedirectionBuffers() error {
 	// portable
 	d.bufferChan = make(chan error, len(d.startAfterStart))
 
@@ -127,7 +131,7 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 		return nil, err
 	}
 
-	if err = d.SetupOnFrozen(); err != nil {
+	if err = d.SetupRedirectionBuffers(); err != nil {
 		return nil, err // we must die here
 	}
 

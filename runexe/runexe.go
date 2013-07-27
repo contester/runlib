@@ -35,6 +35,7 @@ type ProcessConfig struct {
 
 	TrustedMode bool
 	NoIdleCheck bool
+	NoJob bool
 }
 
 type RunexeConfig struct {
@@ -85,6 +86,7 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	fs.StringVar(&result.StdErr, "e", "", "")
 	fs.BoolVar(&result.TrustedMode, "z", false, "")
 	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "")
+	fs.BoolVar(&result.NoJob, "no-job", false, "")
 
 	return fs, &result
 }
@@ -154,6 +156,7 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	sub.CheckIdleness = !s.NoIdleCheck
 	sub.RestrictUi = !s.TrustedMode
 	sub.ProcessAffinityMask = uint64(s.ProcessAffinity)
+	sub.NoJob = s.NoJob
 
 	if len(s.Environment) > 0 {
 		sub.Environment = (*[]string)(&s.Environment)

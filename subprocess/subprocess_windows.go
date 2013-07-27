@@ -206,6 +206,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				d.platformData.hJob = syscall.InvalidHandle
 			}
 		}
+		e = nil
 	}
 
 	if d.platformData.hJob == syscall.InvalidHandle {

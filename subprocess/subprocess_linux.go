@@ -9,6 +9,7 @@ import (
 	"runtime"
 
 	"github.com/contester/runlib/linux"
+	"github.com/contester/runlib/tools"
 	l4g "code.google.com/p/log4go"
 )
 
@@ -27,13 +28,14 @@ type PlatformData struct {
 }
 
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
+	ec := tools.NewContext("NewLoginInfo")
 	u, err := user.Lookup(username)
 	if err != nil {
-		return nil, NewSubprocessError(false, "NewLoginInfo/user.Lookup", err)
+		return nil, ec.NewError(err, "user.Lookup")
 	}
 	uid, err := strconv.Atoi(u.Uid)
 	if err != nil {
-		return nil, NewSubprocessError(false, "NewLoginInfo/strconv.Atoi", err)
+		return nil, ec.NewError(err, "strconv.Atoi")
 	}
 	return &LoginInfo{
 		Uid: uid,
@@ -56,15 +58,17 @@ func (d *SubprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) 
 }
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
+	ec := tools.NewContext("CreateFrozen")
+
 	if sub.Cmd.ApplicationName == nil {
-		return nil, NewSubprocessError(false, "CreateFrozen/init", fmt.Errorf("Application name must be present"))
+		return nil, ec.NewError(fmt.Errorf("Application name must be present"), "init")
 	}
 	d := &SubprocessData{}
 	var stdh linux.StdHandles
 	err := d.wAllRedirects(sub, &stdh)
 	defer stdh.Close()
 	if err != nil {
-		return nil, NewSubprocessError(false, "CreateFrozen/Redirects", err)
+		return nil, ec.NewError(err, "Redirects")
 	}
 	var uid int
 	if sub.Login != nil {
@@ -72,18 +76,18 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	}
 	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
-		return nil, NewSubprocessError(false, "CreateFrozen/CreateCloneParams", err)
+		return nil, ec.NewSubprocessError(err, "CreateCloneParams")
 	}
 	syscall.ForkLock.Lock()
 	d.platformData.Pid, err = d.platformData.params.CloneFrozen()
 	closeDescriptors(d.closeAfterStart)
 	syscall.ForkLock.Unlock()
 	if err != nil {
-		return nil, NewSubprocessError(false, "CreateFrozen/CloneFrozen", err)
+		return nil, ec.NewSubprocessError(err, "CloneFrozen")
 	}
 	err = SetupControlGroup(sub, d)
 	if err != nil {
-		return nil, NewSubprocessError(false, "CreateFrozen/SetupControlGroup", err)
+		return nil, ec.NewSubprocessError(err, "SetupControlGroup")
 	}
 	return d, nil
 }

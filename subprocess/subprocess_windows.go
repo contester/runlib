@@ -224,11 +224,13 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		return nil, ec.NewError(e, "InjectDll")
 	}
 
-	e = win32.SetProcessAffinityMask(d.platformData.hProcess, sub.ProcessAffinityMask)
-	if e != nil {
-		d.platformData.terminateAndClose()
+	if sub.ProcessAffinityMask > 0 {
+		e = win32.SetProcessAffinityMask(d.platformData.hProcess, sub.ProcessAffinityMask)
+		if e != nil {
+			d.platformData.terminateAndClose()
 
-		return nil, ec.NewError(e, "SetProcessAffinityMask")
+			return nil, ec.NewError(e, "SetProcessAffinityMask")
+		}
 	}
 
 	if !sub.NoJob {

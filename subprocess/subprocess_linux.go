@@ -76,18 +76,18 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	}
 	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
-		return nil, ec.NewSubprocessError(err, "CreateCloneParams")
+		return nil, ec.NewError(err, "CreateCloneParams")
 	}
 	syscall.ForkLock.Lock()
 	d.platformData.Pid, err = d.platformData.params.CloneFrozen()
 	closeDescriptors(d.closeAfterStart)
 	syscall.ForkLock.Unlock()
 	if err != nil {
-		return nil, ec.NewSubprocessError(err, "CloneFrozen")
+		return nil, ec.NewError(err, "CloneFrozen")
 	}
 	err = SetupControlGroup(sub, d)
 	if err != nil {
-		return nil, ec.NewSubprocessError(err, "SetupControlGroup")
+		return nil, ec.NewError(err, "SetupControlGroup")
 	}
 	return d, nil
 }

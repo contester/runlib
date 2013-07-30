@@ -65,7 +65,7 @@ func openAndParse(filename string, parser func(io.Reader) map[string]string) (ma
 		defer f.Close()
 		return parser(f), nil
 	} else {
-		return nil, tools.NewComponentError(err, "openAndParse", "os.Open")
+		return nil, tools.NewError(err, "openAndParse", "os.Open")
 	}
 }
 

@@ -3,6 +3,7 @@ package win32
 import (
 	"syscall"
 	"unsafe"
+	"fmt"
 )
 
 var (
@@ -243,6 +244,7 @@ func LogonUser(username *uint16, domain *uint16, password *uint16, logonType uin
 }
 
 func LoadUserProfile(token syscall.Handle, pinfo *ProfileInfo) error {
+	fmt.Println(pinfo)
 	r1, _, e1 := procLoadUserProfileW.Call(
 		uintptr(token),
 		uintptr(unsafe.Pointer(pinfo)))

@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"syscall"
 	"unsafe"
+	"fmt"
 )
 
 // Loads user profile, using handle and username.
@@ -21,9 +22,9 @@ func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
 	if err != nil {
 		return syscall.InvalidHandle, ec.NewError(err, ERR_USER, "UTF16PtrFromString")
 	}
-
+	fmt.Println(pinfo)
 	err = win32.LoadUserProfile(user, &pinfo)
-	if err == nil {
+	if err != nil {
 		l4g.Trace("Error loading profile for %d/%s", user, username)
 		return syscall.InvalidHandle, ec.NewError(err, "LoadUserProfile")
 	}

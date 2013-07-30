@@ -224,6 +224,13 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		return nil, ec.NewError(e, "InjectDll")
 	}
 
+	e = win32.SetProcessAffinityMask(d.platformData.hProcess, sub.ProcessAffinityMask)
+	if e != nil {
+		d.platformData.terminateAndClose()
+
+		return nil, ec.NewError(e, "SetProcessAffinityMask")
+	}
+
 	if !sub.NoJob {
 		e = CreateJob(sub, d)
 		if e != nil {
@@ -245,15 +252,6 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				}
 				l4g.Error("CreateFrozen/AssignProcessToJobObject: %s", e)
 			}
-		}
-	}
-
-	if d.platformData.hJob == syscall.InvalidHandle {
-		e = win32.SetProcessAffinityMask(d.platformData.hProcess, sub.ProcessAffinityMask)
-		if e != nil {
-			d.platformData.terminateAndClose()
-
-			return nil, ec.NewError(e, "SetProcessAffinityMask")
 		}
 	}
 

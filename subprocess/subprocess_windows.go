@@ -224,7 +224,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		return nil, ec.NewError(e, "InjectDll")
 	}
 
-	if sub.ProcessAffinityMask > 0 {
+	if sub.ProcessAffinityMask != 0 {
 		e = win32.SetProcessAffinityMask(d.platformData.hProcess, sub.ProcessAffinityMask)
 		if e != nil {
 			d.platformData.terminateAndClose()
@@ -307,10 +307,10 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	}
 
 	// If we don't create job then we need to set process affinity on the process handle after its creation.
-	if s.ProcessAffinityMask != 0 {
-		einfo.BasicLimitInformation.Affinity = uintptr(s.ProcessAffinityMask)
-		einfo.BasicLimitInformation.LimitFlags |= win32.JOB_OBJECT_LIMIT_AFFINITY
-	}
+	// if s.ProcessAffinityMask != 0 {
+	//	einfo.BasicLimitInformation.Affinity = uintptr(s.ProcessAffinityMask)
+	//	einfo.BasicLimitInformation.LimitFlags |= win32.JOB_OBJECT_LIMIT_AFFINITY
+	//}
 
 	e = win32.SetJobObjectExtendedLimitInformation(d.platformData.hJob, &einfo)
 	if e != nil {

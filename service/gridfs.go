@@ -11,7 +11,7 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 	if request.SandboxId != nil {
 		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {
-			return tools.NewComponentError(err, "GridfsGet", "getSandboxById")
+			return tools.NewError(err, "GridfsGet", "getSandboxById")
 		}
 		sandbox.Mutex.RLock()
 		defer sandbox.Mutex.RUnlock()

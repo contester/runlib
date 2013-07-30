@@ -20,7 +20,7 @@ func statFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 			return nil, nil
 		}
 
-		return nil, tools.NewComponentError(err, "statFile", "os.Stat")
+		return nil, tools.NewError(err, "statFile", "os.Stat")
 	}
 	if info.IsDir() {
 		result.IsDirectory = proto.Bool(true)
@@ -29,7 +29,7 @@ func statFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 		if hash_it {
 			result.Sha1Sum, err = hashFile(name)
 			if err != nil {
-				return nil, tools.NewComponentError(err, "statFile", "hashFile")
+				return nil, tools.NewError(err, "statFile", "hashFile")
 			}
 		}
 	}

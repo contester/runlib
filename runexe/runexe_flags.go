@@ -155,6 +155,6 @@ Process properties:
   -z            - run process in trusted mode.
   -no-idleness-check - switch off idleness checking.
   -a <value>	- set process affinity to <value>. You can either specify it
-  				  as plain int, or as a bit mask starting with 0, so 2 and
-  				  010 are equivalent.
+                  as plain int, or as a bit mask starting with 0, so 2 and
+                  010 are equivalent.
 `

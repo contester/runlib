@@ -67,7 +67,7 @@ const (
 	LOGON32_LOGON_NEW_CREDENTIALS   = 9
 
 	MAXIMUM_ALLOWED = 0x2000000
-	PI_NOUI         = 2
+	PI_NOUI         = 1
 )
 
 type ProcessMemoryCountersEx struct {

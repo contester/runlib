@@ -25,7 +25,7 @@ func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
 	err = win32.LoadUserProfile(user, &pinfo)
 	if err != nil {
 		l4g.Trace("Error loading profile for %d/%s", user, username)
-		// return syscall.InvalidHandle, ec.NewError(err, "LoadUserProfile")
+		return syscall.InvalidHandle, ec.NewError(err, "LoadUserProfile")
 	}
 	return pinfo.Profile, nil
 }

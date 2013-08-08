@@ -704,6 +704,118 @@ func (m *EmptyMessage) Reset()         { *m = EmptyMessage{} }
 func (m *EmptyMessage) String() string { return proto.CompactTextString(m) }
 func (*EmptyMessage) ProtoMessage()    {}
 
+type CopyOperation struct {
+	LocalFileName    *string `protobuf:"bytes,1,opt,name=local_file_name" json:"local_file_name,omitempty"`
+	RemoteLocation   *string `protobuf:"bytes,2,opt,name=remote_location" json:"remote_location,omitempty"`
+	Upload           *bool   `protobuf:"varint,3,opt,name=upload" json:"upload,omitempty"`
+	Checksum         *string `protobuf:"bytes,4,opt,name=checksum" json:"checksum,omitempty"`
+	ModuleType       *string `protobuf:"bytes,5,opt,name=module_type" json:"module_type,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *CopyOperation) Reset()         { *m = CopyOperation{} }
+func (m *CopyOperation) String() string { return proto.CompactTextString(m) }
+func (*CopyOperation) ProtoMessage()    {}
+
+func (m *CopyOperation) GetLocalFileName() string {
+	if m != nil && m.LocalFileName != nil {
+		return *m.LocalFileName
+	}
+	return ""
+}
+
+func (m *CopyOperation) GetRemoteLocation() string {
+	if m != nil && m.RemoteLocation != nil {
+		return *m.RemoteLocation
+	}
+	return ""
+}
+
+func (m *CopyOperation) GetUpload() bool {
+	if m != nil && m.Upload != nil {
+		return *m.Upload
+	}
+	return false
+}
+
+func (m *CopyOperation) GetChecksum() string {
+	if m != nil && m.Checksum != nil {
+		return *m.Checksum
+	}
+	return ""
+}
+
+func (m *CopyOperation) GetModuleType() string {
+	if m != nil && m.ModuleType != nil {
+		return *m.ModuleType
+	}
+	return ""
+}
+
+type CopyOperationResult struct {
+	LocalFileName    *string `protobuf:"bytes,1,opt,name=local_file_name" json:"local_file_name,omitempty"`
+	Checksum         *string `protobuf:"bytes,2,opt,name=checksum" json:"checksum,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *CopyOperationResult) Reset()         { *m = CopyOperationResult{} }
+func (m *CopyOperationResult) String() string { return proto.CompactTextString(m) }
+func (*CopyOperationResult) ProtoMessage()    {}
+
+func (m *CopyOperationResult) GetLocalFileName() string {
+	if m != nil && m.LocalFileName != nil {
+		return *m.LocalFileName
+	}
+	return ""
+}
+
+func (m *CopyOperationResult) GetChecksum() string {
+	if m != nil && m.Checksum != nil {
+		return *m.Checksum
+	}
+	return ""
+}
+
+type CopyOperations struct {
+	Entries          []*CopyOperation `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
+	SandboxId        *string          `protobuf:"bytes,2,opt,name=sandbox_id" json:"sandbox_id,omitempty"`
+	XXX_unrecognized []byte           `json:"-"`
+}
+
+func (m *CopyOperations) Reset()         { *m = CopyOperations{} }
+func (m *CopyOperations) String() string { return proto.CompactTextString(m) }
+func (*CopyOperations) ProtoMessage()    {}
+
+func (m *CopyOperations) GetEntries() []*CopyOperation {
+	if m != nil {
+		return m.Entries
+	}
+	return nil
+}
+
+func (m *CopyOperations) GetSandboxId() string {
+	if m != nil && m.SandboxId != nil {
+		return *m.SandboxId
+	}
+	return ""
+}
+
+type CopyOperationResults struct {
+	Entries          []*CopyOperationResult `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
+	XXX_unrecognized []byte                 `json:"-"`
+}
+
+func (m *CopyOperationResults) Reset()         { *m = CopyOperationResults{} }
+func (m *CopyOperationResults) String() string { return proto.CompactTextString(m) }
+func (*CopyOperationResults) ProtoMessage()    {}
+
+func (m *CopyOperationResults) GetEntries() []*CopyOperationResult {
+	if m != nil {
+		return m.Entries
+	}
+	return nil
+}
+
 type NamePair struct {
 	Source           *string `protobuf:"bytes,1,req,name=source" json:"source,omitempty"`
 	Destination      *string `protobuf:"bytes,2,req,name=destination" json:"destination,omitempty"`

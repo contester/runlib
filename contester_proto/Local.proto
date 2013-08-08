@@ -143,6 +143,28 @@ message EmptyMessage {};
 
 // Gridfs foo
 
+message CopyOperation {
+    optional string local_file_name = 1;
+    optional string remote_location = 2;
+    optional bool upload = 3;
+    optional string checksum = 4;
+    optional string module_type = 5;
+};
+
+message CopyOperationResult {
+    optional string local_file_name = 1;
+    optional string checksum = 2;
+};
+
+message CopyOperations {
+    repeated CopyOperation entries = 1;
+    optional string sandbox_id = 2;
+};
+
+message CopyOperationResults {
+    repeated CopyOperationResult entries = 1;
+};
+
 message NamePair {
     required string source = 1;
     required string destination = 2;

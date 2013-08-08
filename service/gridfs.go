@@ -6,10 +6,11 @@ import (
 	"github.com/contester/runlib/mongotools"
 )
 
-
-func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, response *contester_proto.RepeatedStringEntries) error {
+func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response *contester_proto.CopyOperationResults) error {
+	var sandbox *Sandbox
+	var err error
 	if request.SandboxId != nil {
-		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
+		sandbox, err = getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {
 			return tools.NewError(err, "GridfsGet", "getSandboxById")
 		}
@@ -17,59 +18,31 @@ func (s *Contester) GridfsGet(request *contester_proto.RepeatedNamePairEntries, 
 		defer sandbox.Mutex.RUnlock()
 	}
 
-	response.Entries = make([]string, 0, len(request.Entries))
-
-	// TODO: add error reporting
+	response.Entries = make([]*contester_proto.CopyOperationResult, 0, len(request.Entries))
 	for _, item := range request.Entries {
-		if item.Source == nil || item.Destination == nil {
+		if item.LocalFileName == nil || item.RemoteLocation == nil {
 			continue
 		}
-		resolved, _, err := resolvePath(s.Sandboxes, *item.Source, false)
-		if err != nil {
-			continue
-		}
-		err = mongotools.GridfsCopy(resolved, *item.Destination, s.Mfs, true)
-		if err != nil {
-			continue
-		}
-		response.Entries = append(response.Entries, *item.Destination)
-	}
-	return nil
-}
 
-func (s *Contester) GridfsPut(request *contester_proto.RepeatedNamePairEntries, response *contester_proto.RepeatedStringEntries) error {
-	ec := tools.NewContext("GridfsPut")
-	var sandbox *Sandbox
-	if request.SandboxId != nil {
-		var err error
-		sandbox, err = getSandboxById(s.Sandboxes, *request.SandboxId)
+	    resolved, _, err := resolvePath(s.Sandboxes, item.GetLocalFileName(), false)
 		if err != nil {
-			return ec.NewError(err, "getSandboxById")
+			continue // TODO
 		}
-		sandbox.Mutex.Lock()
-		defer sandbox.Mutex.Unlock()
-	}
 
-	response.Entries = make([]string, 0, len(request.Entries))
-	for _, item := range request.Entries {
-		if item.Source == nil || item.Destination == nil {
-			continue
-		}
-		resolved, _, err := resolvePath(s.Sandboxes, *item.Destination, true)
-		if err != nil {
-			return ec.NewError(err, "resolvePath")
-		}
-		err = mongotools.GridfsCopy(*item.Source, resolved, s.Mfs, false)
-		if err != nil {
-			return ec.NewError(err, "gridfsCopy")
-		}
-		if sandbox != nil {
+		stringHash, err := mongotools.GridfsCopy(resolved, item.GetRemoteLocation(), s.Mfs, item.GetUpload(), item.GetChecksum(), item.GetModuleType())
+
+		if !item.GetUpload() && sandbox != nil {
 			err = sandbox.Own(resolved)
 			if err != nil {
-				return ec.NewError(err, "sandbox.Own")
+				continue
 			}
 		}
-		response.Entries = append(response.Entries, *item.Source)
+
+		response.Entries = append(response.Entries, &contester_proto.CopyOperationResult{
+				LocalFileName: item.LocalFileName,
+				Checksum: &stringHash,
+			})
 	}
+
 	return nil
 }

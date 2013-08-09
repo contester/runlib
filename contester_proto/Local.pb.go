@@ -588,7 +588,7 @@ type FileStat struct {
 	Name             *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	IsDirectory      *bool   `protobuf:"varint,2,opt,name=is_directory" json:"is_directory,omitempty"`
 	Size             *uint64 `protobuf:"varint,3,opt,name=size" json:"size,omitempty"`
-	Sha1Sum          []byte  `protobuf:"bytes,4,opt,name=sha1sum" json:"sha1sum,omitempty"`
+	Checksum         *string `protobuf:"bytes,4,opt,name=checksum" json:"checksum,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
@@ -617,19 +617,19 @@ func (m *FileStat) GetSize() uint64 {
 	return 0
 }
 
-func (m *FileStat) GetSha1Sum() []byte {
-	if m != nil {
-		return m.Sha1Sum
+func (m *FileStat) GetChecksum() string {
+	if m != nil && m.Checksum != nil {
+		return *m.Checksum
 	}
-	return nil
+	return ""
 }
 
 type StatRequest struct {
-	Name             []string `protobuf:"bytes,1,rep,name=name" json:"name,omitempty"`
-	SandboxId        *string  `protobuf:"bytes,2,opt,name=sandbox_id" json:"sandbox_id,omitempty"`
-	Expand           *bool    `protobuf:"varint,3,opt,name=expand" json:"expand,omitempty"`
-	CalculateSha1    *bool    `protobuf:"varint,4,opt,name=calculate_sha1" json:"calculate_sha1,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
+	Name              []string `protobuf:"bytes,1,rep,name=name" json:"name,omitempty"`
+	SandboxId         *string  `protobuf:"bytes,2,opt,name=sandbox_id" json:"sandbox_id,omitempty"`
+	Expand            *bool    `protobuf:"varint,3,opt,name=expand" json:"expand,omitempty"`
+	CalculateChecksum *bool    `protobuf:"varint,4,opt,name=calculate_checksum" json:"calculate_checksum,omitempty"`
+	XXX_unrecognized  []byte   `json:"-"`
 }
 
 func (m *StatRequest) Reset()         { *m = StatRequest{} }
@@ -657,15 +657,15 @@ func (m *StatRequest) GetExpand() bool {
 	return false
 }
 
-func (m *StatRequest) GetCalculateSha1() bool {
-	if m != nil && m.CalculateSha1 != nil {
-		return *m.CalculateSha1
+func (m *StatRequest) GetCalculateChecksum() bool {
+	if m != nil && m.CalculateChecksum != nil {
+		return *m.CalculateChecksum
 	}
 	return false
 }
 
 type FileStats struct {
-	Stats            []*FileStat `protobuf:"bytes,1,rep,name=stats" json:"stats,omitempty"`
+	Entries          []*FileStat `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
 	XXX_unrecognized []byte      `json:"-"`
 }
 
@@ -673,9 +673,9 @@ func (m *FileStats) Reset()         { *m = FileStats{} }
 func (m *FileStats) String() string { return proto.CompactTextString(m) }
 func (*FileStats) ProtoMessage()    {}
 
-func (m *FileStats) GetStats() []*FileStat {
+func (m *FileStats) GetEntries() []*FileStat {
 	if m != nil {
-		return m.Stats
+		return m.Entries
 	}
 	return nil
 }
@@ -752,30 +752,6 @@ func (m *CopyOperation) GetModuleType() string {
 	return ""
 }
 
-type CopyOperationResult struct {
-	LocalFileName    *string `protobuf:"bytes,1,opt,name=local_file_name" json:"local_file_name,omitempty"`
-	Checksum         *string `protobuf:"bytes,2,opt,name=checksum" json:"checksum,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
-}
-
-func (m *CopyOperationResult) Reset()         { *m = CopyOperationResult{} }
-func (m *CopyOperationResult) String() string { return proto.CompactTextString(m) }
-func (*CopyOperationResult) ProtoMessage()    {}
-
-func (m *CopyOperationResult) GetLocalFileName() string {
-	if m != nil && m.LocalFileName != nil {
-		return *m.LocalFileName
-	}
-	return ""
-}
-
-func (m *CopyOperationResult) GetChecksum() string {
-	if m != nil && m.Checksum != nil {
-		return *m.Checksum
-	}
-	return ""
-}
-
 type CopyOperations struct {
 	Entries          []*CopyOperation `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
 	SandboxId        *string          `protobuf:"bytes,2,opt,name=sandbox_id" json:"sandbox_id,omitempty"`
@@ -798,22 +774,6 @@ func (m *CopyOperations) GetSandboxId() string {
 		return *m.SandboxId
 	}
 	return ""
-}
-
-type CopyOperationResults struct {
-	Entries          []*CopyOperationResult `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
-	XXX_unrecognized []byte                 `json:"-"`
-}
-
-func (m *CopyOperationResults) Reset()         { *m = CopyOperationResults{} }
-func (m *CopyOperationResults) String() string { return proto.CompactTextString(m) }
-func (*CopyOperationResults) ProtoMessage()    {}
-
-func (m *CopyOperationResults) GetEntries() []*CopyOperationResult {
-	if m != nil {
-		return m.Entries
-	}
-	return nil
 }
 
 type NamePair struct {

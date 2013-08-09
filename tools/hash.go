@@ -37,3 +37,4 @@ func HashFile(name string) ([]byte, error) {
 
 	return destination.Sum(nil), nil
 }
+

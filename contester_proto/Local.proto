@@ -115,18 +115,18 @@ message FileStat {
     optional string name = 1;
     optional bool is_directory = 2;
     optional uint64 size = 3;
-    optional bytes sha1sum = 4;
+    optional string checksum = 4;
 };
 
 message StatRequest {
     repeated string name = 1;
     optional string sandbox_id = 2;
     optional bool expand = 3;
-    optional bool calculate_sha1 = 4;
+    optional bool calculate_checksum = 4;
 };
 
 message FileStats {
-    repeated FileStat stats = 1;
+    repeated FileStat entries = 1;
 };
 
 // Direct put
@@ -151,18 +151,9 @@ message CopyOperation {
     optional string module_type = 5;
 };
 
-message CopyOperationResult {
-    optional string local_file_name = 1;
-    optional string checksum = 2;
-};
-
 message CopyOperations {
     repeated CopyOperation entries = 1;
     optional string sandbox_id = 2;
-};
-
-message CopyOperationResults {
-    repeated CopyOperationResult entries = 1;
 };
 
 message NamePair {

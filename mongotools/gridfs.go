@@ -7,6 +7,7 @@ import (
 	"labix.org/v2/mgo"
 	"fmt"
 	"compress/zlib"
+	"github.com/contester/runlib/contester_proto"
 )
 
 type fileMetadata struct {
@@ -16,21 +17,20 @@ type fileMetadata struct {
 	OriginalSize uint64 `bson:"originalSize"`
 }
 
-func GridfsCopy(localName, remoteName string, mfs *mgo.GridFS, toGridfs bool, checksum, moduleType string) (string, error) {
-	var err error
+func GridfsCopy(localName, remoteName string, mfs *mgo.GridFS, toGridfs bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
 	ec := tools.NewContext("GridfsCopy")
 
 	if toGridfs {
-		calculatedChecksum, err := tools.HashFileString(localName)
+		stat, err = tools.StatFile(localName, true)
 		if err != nil {
-			return "", ec.NewError(err, "local.CalculateChecksum")
+			return nil, ec.NewError(err, "local.CalculateChecksum")
 		}
 
-		if checksum != "" && calculatedChecksum != checksum {
-			return "", ec.NewError(fmt.Errorf("Checksum mismatch, local %s != %s", calculatedChecksum, checksum))
+		if checksum != "" && *stat.Checksum != checksum {
+			return nil, ec.NewError(fmt.Errorf("Checksum mismatch, local %s != %s", stat.Checksum, checksum))
 		}
 
-		checksum = calculatedChecksum
+		checksum = *stat.Checksum
 	}
 
 	var local *os.File
@@ -41,7 +41,7 @@ func GridfsCopy(localName, remoteName string, mfs *mgo.GridFS, toGridfs bool, ch
 	}
 
 	if err != nil {
-		return "", ec.NewError(err, "local.Open")
+		return nil, ec.NewError(err, "local.Open")
 	}
 	defer local.Close()
 
@@ -52,7 +52,7 @@ func GridfsCopy(localName, remoteName string, mfs *mgo.GridFS, toGridfs bool, ch
 		remote, err = mfs.Open(remoteName)
 	}
 	if err != nil {
-		return "", ec.NewError(err, "remote.Open")
+		return nil, ec.NewError(err, "remote.Open")
 	}
 	defer remote.Close()
 
@@ -63,12 +63,12 @@ func GridfsCopy(localName, remoteName string, mfs *mgo.GridFS, toGridfs bool, ch
 		source = remote
 		var meta fileMetadata
 		if err = remote.GetMeta(&meta); err != nil {
-			return "", ec.NewError(err, "remote.GetMeta")
+			return nil, ec.NewError(err, "remote.GetMeta")
 		}
 		if meta.CompressionType == "ZLIB" {
 			source, err = zlib.NewReader(source)
 			if err != nil {
-				return "", ec.NewError(err, "zlib.NewReader")
+				return nil, ec.NewError(err, "zlib.NewReader")
 			}
 		}
 	}
@@ -82,26 +82,33 @@ func GridfsCopy(localName, remoteName string, mfs *mgo.GridFS, toGridfs bool, ch
 
 	size, err := io.Copy(destination, source)
 	if err != nil {
-		return "", ec.NewError(err, "io.Copy")
+		return nil, ec.NewError(err, "io.Copy")
 	}
 
 	if toGridfs {
 		var meta fileMetadata
 		meta.OriginalSize = uint64(size)
 		meta.CompressionType = "ZLIB"
-		meta.Checksum = checksum
+		meta.Checksum = *stat.Checksum
 		meta.ModuleType = moduleType
 
 		remote.SetMeta(meta)
 	}
 
 	if err = destination.Close(); err != nil {
-		return "", ec.NewError(err, "destination.Close")
+		return nil, ec.NewError(err, "destination.Close")
 	}
 
 	if err = source.Close(); err != nil {
-		return "", ec.NewError(err, "source.Close")
+		return nil, ec.NewError(err, "source.Close")
 	}
 
-	return checksum, nil
+	if !toGridfs {
+		stat, err = tools.StatFile(localName, true)
+		if err != nil {
+			return nil, ec.NewError(err, "StatFile")
+		}
+	}
+
+	return stat, nil
 }

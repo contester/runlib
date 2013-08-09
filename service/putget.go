@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.EmptyMessage) error {
+func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.FileStat) error {
 	ec := tools.NewContext("Put")
 	if request.Data != nil {
 		contester_proto.AddBlob(request.Data)
@@ -48,11 +48,12 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		return sandbox.Own(resolved)
 	}
 
-	_, err = tools.HashFile(resolved)
+	stat, err := tools.StatFile(resolved, true)
 	if err != nil {
-		return ec.NewError(err, "hashFile")
+		return ec.NewError(err, "statFile")
 	}
 
+	*response = *stat
 	return nil
 }
 

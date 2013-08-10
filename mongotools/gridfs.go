@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"compress/zlib"
 	"github.com/contester/runlib/contester_proto"
-	"labix.org/v2/mgo/bson"
 )
 
 type fileMetadata struct {

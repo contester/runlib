@@ -36,7 +36,7 @@ func storeIfExists(mfs *mgo.GridFS, filename, gridname string) error {
 		return err
 	}
 
-	err := mongotools.GridfsCopy(filename, gridname, mfs, true)
+	_, err := mongotools.GridfsCopy(filename, gridname, mfs, true, "", "")
 	if err != nil {
 		return err
 	}

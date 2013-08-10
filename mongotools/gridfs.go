@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"compress/zlib"
 	"github.com/contester/runlib/contester_proto"
+	"labix.org/v2/mgo/bson"
 )
 
 type fileMetadata struct {
@@ -47,6 +48,10 @@ func GridfsCopy(localName, remoteName string, mfs *mgo.GridFS, toGridfs bool, ch
 
 	var remote *mgo.GridFile
 	if toGridfs {
+		// Remove all files with the same remoteName.
+		if err = mfs.Remove(remoteName); err != nil {
+			return nil, ec.NewError(err, "remote.Remove")
+		}
 		remote, err = mfs.Create(remoteName)
 	} else {
 		remote, err = mfs.Open(remoteName)

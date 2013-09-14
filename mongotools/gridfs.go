@@ -23,7 +23,11 @@ func GridfsCopy(localName, remoteName string, mfs *mgo.GridFS, toGridfs bool, ch
 	if toGridfs {
 		stat, err = tools.StatFile(localName, true)
 		if err != nil {
-			return nil, ec.NewError(err, "local.CalculateChecksum")
+			err = ec.NewError(err, "local.CalculateChecksum")
+		}
+		// If file doesn't exist then stat == nil.
+		if err != nil || stat == nil {
+			return
 		}
 
 		if checksum != "" && *stat.Checksum != checksum {

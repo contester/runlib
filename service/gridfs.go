@@ -29,7 +29,8 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 			continue // TODO
 		}
 
-		stat, err := mongotools.GridfsCopy(resolved, item.GetRemoteLocation(), s.Mfs, item.GetUpload(), item.GetChecksum(), item.GetModuleType())
+		stat, err := mongotools.GridfsCopy(resolved, item.GetRemoteLocation(), s.Mfs, item.GetUpload(),
+			item.GetChecksum(), item.GetModuleType())
 
 		if !item.GetUpload() && sandbox != nil {
 			err = sandbox.Own(resolved)
@@ -38,7 +39,9 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 			}
 		}
 
-		response.Entries = append(response.Entries, stat)
+		if stat != nil {
+			response.Entries = append(response.Entries, stat)
+		}
 	}
 
 	return nil

@@ -8,6 +8,7 @@ import (
 	"bufio"
 
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 	"strconv"
 	"github.com/contester/runlib/mongotools"
 	"log"
@@ -15,11 +16,8 @@ import (
 	"strings"
 )
 
-var (
-	fixMemlimit = flag.Bool("fixMemlimit", true, "Fix memlimit")
-)
-
 type ProblemManifest struct {
+	MongoId string `bson:"_id"`
 	Id string
 	Revision int
 	TestCount int `bson:"testCount"`
@@ -29,6 +27,7 @@ type ProblemManifest struct {
 	TesterName string `bson:"testerName"`
 	Answers []int `bson:"answers"`
 	InteractorName string `bson:"interactorName,omitempty"`
+	CombinedHash string `bson:"combinedHash,omitempty"`
 }
 
 func storeIfExists(mfs *mgo.GridFS, filename, gridname string) error {
@@ -58,11 +57,23 @@ func readFirstLine(filename string) (string, error) {
 	return "", nil
 }
 
-func importProblem(id, root, gridprefix string, mdb *mgo.Database, mfs *mgo.GridFS) error {
+func getNextRevision(id string, mdb *mgo.Database) (int, error) {
+	query := mdb.C("manifest").Find(bson.M{"id": id}).Sort("-revision")
 	var manifest ProblemManifest
+	if err := query.One(&manifest); err != nil {
+		return 1, nil
+	}
+	return manifest.Revision + 1, nil
+}
 
-	manifest.Id = "moodle/" + id
-	manifest.Revision = 1
+func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
+	var manifest ProblemManifest
+	var err error
+
+	manifest.Id = id
+	manifest.Revision, err = getNextRevision(id, mdb)
+	manifest.MongoId = manifest.Id + "/" + strconv.FormatInt(manifest.Revision, 10)
+	gridprefix := "problem/direct" + id[8:]
 
 	tests, err := filepath.Glob(filepath.Join(root, "Test.*"))
 	if err != nil {
@@ -156,7 +167,9 @@ func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 			continue
 		}
 
-		err = importProblem(strconv.FormatUint(problemId, 10), problem, "problem/moodle/" + strconv.FormatUint(problemId, 10) + "/1/", mdb, mfs)
+		realProblemId := "direct://moodle/school.sgu.ru/" + strconv.FormatUint(problemId, 10)
+
+		err = importProblem(realProblemId, problem, mdb, mfs)
 		if err != nil {
 			return err
 		}

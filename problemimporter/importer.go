@@ -1,33 +1,37 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
-	"bufio"
 
+	"github.com/contester/runlib/mongotools"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"strconv"
-	"github.com/contester/runlib/mongotools"
 	"log"
 	"sort"
+	"strconv"
 	"strings"
 )
 
 type ProblemManifest struct {
-	MongoId string `bson:"_id"`
-	Id string
-	Revision int
-	TestCount int `bson:"testCount"`
-	TimeLimitMicros int64 `bson:"timeLimitMicros"`
-	MemoryLimit int64 `bson:"memoryLimit"`
-	Stdio bool `bson:"stdio"`
-	TesterName string `bson:"testerName"`
-	Answers []int `bson:"answers"`
-	InteractorName string `bson:"interactorName,omitempty"`
-	CombinedHash string `bson:"combinedHash,omitempty"`
+	MongoId         string `bson:"_id"`
+	Id              string
+	Revision        int
+	TestCount       int    `bson:"testCount"`
+	TimeLimitMicros int64  `bson:"timeLimitMicros"`
+	MemoryLimit     int64  `bson:"memoryLimit"`
+	Stdio           bool   `bson:"stdio"`
+	TesterName      string `bson:"testerName"`
+	Answers         []int  `bson:"answers"`
+	InteractorName  string `bson:"interactorName,omitempty"`
+	CombinedHash    string `bson:"combinedHash,omitempty"`
+}
+
+func (s *ProblemManifest) GetGridPrefix() string {
+	return idToGridPrefix(s.Id) + "/" + strconv.FormatInt(int64(s.Revision), 10) + "/"
 }
 
 func storeIfExists(mfs *mgo.GridFS, filename, gridname string) error {
@@ -72,8 +76,9 @@ func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 
 	manifest.Id = id
 	manifest.Revision, err = getNextRevision(id, mdb)
-	manifest.MongoId = manifest.Id + "/" + strconv.FormatInt(manifest.Revision, 10)
-	gridprefix := "problem/direct" + id[8:]
+	manifest.MongoId = manifest.Id + "/" + strconv.FormatInt(int64(manifest.Revision), 10)
+
+	gridprefix := manifest.GetGridPrefix()
 
 	tests, err := filepath.Glob(filepath.Join(root, "Test.*"))
 	if err != nil {
@@ -95,11 +100,11 @@ func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 			continue
 		}
 
-		if err = storeIfExists(mfs, filepath.Join(testRoot, "Input", "input.txt"), gridprefix + "tests/" + strconv.FormatInt(testId, 10) + "/input.txt"); err != nil {
+		if err = storeIfExists(mfs, filepath.Join(testRoot, "Input", "input.txt"), gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/input.txt"); err != nil {
 			continue
 		}
 
-		if err = storeIfExists(mfs, filepath.Join(testRoot, "Add-ons", "answer.txt"), gridprefix + "tests/" + strconv.FormatInt(testId, 10) + "/answer.txt"); err == nil {
+		if err = storeIfExists(mfs, filepath.Join(testRoot, "Add-ons", "answer.txt"), gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/answer.txt"); err == nil {
 			manifest.Answers = append(manifest.Answers, int(testId))
 		}
 
@@ -108,7 +113,7 @@ func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 		}
 	}
 
-	if err = storeIfExists(mfs, filepath.Join(root, "Tester", "tester.exe"), gridprefix + "checker"); err != nil {
+	if err = storeIfExists(mfs, filepath.Join(root, "Tester", "tester.exe"), gridprefix+"checker"); err != nil {
 		return err
 	}
 
@@ -121,7 +126,7 @@ func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 		if err != nil {
 			fmt.Println(err)
 		}
-		if manifest.MemoryLimit < 16 * 1024 * 1024 {
+		if manifest.MemoryLimit < 16*1024*1024 {
 			manifest.MemoryLimit = 16 * 1024 * 1024
 		}
 	} else {
@@ -179,6 +184,7 @@ func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 
 func main() {
 	mhost := flag.String("mongohost", "", "")
+	mode := flag.String("mode", "", "")
 
 	flag.Parse()
 
@@ -193,8 +199,15 @@ func main() {
 	mdb := msession.DB("contester")
 	mfs := mdb.GridFS("fs")
 
-	err = importProblems(flag.Arg(0), mdb, mfs)
-	if err != nil {
-		log.Fatal(err)
+	if *mode == "import" {
+
+		err = importProblems(flag.Arg(0), mdb, mfs)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if *mode == "cleanup" {
+		doAllCleanup(1, mdb, mfs)
 	}
 }

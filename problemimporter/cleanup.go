@@ -60,9 +60,11 @@ func doAllCleanup(latest int, mdb *mgo.Database, mfs *mgo.GridFS) error {
 	}
 
 	pids = getAllGridPrefixes(mdb)
+	fmt.Println(pids)
 	iter := mfs.Find(nil).Sort("filename").Iter()
 	var f *mgo.GridFile
 	for mfs.OpenNext(iter, &f) {
+		fmt.Println(f.Name())
 		if !strings.HasPrefix(f.Name(), "problem/") {
 			continue
 		}

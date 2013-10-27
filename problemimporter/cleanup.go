@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/url"
@@ -67,6 +68,7 @@ func doAllCleanup(latest int, mdb *mgo.Database, mfs *mgo.GridFS) error {
 		}
 		for _, v := range pids {
 			if strings.HasPrefix(f.Name(), v) {
+				fmt.Printf("Remove: %s\n", f.Name())
 				mfs.RemoveId(f.Id())
 			}
 		}

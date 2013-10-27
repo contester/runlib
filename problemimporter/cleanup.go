@@ -20,10 +20,10 @@ func idToGridPrefix(id string) string {
 		return ""
 	}
 	if u.Scheme == "http" || u.Scheme == "https" {
-		return "problem/polygon/" + u.Scheme + "/" + u.Host + "/" + u.Path
+		return "problem/polygon/" + u.Scheme + "/" + u.Host + u.Path
 	}
 	if u.Scheme == "direct" {
-		return "problem/direct/" + u.Host + "/" + u.Path
+		return "problem/direct/" + u.Host + u.Path
 	}
 	return ""
 }

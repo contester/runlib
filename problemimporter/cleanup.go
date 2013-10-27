@@ -53,6 +53,15 @@ func getAllGridPrefixes(mdb *mgo.Database) []string {
 	return ids
 }
 
+func hasAnyPrefix(s string, p []string) bool {
+	for _, v := range p {
+		if strings.HasPrefix(s, v) {
+			return true
+		}
+	}
+	return false
+}
+
 func doAllCleanup(latest int, mdb *mgo.Database, mfs *mgo.GridFS) error {
 	pids := getAllProblemIds(mdb)
 	for _, v := range pids {
@@ -60,7 +69,6 @@ func doAllCleanup(latest int, mdb *mgo.Database, mfs *mgo.GridFS) error {
 	}
 
 	pids = getAllGridPrefixes(mdb)
-	fmt.Println(pids)
 	iter := mfs.Find(nil).Sort("filename").Iter()
 	var f *mgo.GridFile
 	for mfs.OpenNext(iter, &f) {
@@ -68,11 +76,9 @@ func doAllCleanup(latest int, mdb *mgo.Database, mfs *mgo.GridFS) error {
 		if !strings.HasPrefix(f.Name(), "problem/") {
 			continue
 		}
-		for _, v := range pids {
-			if strings.HasPrefix(f.Name(), v) {
-				fmt.Printf("Remove: %s\n", f.Name())
-				mfs.RemoveId(f.Id())
-			}
+		if !hasAnyPrefix(f.Name(), pids) {
+			fmt.Printf("Remove: %s\n", f.Name())
+			mfs.RemoveId(f.Id())
 		}
 	}
 	return nil

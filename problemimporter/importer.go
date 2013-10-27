@@ -172,7 +172,7 @@ func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 			continue
 		}
 
-		realProblemId := "direct://moodle/school.sgu.ru/" + strconv.FormatUint(problemId, 10)
+		realProblemId := "direct://school.sgu.ru/moodle/" + strconv.FormatUint(problemId, 10)
 
 		err = importProblem(realProblemId, problem, mdb, mfs)
 		if err != nil {

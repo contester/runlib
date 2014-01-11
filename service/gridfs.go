@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"github.com/contester/runlib/mongotools"
 )
 
 func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response *contester_proto.FileStats) error {
@@ -29,7 +28,7 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 			continue // TODO
 		}
 
-		stat, err := mongotools.GridfsCopy(resolved, item.GetRemoteLocation(), s.Mfs, item.GetUpload(),
+		stat, err := s.Storage.Default.Copy(resolved, item.GetRemoteLocation(), item.GetUpload(),
 			item.GetChecksum(), item.GetModuleType())
 
 		if !item.GetUpload() && sandbox != nil {

@@ -6,7 +6,7 @@ import (
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"
-	"labix.org/v2/mgo"
+	"github.com/contester/runlib/storage"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,10 +26,7 @@ type Contester struct {
 
 	GData *platform.GlobalData
 
-	Msession  *mgo.Session
-	Mlocation string
-	Mdb       *mgo.Database
-	Mfs       *mgo.GridFS
+	Storage *storage.Storage
 }
 
 func getHostname() string {
@@ -129,6 +126,8 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	result.PathSeparator = string(os.PathSeparator)
 	result.GData = gData
 
+	result.Storage = storage.NewStorage()
+
 	result.Sandboxes, err = configureSandboxes(config)
 	if err != nil {
 		return nil, err
@@ -138,16 +137,9 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 }
 
 func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response *contester_proto.IdentifyResponse) error {
-	mLocation := *request.MongoHost
-	if mLocation != s.Mlocation {
-		var err error
-		s.Msession, err = mgo.Dial(*request.MongoHost)
-		if err != nil {
-			return err
-		}
+	if err := s.Storage.SetDefault(*request.MongoHost); err != nil {
+		return err
 	}
-	s.Mdb = s.Msession.DB(*request.MongoDb)
-	s.Mfs = s.Mdb.GridFS("fs")
 
 	response.InvokerId = &s.InvokerId
 	response.Environment = &contester_proto.LocalEnvironment{

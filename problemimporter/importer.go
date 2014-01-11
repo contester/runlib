@@ -7,44 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/contester/runlib/mongotools"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
+	"github.com/contester/runlib/storage"
 	"log"
 	"sort"
 	"strconv"
 	"strings"
 )
-
-type ProblemManifest struct {
-	MongoId         string `bson:"_id"`
-	Id              string
-	Revision        int
-	TestCount       int    `bson:"testCount"`
-	TimeLimitMicros int64  `bson:"timeLimitMicros"`
-	MemoryLimit     int64  `bson:"memoryLimit"`
-	Stdio           bool   `bson:"stdio"`
-	TesterName      string `bson:"testerName"`
-	Answers         []int  `bson:"answers"`
-	InteractorName  string `bson:"interactorName,omitempty"`
-	CombinedHash    string `bson:"combinedHash,omitempty"`
-}
-
-func (s *ProblemManifest) GetGridPrefix() string {
-	return idToGridPrefix(s.Id) + "/" + strconv.FormatInt(int64(s.Revision), 10) + "/"
-}
-
-func storeIfExists(mfs *mgo.GridFS, filename, gridname string) error {
-	if _, err := os.Stat(filename); err != nil {
-		return err
-	}
-
-	_, err := mongotools.GridfsCopy(filename, gridname, mfs, true, "", "")
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func readFirstLine(filename string) (string, error) {
 	f, err := os.Open(filename)
@@ -61,22 +29,25 @@ func readFirstLine(filename string) (string, error) {
 	return "", nil
 }
 
-func getNextRevision(id string, mdb *mgo.Database) (int, error) {
-	query := mdb.C("manifest").Find(bson.M{"id": id}).Sort("-revision")
-	var manifest ProblemManifest
-	if err := query.One(&manifest); err != nil {
-		return 1, nil
+func storeIfExists(backend storage.Backend, filename, gridname string) error {
+	if _, err := os.Stat(filename); err != nil {
+		return err
 	}
-	return manifest.Revision + 1, nil
+
+	_, err := backend.Copy(filename, gridname, true, "", "")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
-	var manifest ProblemManifest
+func importProblem(id, root string, backend storage.ProblemStore) error {
+	var manifest storage.ProblemManifest
 	var err error
 
 	manifest.Id = id
-	manifest.Revision, err = getNextRevision(id, mdb)
-	manifest.MongoId = manifest.Id + "/" + strconv.FormatInt(int64(manifest.Revision), 10)
+	manifest.Revision, err = backend.GetNextRevision(id)
+	manifest.Key = manifest.Id + "/" + strconv.FormatInt(int64(manifest.Revision), 10)
 
 	gridprefix := manifest.GetGridPrefix()
 
@@ -100,11 +71,13 @@ func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 			continue
 		}
 
-		if err = storeIfExists(mfs, filepath.Join(testRoot, "Input", "input.txt"), gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/input.txt"); err != nil {
+		if err = storeIfExists(backend, filepath.Join(testRoot, "Input", "input.txt"),
+						gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/input.txt"); err != nil {
 			continue
 		}
 
-		if err = storeIfExists(mfs, filepath.Join(testRoot, "Add-ons", "answer.txt"), gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/answer.txt"); err == nil {
+		if err = storeIfExists(backend, filepath.Join(testRoot, "Add-ons", "answer.txt"),
+						gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/answer.txt"); err == nil {
 			manifest.Answers = append(manifest.Answers, int(testId))
 		}
 
@@ -113,7 +86,7 @@ func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 		}
 	}
 
-	if err = storeIfExists(mfs, filepath.Join(root, "Tester", "tester.exe"), gridprefix+"checker"); err != nil {
+	if err = storeIfExists(backend, filepath.Join(root, "Tester", "tester.exe"), gridprefix+"checker"); err != nil {
 		return err
 	}
 
@@ -152,10 +125,10 @@ func importProblem(id, root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 
 	fmt.Println(manifest)
 
-	return mdb.C("manifest").Insert(&manifest)
+	return backend.SetManifest(&manifest)
 }
 
-func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
+func importProblems(root string, backend storage.ProblemStore) error {
 	problems, err := filepath.Glob(filepath.Join(root, "Task.*"))
 	if err != nil {
 		return err
@@ -174,7 +147,7 @@ func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 
 		realProblemId := "direct://school.sgu.ru/moodle/" + strconv.FormatUint(problemId, 10)
 
-		err = importProblem(realProblemId, problem, mdb, mfs)
+		err = importProblem(realProblemId, problem, backend)
 		if err != nil {
 			return err
 		}
@@ -183,31 +156,31 @@ func importProblems(root string, mdb *mgo.Database, mfs *mgo.GridFS) error {
 }
 
 func main() {
-	mhost := flag.String("mongohost", "", "")
+	storageUrl := flag.String("url", "", "")
 	mode := flag.String("mode", "", "")
 
 	flag.Parse()
 
-	if *mhost == "" {
+	if *storageUrl == "" {
 		return
 	}
 
-	msession, err := mgo.Dial(*mhost)
+	stor := storage.NewStorage()
+	err := stor.SetDefault(*storageUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
-	mdb := msession.DB("contester")
-	mfs := mdb.GridFS("fs")
+
+	backend := stor.Default.(storage.ProblemStore)
 
 	if *mode == "import" {
-
-		err = importProblems(flag.Arg(0), mdb, mfs)
+		err = importProblems(flag.Arg(0), backend)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	if *mode == "cleanup" {
-		doAllCleanup(1, mdb, mfs)
+		backend.Cleanup(1)
 	}
 }

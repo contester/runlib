@@ -51,12 +51,19 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 
 	gridprefix := manifest.GetGridPrefix()
 
-	tests, err := filepath.Glob(filepath.Join(root, "Test.*"))
+	// tests, err := filepath.Glob(filepath.Join(root, "Test.*"))
+	rootDir, err := os.Open(root)
 	if err != nil {
 		return err
 	}
 
-	for _, testRoot := range tests {
+	names, err := rootDir.Readdirnames(-1)
+
+	for _, shortName := range names {
+		if !strings.HasPrefix(strings.ToLower(shortName), "test.") {
+			continue
+		}
+		testRoot := filepath.Join(root, shortName)
 		if dstat, err := os.Stat(testRoot); err != nil || !dstat.IsDir() {
 			continue
 		}
@@ -129,12 +136,19 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 }
 
 func importProblems(root string, backend storage.ProblemStore) error {
-	problems, err := filepath.Glob(filepath.Join(root, "Task.*"))
+	rootDir, err := os.Open(root)
 	if err != nil {
 		return err
 	}
-	for _, problem := range problems {
-		ext := filepath.Ext(problem)
+	problems, err := rootDir.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, problemShort := range problems {
+		if !strings.HasPrefix(strings.ToLower(problemShort), "task.") {
+			continue
+		}
+		ext := filepath.Ext(problemShort)
 
 		if len(ext) < 2 {
 			continue
@@ -147,7 +161,7 @@ func importProblems(root string, backend storage.ProblemStore) error {
 
 		realProblemId := "direct://school.sgu.ru/moodle/" + strconv.FormatUint(problemId, 10)
 
-		err = importProblem(realProblemId, problem, backend)
+		err = importProblem(realProblemId, filepath.Join(root, problemShort), backend)
 		if err != nil {
 			return err
 		}

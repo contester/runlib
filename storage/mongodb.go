@@ -160,8 +160,8 @@ return 1, nil
 return manifest.Revision + 1, nil
 }
 
-func (s *mongodbStorage) SetManifest(manifest ProblemManifest) error {
-	return s.Database.C("manifest").Insert(&manifest)
+func (s *mongodbStorage) SetManifest(manifest *ProblemManifest) error {
+	return s.Database.C("manifest").Insert(manifest)
 }
 
 func (s *mongodbStorage) getAllProblemIds() []string {

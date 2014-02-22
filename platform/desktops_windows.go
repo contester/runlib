@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"syscall"
+	"runtime"
 )
 
 type ContesterDesktop struct {
@@ -29,64 +30,60 @@ func CreateContesterDesktopStruct() (*ContesterDesktop, error) {
 	return &result, nil
 }
 
+func threadIdName(prefix string) string {
+	return prefix + strconv.FormatUint(uint64(win32.GetCurrentThreadId()), 10)
+}
+
 func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name string, err error) {
-	origWinsta, err := win32.GetProcessWindowStation()
-	if err != nil {
-		err = os.NewSyscallError("GetProcessWindowStation", err)
-		return
-	}
-	origDesktop, err := win32.GetThreadDesktop(win32.GetCurrentThreadId())
-	if err != nil {
-		err = os.NewSyscallError("GetThreadDesktop", err)
+	var origWinsta win32.Hwinsta
+	if origWinsta, err = win32.GetProcessWindowStation(); err != nil {
 		return
 	}
 
-	newName := "w" + strconv.FormatUint(uint64(win32.GetCurrentThreadId()), 10)
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
-	newWinsta, err := win32.CreateWindowStation(syscall.StringToUTF16Ptr(newName), 0, win32.MAXIMUM_ALLOWED, win32.MakeInheritSa())
-	if err != nil {
-		err = os.NewSyscallError("CreateWindowStation", err)
+	var origDesktop win32.Hdesk
+	if origDesktop, err = win32.GetThreadDesktop(win32.GetCurrentThreadId()); err != nil {
 		return
 	}
 
-	err = win32.SetProcessWindowStation(newWinsta)
-	if err != nil {
-		win32.CloseWindowStation(newWinsta)
-		err = os.NewSyscallError("SetProcessWindowStation", err)
+	if winsta, err = win32.CreateWindowStation(
+		syscall.StringToUTF16Ptr(threadIdName("w")), 0, win32.MAXIMUM_ALLOWED, win32.MakeInheritSa()); err != nil {
 		return
 	}
 
-	winsta = newWinsta
+	if err = win32.SetProcessWindowStation(winsta); err != nil {
+		win32.CloseWindowStation(winsta)
+		return
+	}
 
-	newWinstaName, err := win32.GetUserObjectName(syscall.Handle(newWinsta))
-
-	if err == nil {
-		shortName := "c" + strconv.FormatUint(uint64(win32.GetCurrentThreadId()), 10)
+	var winstaName string
+	if winstaName, err = win32.GetUserObjectName(syscall.Handle(winsta)); err == nil {
+		shortName := threadIdName("c")
 
 		desk, err = win32.CreateDesktop(
 			syscall.StringToUTF16Ptr(shortName),
 			nil, 0, 0, syscall.GENERIC_ALL, win32.MakeInheritSa())
 
 		if err == nil {
-			name = newWinstaName + "\\" + shortName
-		} else {
-			err = os.NewSyscallError("CreateDesktop", err)
+			name = winstaName + "\\" + shortName
 		}
-	} else {
-		err = os.NewSyscallError("GetUserObjectName", err)
 	}
 
 	win32.SetProcessWindowStation(origWinsta)
 	win32.SetThreadDesktop(origDesktop)
 
+	if err != nil {
+		return
+	}
+
 	everyone, err := syscall.StringToSid("S-1-1-0")
 	if err == nil {
-		err = win32.AddAceToWindowStation(newWinsta, everyone)
-		if err != nil {
+		if err = win32.AddAceToWindowStation(winsta, everyone); err != nil {
 			l4g.Error(err)
 		}
-		err = win32.AddAceToDesktop(desk, everyone)
-		if err != nil {
+		if err = win32.AddAceToDesktop(desk, everyone); err != nil {
 			l4g.Error(err)
 		}
 	} else {
@@ -99,7 +96,7 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 func GetLoadLibrary() (uintptr, error) {
 	handle, err := win32.GetModuleHandle(syscall.StringToUTF16Ptr("kernel32"))
 	if err != nil {
-		return 0, os.NewSyscallError("GetModuleHandle", err)
+		return 0, err
 	}
 	addr, err := syscall.GetProcAddress(handle, "LoadLibraryW")
 	if err != nil {

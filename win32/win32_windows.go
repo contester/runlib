@@ -1,6 +1,7 @@
 package win32
 
 import (
+	"os"
 	"syscall"
 	"unsafe"
 )
@@ -148,9 +149,8 @@ func CreateProcessWithLogonW(
 	environment *uint16,
 	currentDirectory *uint16,
 	startupInfo *syscall.StartupInfo,
-	processInformation *syscall.ProcessInformation) (err error) {
-
-	r1, _, e1 := procCreateProcessWithLogonW.Call(
+	processInformation *syscall.ProcessInformation) error {
+	if r1, _, e1 := procCreateProcessWithLogonW.Call(
 		uintptr(unsafe.Pointer(username)),
 		uintptr(unsafe.Pointer(domain)),
 		uintptr(unsafe.Pointer(password)),
@@ -161,13 +161,17 @@ func CreateProcessWithLogonW(
 		uintptr(unsafe.Pointer(environment)), // env
 		uintptr(unsafe.Pointer(currentDirectory)),
 		uintptr(unsafe.Pointer(startupInfo)),
-		uintptr(unsafe.Pointer(processInformation)))
-
-	if int(r1) == 0 {
-		return e1
+		uintptr(unsafe.Pointer(processInformation))); int(r1) == 0 {
+		return os.NewSyscallError("CreateProcessWithLogonW", e1)
 	}
-
 	return nil
+}
+
+func boolToUint32(src bool) uint32 {
+	if src {
+		return 1
+	}
+	return 0
 }
 
 func CreateProcessAsUser(
@@ -181,83 +185,69 @@ func CreateProcessAsUser(
 	environment *uint16,
 	currentDirectory *uint16,
 	startupInfo *syscall.StartupInfo,
-	processInformation *syscall.ProcessInformation) (err error) {
+	processInformation *syscall.ProcessInformation) error {
 
-	var _p0 uint32
-	if inheritHandles {
-		_p0 = 1
-	} else {
-		_p0 = 0
-	}
-	r1, _, e1 := procCreateProcessAsUserW.Call(
+	if r1, _, e1 := procCreateProcessAsUserW.Call(
 		uintptr(token),
 		uintptr(unsafe.Pointer(applicationName)),
 		uintptr(unsafe.Pointer(commandLine)),
 		uintptr(unsafe.Pointer(procSecurity)),
 		uintptr(unsafe.Pointer(threadSecurity)),
-		uintptr(_p0),
+		uintptr(boolToUint32(inheritHandles)),
 		uintptr(creationFlags),
 		uintptr(unsafe.Pointer(environment)), // env
 		uintptr(unsafe.Pointer(currentDirectory)),
 		uintptr(unsafe.Pointer(startupInfo)),
-		uintptr(unsafe.Pointer(processInformation)))
-
-	if int(r1) == 0 {
-		return e1
+		uintptr(unsafe.Pointer(processInformation))); int(r1) == 0 {
+		return os.NewSyscallError("CreateProcessAsUser", e1)
 	}
-
 	return nil
 }
 
 func ResumeThread(thread syscall.Handle) (suspendCount int, err error) {
-	r1, _, e1 := procResumeThread.Call(uintptr(thread))
-	if int(r1) == -1 {
-		return -1, e1
+	if r1, _, e1 := procResumeThread.Call(uintptr(thread)); int(r1) == -1 {
+		return -1, os.NewSyscallError("ResumeThread", e1)
+	} else {
+		return int(r1), nil
 	}
-	return int(r1), nil
 }
 
 func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx, err error) {
 	pmc = &ProcessMemoryCountersEx{}
 	pmc.Cb = uint32(unsafe.Sizeof(*pmc))
-	r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(pmc)), uintptr(pmc.Cb))
-	if int(r1) == 0 {
-		return nil, e1
+	if r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(pmc)), uintptr(pmc.Cb)); int(r1) == 0 {
+		return nil, os.NewSyscallError("GetProcessMemoryInfo", e1)
 	}
 	return pmc, nil
 }
 
 func LogonUser(username *uint16, domain *uint16, password *uint16, logonType uint32, logonProvider uint32) (token syscall.Handle, err error) {
-	r1, _, e1 := procLogonUserW.Call(
+	if r1, _, e1 := procLogonUserW.Call(
 		uintptr(unsafe.Pointer(username)),
 		uintptr(unsafe.Pointer(domain)),
 		uintptr(unsafe.Pointer(password)),
 		uintptr(logonType),
 		uintptr(logonProvider),
-		uintptr(unsafe.Pointer(&token)))
-
-	if int(r1) == 0 {
-		return syscall.InvalidHandle, e1
+		uintptr(unsafe.Pointer(&token))); int(r1) == 0 {
+		return syscall.InvalidHandle, os.NewSyscallError("LogonUser", e1)
 	}
 	return
 }
 
 func LoadUserProfile(token syscall.Handle, pinfo *ProfileInfo) error {
-	r1, _, e1 := procLoadUserProfileW.Call(
+	if r1, _, e1 := procLoadUserProfileW.Call(
 		uintptr(token),
-		uintptr(unsafe.Pointer(pinfo)))
-	if int(r1) == 0 {
-		return e1
+		uintptr(unsafe.Pointer(pinfo))); int(r1) == 0 {
+		return os.NewSyscallError("LoadUserProfile", e1)
 	}
 	return nil
 }
 
 func UnloadUserProfile(token, profile syscall.Handle) error {
-	r1, _, e1 := procUnloadUserProfile.Call(
+	if r1, _, e1 := procUnloadUserProfile.Call(
 		uintptr(token),
-		uintptr(profile))
-	if int(r1) == 0 {
-		return e1
+		uintptr(profile)); int(r1) == 0 {
+		return os.NewSyscallError("UnloadUserProfile", e1)
 	}
 	return nil
 }
@@ -265,7 +255,7 @@ func UnloadUserProfile(token, profile syscall.Handle) error {
 func GetProcessWindowStation() (Hwinsta, error) {
 	r1, _, e1 := procGetProcessWindowStation.Call()
 	if int(r1) == 0 {
-		return Hwinsta(r1), e1
+		return Hwinsta(r1), os.NewSyscallError("GetProcessWindowStation", e1)
 	}
 	return Hwinsta(r1), nil
 }
@@ -279,7 +269,7 @@ func GetThreadDesktop(threadId uint32) (Hdesk, error) {
 	r1, _, e1 := procGetThreadDesktop.Call(
 		uintptr(threadId))
 	if int(r1) == 0 {
-		return Hdesk(r1), e1
+		return Hdesk(r1), os.NewSyscallError("GetThreadDesktop", e1)
 	}
 	return Hdesk(r1), nil
 }
@@ -291,7 +281,7 @@ func CreateWindowStation(winsta *uint16, flags, desiredAccess uint32, sa *syscal
 		uintptr(desiredAccess),
 		uintptr(unsafe.Pointer(sa)))
 	if int(r1) == 0 {
-		return Hwinsta(r1), e1
+		return Hwinsta(r1), os.NewSyscallError("CreateWindowStation", e1)
 	}
 	return Hwinsta(r1), nil
 }
@@ -300,7 +290,7 @@ func SetProcessWindowStation(winsta Hwinsta) error {
 	r1, _, e1 := procSetProcessWindowStation.Call(
 		uintptr(winsta))
 	if int(r1) == 0 {
-		return e1
+		return os.NewSyscallError("SetProcessWindowStation", e1)
 	}
 	return nil
 }
@@ -314,7 +304,7 @@ func CreateDesktop(desktop, device *uint16, devmode uintptr, flags, desiredAcces
 		uintptr(desiredAccess),
 		uintptr(unsafe.Pointer(sa)))
 	if int(r1) == 0 {
-		return Hdesk(r1), e1
+		return Hdesk(r1), os.NewSyscallError("CreateDesktop", e1)
 	}
 	return Hdesk(r1), nil
 }
@@ -323,7 +313,7 @@ func SetThreadDesktop(desk Hdesk) error {
 	r1, _, e1 := procSetThreadDesktop.Call(
 		uintptr(desk))
 	if int(r1) == 0 {
-		return e1
+		return os.NewSyscallError("SetThreadDesktop", e1)
 	}
 	return nil
 }
@@ -341,7 +331,7 @@ func GetUserObjectInformation(obj syscall.Handle, index int, info unsafe.Pointer
 		uintptr(length),
 		uintptr(unsafe.Pointer(&nLength)))
 	if int(r1) == 0 {
-		return nLength, e1
+		return nLength, os.NewSyscallError("GetUserObjectInformation", e1)
 	}
 	return 0, nil
 }
@@ -359,7 +349,7 @@ func CloseWindowStation(winsta Hwinsta) error {
 	r1, _, e1 := procCloseWindowStation.Call(
 		uintptr(winsta))
 	if int(r1) == 0 {
-		return e1
+		return os.NewSyscallError("CloseWindowStation", e1)
 	}
 	return nil
 }
@@ -369,7 +359,7 @@ func CreateJobObject(sa *syscall.SecurityAttributes, name *uint16) (syscall.Hand
 		uintptr(unsafe.Pointer(sa)),
 		uintptr(unsafe.Pointer(name)))
 	if int(r1) == 0 {
-		return syscall.InvalidHandle, e1
+		return syscall.InvalidHandle, os.NewSyscallError("CreateJobObject", e1)
 	}
 	return syscall.Handle(r1), nil
 }
@@ -384,7 +374,7 @@ func QueryInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe
 		uintptr(unsafe.Pointer(&nLength)))
 
 	if int(r1) == 0 {
-		return nLength, e1
+		return nLength, os.NewSyscallError("QueryInformationJobObject", e1)
 	}
 	return nLength, nil
 }
@@ -397,7 +387,7 @@ func SetInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe.P
 		uintptr(length))
 
 	if int(r1) == 0 {
-		return e1
+		return os.NewSyscallError("SetInformationJobObject", e1)
 	}
 	return nil
 }
@@ -493,7 +483,7 @@ func AssignProcessToJobObject(job syscall.Handle, process syscall.Handle) error 
 		uintptr(job),
 		uintptr(process))
 	if int(r1) == 0 {
-		return e1
+		return os.NewSyscallError("AssignProcessToJobObject", e1)
 	}
 	return nil
 }
@@ -512,7 +502,7 @@ func VirtualAllocEx(process syscall.Handle, addr uintptr, size, allocType, prote
 		uintptr(protect))
 
 	if int(r1) == 0 {
-		return r1, e1
+		return r1, os.NewSyscallError("VirtualAllocEx", e1)
 	}
 	return r1, nil
 }
@@ -527,7 +517,7 @@ func WriteProcessMemory(process syscall.Handle, addr uintptr, buf unsafe.Pointer
 		uintptr(unsafe.Pointer(&nLength)))
 
 	if int(r1) == 0 {
-		return nLength, e1
+		return nLength, os.NewSyscallError("WriteProcessMemory", e1)
 	}
 	return nLength, nil
 }
@@ -535,7 +525,7 @@ func WriteProcessMemory(process syscall.Handle, addr uintptr, buf unsafe.Pointer
 func GetModuleHandle(name *uint16) (syscall.Handle, error) {
 	r1, _, e1 := procGetModuleHandleW.Call(uintptr(unsafe.Pointer(name)))
 	if int(r1) == 0 {
-		return syscall.InvalidHandle, e1
+		return syscall.InvalidHandle, os.NewSyscallError("GetModuleHandle", e1)
 	}
 	return syscall.Handle(r1), nil
 }
@@ -553,7 +543,7 @@ func CreateRemoteThread(process syscall.Handle, sa *syscall.SecurityAttributes, 
 		uintptr(unsafe.Pointer(&threadId)))
 
 	if int(r1) == 0 {
-		return syscall.InvalidHandle, 0, e1
+		return syscall.InvalidHandle, 0, os.NewSyscallError("CreateRemoteThread", e1)
 	}
 	return syscall.Handle(r1), threadId, nil
 }
@@ -570,7 +560,7 @@ func VirtualFreeEx(process syscall.Handle, addr uintptr, size, freeType uint32) 
 		uintptr(freeType))
 
 	if int(r1) == 0 {
-		return e1
+		return os.NewSyscallError("VirtualFreeEx", e1)
 	}
 	return nil
 }
@@ -580,7 +570,8 @@ func SetInheritHandle(h syscall.Handle, inherit bool) error {
 	if inherit {
 		v = syscall.HANDLE_FLAG_INHERIT
 	}
-	return syscall.SetHandleInformation(syscall.Handle(h), syscall.HANDLE_FLAG_INHERIT, v)
+	return os.NewSyscallError("SetHandleInformation",
+		syscall.SetHandleInformation(syscall.Handle(h), syscall.HANDLE_FLAG_INHERIT, v))
 }
 
 func SetProcessAffinityMask(process syscall.Handle, mask uint64) error {
@@ -589,7 +580,7 @@ func SetProcessAffinityMask(process syscall.Handle, mask uint64) error {
 		uintptr(mask))
 
 	if int(r1) == 0 {
-		return e1
+		return os.NewSyscallError("SetProcessAffinityMask", e1)
 	}
 	return nil
 }
@@ -601,7 +592,7 @@ func GetProcessAffinityMask(process syscall.Handle) (processMask, systemMask uin
 		uintptr(unsafe.Pointer(&systemMask)))
 
 	if int(r1) == 0 {
-		err = e1
+		err = os.NewSyscallError("GetProcessAffinityMask", e1)
 	}
 	return
 }

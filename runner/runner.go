@@ -3,11 +3,12 @@ package main
 import (
 	l4g "code.google.com/p/log4go"
 	"github.com/contester/runlib/platform"
-	"github.com/contester/runlib/rpc4"
 	"github.com/contester/runlib/service"
 	"github.com/contester/runlib/tools"
+	"github.com/contester/rpc4/rpc4go"
 	"net/rpc"
 	"runtime"
+	"time"
 )
 
 func main() {
@@ -29,5 +30,10 @@ func main() {
 	}
 
 	rpc.Register(c)
-	rpc4.ConnectRpc4(c.ServerAddress, rpc.DefaultServer)
+	for {
+		if err = rpc4go.ConnectServer(c.ServerAddress, rpc.DefaultServer); err != nil {
+			l4g.Error(err)
+			time.Sleep(time.Second * 5)
+		}
+	}
 }

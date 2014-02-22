@@ -17,7 +17,7 @@ func HashFileString(name string) (string, error) {
 }
 
 func HashFile(name string) ([]byte, error) {
-	ec := ErrorContext("hashFile")
+	ec := ErrorContext("HashFile")
 
 	source, err := os.Open(name)
 	if err != nil {

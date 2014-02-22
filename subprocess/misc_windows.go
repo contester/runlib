@@ -71,7 +71,7 @@ func (s *LoginInfo) Prepare() error {
 		win32.LOGON32_PROVIDER_DEFAULT)
 
 	if err != nil {
-		return ec.NewError(os.NewSyscallError("LogonUser", err))
+		return ec.NewError(err)
 	}
 
 	s.HProfile, err = loadProfile(s.HUser, s.Username)

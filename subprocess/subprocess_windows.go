@@ -338,17 +338,17 @@ func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
 	nameLen := uint32((len(name) + 1) * 2)
 	remoteName, err := win32.VirtualAllocEx(d.platformData.hProcess, 0, nameLen, win32.MEM_COMMIT, win32.PAGE_READWRITE)
 	if err != nil {
-		return ec.NewError(os.NewSyscallError("VirtualAllocEx", err))
+		return ec.NewError(err)
 	}
 	defer win32.VirtualFreeEx(d.platformData.hProcess, remoteName, 0, win32.MEM_RELEASE)
 
 	_, err = win32.WriteProcessMemory(d.platformData.hProcess, remoteName, unsafe.Pointer(&name[0]), nameLen)
 	if err != nil {
-		return ec.NewError(os.NewSyscallError("WriteProcessMemory", err))
+		return ec.NewError(err)
 	}
 	thread, _, err := win32.CreateRemoteThread(d.platformData.hProcess, win32.MakeInheritSa(), 0, loadLibraryW, remoteName, 0)
 	if err != nil {
-		return ec.NewError(os.NewSyscallError("CreateRemoteThread", err))
+		return ec.NewError(err)
 	}
 	defer syscall.CloseHandle(thread)
 	wr, err := syscall.WaitForSingleObject(thread, syscall.INFINITE)

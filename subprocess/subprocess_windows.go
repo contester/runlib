@@ -363,7 +363,6 @@ func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
 }
 
 func (d *SubprocessData) Unfreeze() error {
-	// platform
 	hThread := d.platformData.hThread
 	win32.ResumeThread(hThread)
 	syscall.CloseHandle(hThread)

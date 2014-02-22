@@ -48,7 +48,7 @@ type fileMetadata struct {
 }
 
 func (s *mongodbStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
-	ec := tools.NewContext("mongodb.Copy")
+	ec := tools.ErrorContext("mongodb.Copy")
 
 	if toRemote {
 		stat, err = tools.StatFile(localName, true)

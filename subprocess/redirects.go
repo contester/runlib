@@ -126,7 +126,7 @@ func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
 }
 
 func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File) error {
-	ec := tools.NewContext("Interconnect")
+	ec := tools.ErrorContext("Interconnect")
 
 	read1, write1, err := RecordingPipe(d1)
 	if err != nil {

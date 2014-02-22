@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.FileStat) error {
-	ec := tools.NewContext("Put")
+	ec := tools.ErrorContext("Put")
 
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, true)
 	if err != nil {
@@ -55,7 +55,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 }
 
 func (s *Contester) Get(request *contester_proto.GetRequest, response *contester_proto.FileBlob) error {
-	ec := tools.NewContext("Get")
+	ec := tools.ErrorContext("Get")
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, false)
 	if err != nil {
 		return ec.NewError(err, "resolvePath")

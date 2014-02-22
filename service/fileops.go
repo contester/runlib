@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.FileStats) error {
-	ec := tools.NewContext("Stat")
+	ec := tools.ErrorContext("Stat")
 	if request.SandboxId != nil {
 		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {

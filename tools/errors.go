@@ -64,14 +64,8 @@ func HasAnnotation(err error, component string) bool {
 	return false
 }
 
-type ErrorContext struct {
-	Context string
-}
+type ErrorContext string
 
-func NewContext(s string) *ErrorContext {
-	return &ErrorContext{Context: s,}
-}
-
-func (c *ErrorContext) NewError(err error, s ...string) error {
-	return NewError(err, append([]string{c.Context,}, s...)...)
+func (c ErrorContext) NewError(err error, s ...string) error {
+	return NewError(err, append([]string{string(c),}, s...)...)
 }

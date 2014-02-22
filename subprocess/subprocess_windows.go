@@ -136,7 +136,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		si.Desktop = syscall.StringToUTF16Ptr(sub.Options.Desktop)
 	}
 
-	ec := tools.NewContext("CreateFrozen")
+	ec := tools.ErrorContext("CreateFrozen")
 
 	e := d.wAllRedirects(sub, si)
 	if e != nil {
@@ -266,7 +266,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 func CreateJob(s *Subprocess, d *SubprocessData) error {
 	var e error
-	ec := tools.NewContext("CreateJob")
+	ec := tools.ErrorContext("CreateJob")
 	d.platformData.hJob, e = win32.CreateJobObject(nil, nil)
 	if e != nil {
 		return ec.NewError(e, "CreateJobObject")
@@ -328,7 +328,7 @@ func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
 		return nil
 	}
 
-	ec := tools.NewContext("InjectDll")
+	ec := tools.ErrorContext("InjectDll")
 
 	l4g.Trace("InjectDll: Injecting library %s with call to %d", dll, loadLibraryW)
 	name, err := syscall.UTF16FromString(dll)

@@ -11,7 +11,7 @@ import (
 )
 
 func tryClearPath(path string) (bool, error) {
-	ec := tools.NewContext("tryClearPath")
+	ec := tools.ErrorContext("tryClearPath")
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return false, ec.NewError(err, "ioutil.ReadDir")
@@ -35,7 +35,7 @@ func tryClearPath(path string) (bool, error) {
 }
 
 func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response *contester_proto.EmptyMessage) error {
-	ec := tools.NewContext("Clear")
+	ec := tools.ErrorContext("Clear")
 	sandbox, err := getSandboxById(s.Sandboxes, request.GetSandbox())
 	if err != nil {
 		return ec.NewError(err, "getSandboxById")

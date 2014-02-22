@@ -12,7 +12,7 @@ import (
 
 // Loads user profile, using handle and username.
 func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
-	ec := tools.NewContext("loadProfile")
+	ec := tools.ErrorContext("loadProfile")
 	var pinfo win32.ProfileInfo
 	var err error
 	pinfo.Size = uint32(unsafe.Sizeof(pinfo))
@@ -61,7 +61,7 @@ func (s *LoginInfo) Prepare() error {
 		return nil
 	}
 
-	ec := tools.NewContext("LoginInfo.Prepare")
+	ec := tools.ErrorContext("LoginInfo.Prepare")
 
 	s.HUser, err = win32.LogonUser(
 		syscall.StringToUTF16Ptr(s.Username),

@@ -4,7 +4,6 @@ import (
 	l4g "code.google.com/p/log4go"
 	"github.com/contester/runlib/win32"
 	"github.com/contester/runlib/tools"
-	"os"
 	"runtime"
 	"syscall"
 	"unsafe"

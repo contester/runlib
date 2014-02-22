@@ -28,7 +28,7 @@ type PlatformData struct {
 }
 
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
-	ec := tools.NewContext("NewLoginInfo")
+	ec := tools.ErrorContext("NewLoginInfo")
 	u, err := user.Lookup(username)
 	if err != nil {
 		return nil, ec.NewError(err, "user.Lookup")
@@ -58,7 +58,7 @@ func (d *SubprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) 
 }
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
-	ec := tools.NewContext("CreateFrozen")
+	ec := tools.ErrorContext("CreateFrozen")
 
 	if sub.Cmd.ApplicationName == nil {
 		return nil, ec.NewError(fmt.Errorf("Application name must be present"), "init")
@@ -74,7 +74,8 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	if sub.Login != nil {
 		uid = sub.Login.Uid
 	}
-	d.platformData.params, err = linux.CreateCloneParams(*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
+	d.platformData.params, err = linux.CreateCloneParams(
+		*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
 		return nil, ec.NewError(err, "CreateCloneParams")
 	}

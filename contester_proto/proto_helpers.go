@@ -6,11 +6,7 @@ import (
 	"compress/zlib"
 	"crypto/sha1"
 	"io"
-	"runtime"
-	"sync/atomic"
 )
-
-var blobCounter int32
 
 func (blob *Blob) Reader() (io.Reader, error) {
 	if blob.Compression != nil && blob.Compression.GetMethod() == Blob_CompressionInfo_METHOD_ZLIB {
@@ -72,7 +68,6 @@ func NewBlob(data []byte) (*Blob, error) {
 	result := &Blob{
 		Sha1: sha1sum,
 	}
-	AddBlob(result)
 	if len(compressed) < len(data)-8 {
 		method := Blob_CompressionInfo_METHOD_ZLIB
 		result.Compression = &Blob_CompressionInfo{
@@ -106,19 +101,5 @@ func BlobFromStream(r io.Reader) (*Blob, error) {
 			OriginalSize: proto.Uint32(uint32(size)),
 		},
 	}
-	AddBlob(result)
 	return result, nil
-}
-
-func AddBlob(b *Blob) {
-	atomic.AddInt32(&blobCounter, 1)
-	runtime.SetFinalizer(b, RemoveBlob)
-}
-
-func RemoveBlob(b *Blob) {
-	atomic.AddInt32(&blobCounter, -1)
-}
-
-func BlobCount() int32 {
-	return atomic.LoadInt32(&blobCounter)
 }

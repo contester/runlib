@@ -8,9 +8,6 @@ import (
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.FileStat) error {
 	ec := tools.NewContext("Put")
-	if request.Data != nil {
-		contester_proto.AddBlob(request.Data)
-	}
 
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, true)
 	if err != nil {

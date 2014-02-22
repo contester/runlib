@@ -6,14 +6,13 @@ import (
 	"time"
 
 	l4g "code.google.com/p/log4go"
-	"github.com/contester/runlib/contester_proto"
 )
 
 func LogMem() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	l4g.Logf(l4g.INFO, "Alloc: %d, Sys: %d, HeapAlloc: %d, HeapIdle: %d, NextGC: %d, LastGC: %s, NumGC: %d, Blobs: %d",
-		m.Alloc, m.Sys, m.HeapAlloc, m.HeapIdle, m.NextGC, time.Now().Sub(time.Unix(0, int64(m.LastGC))), m.NumGC, contester_proto.BlobCount())
+	l4g.Logf(l4g.INFO, "Alloc: %d, Sys: %d, HeapAlloc: %d, HeapIdle: %d, NextGC: %d, LastGC: %s, NumGC: %d",
+		m.Alloc, m.Sys, m.HeapAlloc, m.HeapIdle, m.NextGC, time.Now().Sub(time.Unix(0, int64(m.LastGC))), m.NumGC)
 
 	// TODO: Instead of os.Exit, properly lame duck/close connection.
 	// if m.Sys > 384*1024*1024 {

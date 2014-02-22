@@ -24,7 +24,7 @@ type PlatformData struct {
 
 type PlatformOptions struct {
 	Desktop      string
-	InjectDLL    string
+	InjectDLL    []string
 	LoadLibraryW uintptr
 }
 
@@ -216,7 +216,11 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d.platformData.hThread = pi.Thread
 	d.platformData.hJob = syscall.InvalidHandle
 
-	e = InjectDll(sub, d)
+	for _, dll := range sub.Options.InjectDLL {
+		if e = InjectDll(d, sub.Options.LoadLibraryW, dll); e != nil {
+			break
+		}
+	}
 
 	if e != nil {
 		// Terminate process/thread here.
@@ -319,15 +323,15 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	return nil
 }
 
-func InjectDll(s *Subprocess, d *SubprocessData) error {
-	if s.Options.InjectDLL == "" || int(s.Options.LoadLibraryW) == 0 {
+func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
+	if int(loadLibraryW) == 0 {
 		return nil
 	}
 
 	ec := tools.NewContext("InjectDll")
 
-	l4g.Trace("InjectDll: Injecting library %s with call to %d", s.Options.InjectDLL, s.Options.LoadLibraryW)
-	name, err := syscall.UTF16FromString(s.Options.InjectDLL)
+	l4g.Trace("InjectDll: Injecting library %s with call to %d", dll, loadLibraryW)
+	name, err := syscall.UTF16FromString(dll)
 	if err != nil {
 		return ec.NewError(err, ERR_USER, "UTF16FromString")
 	}
@@ -342,7 +346,7 @@ func InjectDll(s *Subprocess, d *SubprocessData) error {
 	if err != nil {
 		return ec.NewError(os.NewSyscallError("WriteProcessMemory", err))
 	}
-	thread, _, err := win32.CreateRemoteThread(d.platformData.hProcess, win32.MakeInheritSa(), 0, s.Options.LoadLibraryW, remoteName, 0)
+	thread, _, err := win32.CreateRemoteThread(d.platformData.hProcess, win32.MakeInheritSa(), 0, loadLibraryW, remoteName, 0)
 	if err != nil {
 		return ec.NewError(os.NewSyscallError("CreateRemoteThread", err))
 	}

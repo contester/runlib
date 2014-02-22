@@ -29,7 +29,7 @@ func setDesktop(p *subprocess.PlatformOptions, desktop *platform.ContesterDeskto
 
 func setInject(p *subprocess.PlatformOptions, injectDll string, loadLibraryW uintptr) {
 	if injectDll != "" && loadLibraryW != 0 {
-		p.InjectDLL = injectDll
+		p.InjectDLL = []string{injectDll}
 		p.LoadLibraryW = loadLibraryW
 	}
 }

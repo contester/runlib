@@ -123,7 +123,7 @@ Global options:
   -xml          - print result in xml format (otherwise, use human-readable)
   -show-kernel-mode-time - include kernel-mode time in human-readable format
                   (always included in xml)
-  -x            - return process exit code (not implemented)
+  -x            - return process exit code
   -logfile=<f>  - for runexe developers only
   -interactor="<process properties> interactor <parameters>"
                   INTERACTOR MODE

@@ -4,7 +4,7 @@ import (
 	"os"
 	"syscall"
 	"unsafe"
-)
+	"fmt")
 
 var (
 	advapi32 = syscall.NewLazyDLL("advapi32.dll")
@@ -134,9 +134,10 @@ func VerifyWindowsInfoW(vi OSVersionInfoEx, typeMask uint32, conditionMask uint6
 }
 
 func IsWindows8OrGreater() bool {
-	r, _ := VerifyWindowsInfoW(OSVersionInfoEx{
+	r, err := VerifyWindowsInfoW(OSVersionInfoEx{
 		MajorVersion: 8,
 	}, VER_MAJORVERSION, VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL))
+	fmt.Printf("w: %s, %s", r, err)
 	return r
 }
 

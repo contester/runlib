@@ -105,7 +105,7 @@ type OSVersionInfoEx struct {
 }
 
 func IsWindows8OrGreater() bool {
-	cm := VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER)
+	cm := VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL)
 	cm = VerSetConditionMask(cm, VER_MINORVERSION, VER_GREATER_EQUAL)
 	cm = VerSetConditionMask(cm, VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL)
 	cm = VerSetConditionMask(cm, VER_SERVICEPACKMINOR, VER_GREATER_EQUAL)

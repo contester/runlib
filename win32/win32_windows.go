@@ -136,10 +136,12 @@ func VerifyWindowsInfoW(vi OSVersionInfoEx, typeMask uint32, conditionMask uint6
 func IsWindows8OrGreater() bool {
 	cm := VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL)
 	cm = VerSetConditionMask(cm, VER_MINORVERSION, VER_GREATER_EQUAL)
+	cm = VerSetConditionMask(cm, VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL)
+	cm = VerSetConditionMask(cm, VER_SERVICEPACKMINOR, VER_GREATER_EQUAL)
 	r, err := VerifyWindowsInfoW(OSVersionInfoEx{
 		MajorVersion: 6,
 		MinorVersion: 2,
-	}, VER_MAJORVERSION|VER_MINORVERSION, cm)
+	}, VER_MAJORVERSION|VER_MINORVERSION|VER_SERVICEPACKMAJOR|VER_SERVICEPACKMINOR, cm)
 	fmt.Printf("w: %s, %s", r, err)
 	return r
 }

@@ -40,6 +40,8 @@ var (
 	procVirtualFreeEx             = kernel32.NewProc("VirtualFreeEx")
 	procSetProcessAffinityMask    = kernel32.NewProc("SetProcessAffinityMask")
 	procGetProcessAffinityMask    = kernel32.NewProc("GetProcessAffinityMask")
+	procVerifyVersionInfoW = kernel32.NewProc("VerifyVersionInfoW")
+	procVerSetConditionMask = kernel32.NewProc("VerSetConditionMask")
 )
 
 const (
@@ -69,7 +71,74 @@ const (
 
 	MAXIMUM_ALLOWED = 0x2000000
 	PI_NOUI         = 1
+
+	VER_BUILDNUMBER      = 0x0000004
+	VER_MAJORVERSION     = 0x0000002
+	VER_MINORVERSION     = 0x0000001
+	VER_PLATFORMID       = 0x0000008
+	VER_PRODUCT_TYPE     = 0x0000080
+	VER_SERVICEPACKMAJOR = 0x0000020
+	VER_SERVICEPACKMINOR = 0x0000010
+	VER_SUITENAME        = 0x0000040
+
+	VER_EQUAL         = 1
+	VER_GREATER       = 2
+	VER_GREATER_EQUAL = 3
+	VER_LESS          = 4
+	VER_LESS_EQUAL    = 5
+
+	ERROR_OLD_WIN_VERSION syscall.Errno = 1150
 )
+
+type OSVersionInfoEx struct {
+	OSVersionInfoSize uint32
+	MajorVersion      uint32
+	MinorVersion      uint32
+	BuildNumber       uint32
+	PlatformId        uint32
+	CSDVersion        [128]uint16
+	ServicePackMajor  uint16
+	ServicePackMinor  uint16
+	SuiteMask         uint16
+	ProductType       byte
+	Reserve           byte
+}
+
+func unpackConditionMask(cm uint64) (m1, m2 uintptr) {
+	return uintptr(lConditionMask & 0xffffffff), uintptr(lConditionMask >> 32)
+}
+
+func packConditionMask(m1, m2 uintptr) uint64 {
+	return uint64(m1) | (uint64(m2) << 32)
+}
+
+func VerSetConditionMask(lConditionMask uint64, typeBitMask uint32, conditionMask uint8) uint64 {
+	m1, m2 := unpackConditionMask(lConditionMask)
+
+	r1, r2, _ := procVerSetConditionMask(m1, m2, uintptr(typeBitMask), uintptr(conditionMask))
+	return packConditionMask(r1, r2)
+}
+
+func VerifyWindowsInfoW(vi OSVersionInfoEx, typeMask uint32, conditionMask uint64) (bool, error) {
+	m1, m2 := unpackConditionMask(conditionMask)
+	vi.OSVersionInfoSize = uint32(unsafe.Sizeof(vi))
+
+	r1, _, e1 := procVerifyVersionInfoW(uintptr(unsafe.Pointer(&vi)), uintptr(typeMask), m1, m2)
+	if r1 != 0 {
+		return true, nil
+	}
+	if r1 == 0 && e1 == ERROR_OLD_WIN_VERSION {
+		return false, nil
+	}
+	return false, os.NewSyscallError("VerifyVersionInfoW", e1)
+}
+
+func IsWindows8OrGreater() bool {
+	r, _ := VerifyWindowsInfoW(OSVersionInfoEx{
+		MajorVersion: 8,
+	}, VER_MAJORVERSION, VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL))
+	return r
+}
 
 type ProcessMemoryCountersEx struct {
 	Cb                         uint32  // DWORD

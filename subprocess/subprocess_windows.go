@@ -156,7 +156,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	wSetInherit(si)
 
 	if sub.Login != nil {
-		if sub.NoJob {
+		if sub.NoJob || win32.IsWindows8OrGreater() {
 			syscallName = "CreateProcessWithLogonW"
 			e = win32.CreateProcessWithLogonW(
 				syscall.StringToUTF16Ptr(sub.Login.Username),

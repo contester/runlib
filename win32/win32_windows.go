@@ -116,8 +116,8 @@ func VerSetConditionMask(lConditionMask uint64, typeBitMask uint32, conditionMas
 	m1, m2 := unpackConditionMask(lConditionMask)
 
 	fmt.Println("d:", lConditionMask, m1, m2, typeBitMask, conditionMask)
-	r1, r2, _ := procVerSetConditionMask.Call(m1, m2, uintptr(typeBitMask), uintptr(conditionMask))
-	fmt.Printf("x: %s, %s\n", r1, r2)
+	r1, r2, e1 := procVerSetConditionMask.Call(m1, m2, uintptr(typeBitMask), uintptr(conditionMask))
+	fmt.Printf("x:", r1, r2, e1)
 	return packConditionMask(r1, r2)
 }
 
@@ -137,7 +137,7 @@ func VerifyWindowsInfoW(vi OSVersionInfoEx, typeMask uint32, conditionMask uint6
 }
 
 func IsWindows8OrGreater() bool {
-	cm := VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL)
+	cm := VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER)
 	cm = VerSetConditionMask(cm, VER_MINORVERSION, VER_GREATER_EQUAL)
 	cm = VerSetConditionMask(cm, VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL)
 	cm = VerSetConditionMask(cm, VER_SERVICEPACKMINOR, VER_GREATER_EQUAL)

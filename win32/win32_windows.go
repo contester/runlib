@@ -4,7 +4,7 @@ import (
 	"os"
 	"syscall"
 	"unsafe"
-	"fmt")
+)
 
 var (
 	advapi32 = syscall.NewLazyDLL("advapi32.dll")
@@ -113,7 +113,6 @@ func IsWindows8OrGreater() bool {
 		MajorVersion: 6,
 		MinorVersion: 2,
 	}, VER_MAJORVERSION|VER_MINORVERSION|VER_SERVICEPACKMAJOR|VER_SERVICEPACKMINOR, cm)
-	fmt.Printf("w: %s, %s, %s\n", cm, r, err)
 	return r
 }
 

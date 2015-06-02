@@ -1,7 +1,6 @@
 package win32
 import (
 	"unsafe"
-	"fmt"
 	"os")
 
 type JobObjectExtendedLimitInformation struct {
@@ -22,7 +21,6 @@ func VerifyWindowsInfoW(vi OSVersionInfoEx, typeMask uint32, conditionMask uint6
 	vi.OSVersionInfoSize = uint32(unsafe.Sizeof(vi))
 
 	r1, _, e1 := procVerifyVersionInfoW.Call(uintptr(unsafe.Pointer(&vi)), uintptr(typeMask), uintptr(conditionMask))
-	fmt.Printf("v: %s, %s\n", r1, e1)
 	if r1 != 0 {
 		return true, nil
 	}

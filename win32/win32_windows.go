@@ -123,7 +123,8 @@ func VerifyWindowsInfoW(vi OSVersionInfoEx, typeMask uint32, conditionMask uint6
 	m1, m2 := unpackConditionMask(conditionMask)
 	vi.OSVersionInfoSize = uint32(unsafe.Sizeof(vi))
 
-	r1, _, e1 := procVerifyVersionInfoW.Call(uintptr(unsafe.Pointer(&vi)), uintptr(typeMask), m1, m2)
+	r1, r2, e1 := procVerifyVersionInfoW.Call(uintptr(unsafe.Pointer(&vi)), uintptr(typeMask), m1, m2)
+	fmt.Printf("v: %s, %s, %s", r1, r2, e1)
 	if r1 != 0 {
 		return true, nil
 	}
@@ -142,7 +143,7 @@ func IsWindows8OrGreater() bool {
 		MajorVersion: 6,
 		MinorVersion: 2,
 	}, VER_MAJORVERSION|VER_MINORVERSION|VER_SERVICEPACKMAJOR|VER_SERVICEPACKMINOR, cm)
-	fmt.Printf("w: %s, %s", r, err)
+	fmt.Printf("w: %s, %s, %s", cm, r, err)
 	return r
 }
 

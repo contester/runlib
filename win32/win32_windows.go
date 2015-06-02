@@ -109,7 +109,7 @@ func IsWindows8OrGreater() bool {
 	cm = VerSetConditionMask(cm, VER_MINORVERSION, VER_GREATER_EQUAL)
 	cm = VerSetConditionMask(cm, VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL)
 	cm = VerSetConditionMask(cm, VER_SERVICEPACKMINOR, VER_GREATER_EQUAL)
-	r, err := VerifyWindowsInfoW(OSVersionInfoEx{
+	r, _ := VerifyWindowsInfoW(OSVersionInfoEx{
 		MajorVersion: 6,
 		MinorVersion: 2,
 	}, VER_MAJORVERSION|VER_MINORVERSION|VER_SERVICEPACKMAJOR|VER_SERVICEPACKMINOR, cm)

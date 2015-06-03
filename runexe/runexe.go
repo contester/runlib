@@ -150,6 +150,10 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 
 	if s.CurrentDirectory != "" {
 		sub.CurrentDirectory = &s.CurrentDirectory
+	} else {
+		if wd, err := os.Getwd(); err == nil && wd != "" {
+			sub.CurrentDirectory = &wd
+		}
 	}
 
 	sub.TimeLimit = subprocess.DuFromMicros(uint64(s.TimeLimit))

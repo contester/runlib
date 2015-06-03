@@ -293,7 +293,7 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	}
 
 	var einfo win32.JobObjectExtendedLimitInformation
-	// einfo.BasicLimitInformation.LimitFlags = win32.JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION | win32.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+	einfo.BasicLimitInformation.LimitFlags = win32.JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION | win32.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
 
 	if s.HardTimeLimit > 0 {
 		einfo.BasicLimitInformation.PerJobUserTimeLimit = uint64(s.HardTimeLimit.Nanoseconds() / 100)

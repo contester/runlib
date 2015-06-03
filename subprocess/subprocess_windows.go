@@ -132,7 +132,10 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	si.Cb = uint32(unsafe.Sizeof(*si))
 	si.Flags = win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW
 	si.ShowWindow = syscall.SW_SHOWMINNOACTIVE
-	if !sub.NoJob && sub.Options != nil && sub.Options.Desktop != "" {
+
+	useCreateProcessWithLogonW := sub.NoJob || win32.IsWindows8OrGreater()
+
+	if !useCreateProcessWithLogonW && sub.Options != nil && sub.Options.Desktop != "" {
 		si.Desktop = syscall.StringToUTF16Ptr(sub.Options.Desktop)
 	}
 
@@ -156,7 +159,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	wSetInherit(si)
 
 	if sub.Login != nil {
-		if sub.NoJob || win32.IsWindows8OrGreater() {
+		if useCreateProcessWithLogonW {
 			syscallName = "CreateProcessWithLogonW"
 			e = win32.CreateProcessWithLogonW(
 				syscall.StringToUTF16Ptr(sub.Login.Username),

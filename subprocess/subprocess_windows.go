@@ -2,14 +2,15 @@ package subprocess
 
 import (
 	"bytes"
-	l4g "code.google.com/p/log4go"
 	"fmt"
-	"github.com/contester/runlib/win32"
-	"github.com/contester/runlib/tools"
 	"os"
 	"syscall"
 	"time"
 	"unsafe"
+
+	"github.com/contester/runlib/win32"
+	"github.com/contester/runlib/tools"
+	log "github.com/Sirupsen/logrus"
 )
 
 type PlatformData struct {
@@ -248,7 +249,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 				return nil, ec.NewError(e, "CreateJob")
 			}
-			l4g.Error("CreateFrozen/CreateJob: %s", e)
+			log.Error("CreateFrozen/CreateJob: %s", e)
 		} else {
 			e = win32.AssignProcessToJobObject(d.platformData.hJob, d.platformData.hProcess)
 			if e != nil {
@@ -259,7 +260,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 					return nil, ec.NewError(e, "AssignProcessToJobObject")
 				}
-				l4g.Error("CreateFrozen/AssignProcessToJobObject: %s", e)
+				log.Error("CreateFrozen/AssignProcessToJobObject: %s", e)
 			}
 		}
 	}
@@ -333,7 +334,7 @@ func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
 
 	ec := tools.ErrorContext("InjectDll")
 
-	l4g.Trace("InjectDll: Injecting library %s with call to %d", dll, loadLibraryW)
+	log.Trace("InjectDll: Injecting library %s with call to %d", dll, loadLibraryW)
 	name, err := syscall.UTF16FromString(dll)
 	if err != nil {
 		return ec.NewError(err, ERR_USER, "UTF16FromString")
@@ -402,7 +403,7 @@ func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished 
 	if pdata.hJob != syscall.InvalidHandle {
 		jinfo, err = win32.GetJobObjectBasicAccountingInformation(pdata.hJob)
 		if err != nil {
-			l4g.Error(err)
+			log.Error(err)
 		}
 	}
 
@@ -437,7 +438,7 @@ func UpdateProcessMemory(pdata *PlatformData, result *SubprocessResult) {
 	if pdata.hJob != syscall.InvalidHandle {
 		jinfo, err = win32.GetJobObjectExtendedLimitInformation(pdata.hJob)
 		if err != nil {
-			l4g.Error(err)
+			log.Error(err)
 		}
 	}
 	if jinfo != nil {
@@ -493,7 +494,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	for _ = range d.startAfterStart {
 		err := <-d.bufferChan
 		if err != nil {
-			l4g.Error(err)
+			log.Error(err)
 		}
 	}
 

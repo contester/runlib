@@ -1,13 +1,14 @@
 package service
 
 import (
-	l4g "code.google.com/p/log4go"
-	"github.com/contester/runlib/contester_proto"
-	"github.com/contester/runlib/tools"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/tools"
+	log "github.com/Sirupsen/logrus"
 )
 
 func tryClearPath(path string) (bool, error) {
@@ -49,7 +50,7 @@ func (s *Contester) Clear(request *contester_proto.ClearSandboxRequest, response
 	for retries := 10; retries > 0 && repeat; retries-- {
 		repeat, err = tryClearPath(sandbox.Path)
 		if repeat && err != nil {
-			l4g.Error(err)
+			log.Error(err)
 			time.Sleep(time.Second / 2)
 		}
 	}

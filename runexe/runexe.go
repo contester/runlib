@@ -1,7 +1,6 @@
 package main
 
 import (
-	l4g "code.google.com/p/log4go"
 	"flag"
 	"fmt"
 	"os"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"
+	log "github.com/Sirupsen/logrus"
 )
 
 var version string
@@ -218,8 +218,6 @@ func ParseFlags(globals bool, args []string) (pc *ProcessConfig, gc *RunexeConfi
 }
 
 func main() {
-	l4g.Global = l4g.Logger{}
-
 	programFlags, globalFlags, err := ParseFlags(true, os.Args[1:])
 
 	if err != nil {
@@ -227,7 +225,11 @@ func main() {
 	}
 
 	if globalFlags.Logfile != "" {
-		l4g.Global.AddFilter("log", l4g.FINE, l4g.NewFileLogWriter(globalFlags.Logfile, true))
+		logfile, err := os.Create(globalFlags.Logfile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.SetOutput(logfile)
 	}
 
 	var interactorFlags *ProcessConfig

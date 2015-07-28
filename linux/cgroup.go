@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	"github.com/contester/runlib/tools"
-	l4g "code.google.com/p/log4go"
+	log "github.com/Sirupsen/logrus"
 )
 
 type Cgroups struct {
@@ -106,13 +106,13 @@ func NewCgroups() (*Cgroups, error) {
 func cgAttach(name string, pid int) error {
 	f, err := os.Create(name + "/tasks")
 	if err != nil {
-		l4g.Error("Can't attach to cgroup %s, pid %d: %s", name, pid, err)
+		log.Error("Can't attach to cgroup %s, pid %d: %s", name, pid, err)
 		return err
 	}
 	defer f.Close()
 	_, err = f.WriteString(strconv.Itoa(pid) + "\n")
 	if err != nil {
-                l4g.Error("Can't attach to cgroup %s, pid %d: %s", name, pid, err)
+                log.Error("Can't attach to cgroup %s, pid %d: %s", name, pid, err)
 		return err
 	}
 	return nil
@@ -123,7 +123,7 @@ func cgSetup(name string, pid int) error {
 	if tools.IsStatErrorFileNotFound(err) {
 		err = os.MkdirAll(name, os.ModeDir | 0755)
 		if err != nil {
-			l4g.Error(err)
+			log.Error(err)
 			return err
 		}
 	}

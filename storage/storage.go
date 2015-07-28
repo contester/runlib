@@ -1,10 +1,11 @@
 package storage
 
 import (
-	"github.com/contester/runlib/contester_proto"
 	"strings"
 	"fmt"
-	"code.google.com/p/log4go"
+
+	"github.com/contester/runlib/contester_proto"
+	log "github.com/Sirupsen/logrus"
 )
 
 type Backend interface {
@@ -35,7 +36,7 @@ func NewBackend(url string) (Backend, error) {
 
 func (s *Storage) SetDefault(url string) error {
 	if s.Default != nil && s.Default.String() == url {
-		log4go.Debug("New url %s is the same as the old %s", url, s.Default.String())
+		log.Debug("New url %s is the same as the old %s", url, s.Default.String())
 		return nil
 	}
 	backend, err := NewBackend(url)

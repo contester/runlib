@@ -10,7 +10,7 @@ import (
 
 	"github.com/contester/runlib/linux"
 	"github.com/contester/runlib/tools"
-	l4g "code.google.com/p/log4go"
+	log "github.com/Sirupsen/logrus"
 )
 
 type LoginInfo struct {
@@ -188,7 +188,7 @@ W:
 	for _ = range d.startAfterStart {
 		err := <-d.bufferChan
 		if err != nil {
-			l4g.Error(err)
+			log.Error(err)
 		}
 	}
 

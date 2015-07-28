@@ -1,12 +1,13 @@
 package subprocess
 
 import (
-	l4g "code.google.com/p/log4go"
-	"github.com/contester/runlib/win32"
-	"github.com/contester/runlib/tools"
 	"runtime"
 	"syscall"
 	"unsafe"
+
+	"github.com/contester/runlib/win32"
+	"github.com/contester/runlib/tools"
+	log "github.com/Sirupsen/logrus"
 )
 
 // Loads user profile, using handle and username.
@@ -23,7 +24,7 @@ func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
 
 	err = win32.LoadUserProfile(user, &pinfo)
 	if err != nil {
-		l4g.Trace("Error loading profile for %d/%s", user, username)
+		log.Trace("Error loading profile for %d/%s", user, username)
 		return syscall.InvalidHandle, ec.NewError(err, "LoadUserProfile")
 	}
 	return pinfo.Profile, nil
@@ -37,7 +38,7 @@ func realLogout(s *LoginInfo) {
 			if err == nil {
 				break
 			}
-			l4g.Error(err)
+			log.Error(err)
 		}
 		s.HProfile = syscall.InvalidHandle
 	}

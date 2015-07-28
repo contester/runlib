@@ -1,13 +1,14 @@
 package service
 
 import (
-	l4g "code.google.com/p/log4go"
 	"syscall"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 func OnOsCreateError(err error) (bool, error) {
 	if err != nil {
-		l4g.Error(err)
+		log.Error(err)
 		if err == syscall.ERROR_ACCESS_DENIED {
 			return true, nil
 		}

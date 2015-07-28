@@ -1,12 +1,13 @@
 package platform
 
 import (
-	l4g "code.google.com/p/log4go"
-	"github.com/contester/runlib/win32"
 	"os"
 	"strconv"
 	"syscall"
 	"runtime"
+
+	"github.com/contester/runlib/win32"
+	log "github.com/Sirupsen/logrus"
 )
 
 type ContesterDesktop struct {
@@ -81,10 +82,10 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 	everyone, err := syscall.StringToSid("S-1-1-0")
 	if err == nil {
 		if err = win32.AddAceToWindowStation(winsta, everyone); err != nil {
-			l4g.Error(err)
+			log.Error(err)
 		}
 		if err = win32.AddAceToDesktop(desk, everyone); err != nil {
-			l4g.Error(err)
+			log.Error(err)
 		}
 	} else {
 		err = os.NewSyscallError("StringToSid", err)

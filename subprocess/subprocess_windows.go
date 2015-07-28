@@ -334,7 +334,7 @@ func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
 
 	ec := tools.ErrorContext("InjectDll")
 
-	log.Trace("InjectDll: Injecting library %s with call to %d", dll, loadLibraryW)
+	log.Debug("InjectDll: Injecting library %s with call to %d", dll, loadLibraryW)
 	name, err := syscall.UTF16FromString(dll)
 	if err != nil {
 		return ec.NewError(err, ERR_USER, "UTF16FromString")

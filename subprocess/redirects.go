@@ -15,6 +15,8 @@ type Redirect struct {
 	Data     []byte
 }
 
+const MAX_MEM_OUTPUT = 1024 * 1024
+
 func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
@@ -24,7 +26,7 @@ func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	d.closeAfterStart = append(d.closeAfterStart, writer)
 
 	d.startAfterStart = append(d.startAfterStart, func() error {
-		_, err := io.Copy(b, reader)
+		_, err := io.Copy(b, io.LimitReader(reader, MAX_MEM_OUTPUT))
 		reader.Close()
 		return err
 	})

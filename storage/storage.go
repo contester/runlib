@@ -37,7 +37,7 @@ func NewBackend(url string) (Backend, error) {
 func (s *Storage) SetDefault(url string) error {
 	if s.Default != nil && s.Default.String() == url {
 		log.Debug("New url %s is the same as the old %s", url, s.Default.String())
-		return nil
+		// return nil - this is causing more harm than good
 	}
 	backend, err := NewBackend(url)
 	if err != nil {

@@ -33,6 +33,7 @@ type ProcessConfig struct {
 	StdIn  string
 	StdOut string
 	StdErr string
+	JoinStdOutErr bool
 
 	TrustedMode bool
 	NoIdleCheck bool
@@ -86,6 +87,7 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	fs.StringVar(&result.StdIn, "i", "", "")
 	fs.StringVar(&result.StdOut, "o", "", "")
 	fs.StringVar(&result.StdErr, "e", "", "")
+	fs.BoolVar(&result.JoinStdOutErr, "u", false, "")
 	fs.BoolVar(&result.TrustedMode, "z", false, "")
 	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "")
 	fs.BoolVar(&result.NoJob, "no-job", false, "")
@@ -172,7 +174,11 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 
 	sub.StdIn = fillRedirect(s.StdIn)
 	sub.StdOut = fillRedirect(s.StdOut)
-	sub.StdErr = fillRedirect(s.StdErr)
+	if s.JoinStdOutErr {
+		sub.JoinStdOutErr = true
+	} else {
+		sub.StdErr = fillRedirect(s.StdErr)
+	}
 
 	sub.Options = newPlatformOptions()
 

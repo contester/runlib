@@ -152,6 +152,7 @@ Process properties:
   -i <filename> - redirect standard input to <filename>.
   -o <filename> - redirect standard output to <filename>.
   -e <filename> - redirect standard error to <filename>.
+  -u            - instead of using separate stderr, join error output to standard output.
   -z            - run process in trusted mode.
   -no-idleness-check - switch off idleness checking.
   -a <value>	- set process affinity to <value>. You can either specify it

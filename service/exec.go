@@ -131,7 +131,12 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 		sub.StdIn = fillRedirect(request.StdIn)
 		sub.StdOut = fillRedirect(request.StdOut)
 	}
-	sub.StdErr = fillRedirect(request.StdErr)
+
+	if request.GetJoinStdoutStderr() {
+		sub.JoinStdOutErr = true
+	} else {
+		sub.StdErr = fillRedirect(request.StdErr)
+	}
 
 	sub.Options = &subprocess.PlatformOptions{}
 

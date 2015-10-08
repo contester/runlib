@@ -78,6 +78,7 @@ type Subprocess struct {
 	Cmd                   *CommandLine
 	Login                 *LoginInfo
 	StdIn, StdOut, StdErr *Redirect
+	JoinStdOutErr bool
 
 	Options *PlatformOptions
 }

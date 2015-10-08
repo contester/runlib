@@ -137,6 +137,7 @@ type LocalExecutionParameters struct {
 	StdErr                *RedirectParameters `protobuf:"bytes,14,opt,name=std_err" json:"std_err,omitempty"`
 	CommandLineParameters []string            `protobuf:"bytes,16,rep,name=command_line_parameters" json:"command_line_parameters,omitempty"`
 	SandboxId             *string             `protobuf:"bytes,17,opt,name=sandbox_id" json:"sandbox_id,omitempty"`
+	JoinStdoutStderr      *bool               `protobuf:"varint,18,opt,name=join_stdout_stderr" json:"join_stdout_stderr,omitempty"`
 	XXX_unrecognized      []byte              `json:"-"`
 }
 
@@ -254,6 +255,13 @@ func (m *LocalExecutionParameters) GetSandboxId() string {
 		return *m.SandboxId
 	}
 	return ""
+}
+
+func (m *LocalExecutionParameters) GetJoinStdoutStderr() bool {
+	if m != nil && m.JoinStdoutStderr != nil {
+		return *m.JoinStdoutStderr
+	}
+	return false
 }
 
 type LocalExecuteConnected struct {

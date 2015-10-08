@@ -36,6 +36,8 @@ message LocalExecutionParameters {
     repeated string command_line_parameters = 16;
 
     optional string sandbox_id = 17;
+
+    optional bool join_stdout_stderr = 18;
 };
 
 message LocalExecuteConnected {

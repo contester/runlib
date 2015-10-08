@@ -74,8 +74,12 @@ func (d *SubprocessData) wAllRedirects(s *Subprocess, si *syscall.StartupInfo) e
 	if si.StdOutput, err = d.wOutputRedirect(s.StdOut, &d.stdOut); err != nil {
 		return err
 	}
-	if si.StdErr, err = d.wOutputRedirect(s.StdErr, &d.stdErr); err != nil {
-		return err
+	if s.JoinStdOutErr {
+		si.StdErr = si.StdOutput
+	} else {
+		if si.StdErr, err = d.wOutputRedirect(s.StdErr, &d.stdErr); err != nil {
+			return err
+		}
 	}
 	if si.StdInput != syscall.InvalidHandle ||
 		si.StdOutput != syscall.InvalidHandle ||

@@ -3,7 +3,7 @@ package tools
 import (
 	"github.com/contester/runlib/contester_proto"
 	"os"
-	"code.google.com/p/goprotobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {

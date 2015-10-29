@@ -2,7 +2,7 @@ package service
 
 import (
 	"code.google.com/p/goconf/conf"
-	"code.google.com/p/goprotobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"

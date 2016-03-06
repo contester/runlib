@@ -2,15 +2,16 @@ package service
 
 import (
 	"code.google.com/p/goconf/conf"
-	"github.com/golang/protobuf/proto"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
-	"github.com/contester/runlib/subprocess"
 	"github.com/contester/runlib/storage"
+	"github.com/contester/runlib/subprocess"
+	"github.com/golang/protobuf/proto"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Contester struct {
@@ -26,7 +27,8 @@ type Contester struct {
 
 	GData *platform.GlobalData
 
-	Storage *storage.Storage
+	mu      sync.RWMutex
+	Storage storage.Backend
 }
 
 func getHostname() string {
@@ -126,8 +128,6 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	result.PathSeparator = string(os.PathSeparator)
 	result.GData = gData
 
-	result.Storage = storage.NewStorage()
-
 	result.Sandboxes, err = configureSandboxes(config)
 	if err != nil {
 		return nil, err
@@ -137,9 +137,17 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 }
 
 func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response *contester_proto.IdentifyResponse) error {
-	if err := s.Storage.SetDefault(*request.MongoHost); err != nil {
+	backend, err := storage.NewBackend(*request.MongoHost)
+	if err != nil {
 		return err
 	}
+
+	s.mu.Lock()
+	if s.Storage != nil {
+		s.Storage.Close()
+	}
+	s.Storage = backend
+	s.mu.Unlock()
 
 	response.InvokerId = &s.InvokerId
 	response.Environment = &contester_proto.LocalEnvironment{

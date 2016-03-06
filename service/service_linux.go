@@ -36,4 +36,3 @@ func setAcl(path, username string) error {
 	cmd.Run()
 	return nil
 }
-

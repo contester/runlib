@@ -1,7 +1,9 @@
 package win32
+
 import (
 	"os"
-	"unsafe")
+	"unsafe"
+)
 
 type JobObjectExtendedLimitInformation struct {
 	BasicLimitInformation JobObjectBasicLimitInformation

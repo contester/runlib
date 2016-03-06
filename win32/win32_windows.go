@@ -40,8 +40,8 @@ var (
 	procVirtualFreeEx             = kernel32.NewProc("VirtualFreeEx")
 	procSetProcessAffinityMask    = kernel32.NewProc("SetProcessAffinityMask")
 	procGetProcessAffinityMask    = kernel32.NewProc("GetProcessAffinityMask")
-	procVerifyVersionInfoW = kernel32.NewProc("VerifyVersionInfoW")
-	procVerSetConditionMask = kernel32.NewProc("VerSetConditionMask")
+	procVerifyVersionInfoW        = kernel32.NewProc("VerifyVersionInfoW")
+	procVerSetConditionMask       = kernel32.NewProc("VerSetConditionMask")
 )
 
 const (
@@ -493,7 +493,7 @@ const (
 	JOB_OBJECT_LIMIT_PROCESS_MEMORY             = 0x100
 	JOB_OBJECT_LIMIT_PROCESS_TIME               = 2
 	JOB_OBJECT_LIMIT_WORKINGSET                 = 1
-	JOB_OBJECT_LIMIT_AFFINITY = 0x00000010
+	JOB_OBJECT_LIMIT_AFFINITY                   = 0x00000010
 )
 
 type IoCounters struct {
@@ -504,7 +504,6 @@ type IoCounters struct {
 	WriteTransferCount  uint64 // ULONGLONG
 	OtherTransferCount  uint64 // ULONGLONG
 }
-
 
 func GetJobObjectExtendedLimitInformation(job syscall.Handle) (*JobObjectExtendedLimitInformation, error) {
 	var jinfo JobObjectExtendedLimitInformation

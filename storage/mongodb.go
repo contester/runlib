@@ -1,14 +1,14 @@
 package storage
 
 import (
-	"labix.org/v2/mgo"
+	"compress/zlib"
+	"fmt"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"fmt"
-	"os"
-	"compress/zlib"
 	"io"
+	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"os"
 	"strings"
 )
 
@@ -41,10 +41,10 @@ func (s *mongodbStorage) Close() {
 }
 
 type fileMetadata struct {
-	Checksum string `bson:"checksum,omitempty"`
-	ModuleType string `bson:"moduleType,omitempty"`
+	Checksum        string `bson:"checksum,omitempty"`
+	ModuleType      string `bson:"moduleType,omitempty"`
 	CompressionType string `bson:"compressionType,omitempty"`
-	OriginalSize uint64 `bson:"originalSize"`
+	OriginalSize    uint64 `bson:"originalSize"`
 }
 
 func (s *mongodbStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
@@ -153,11 +153,11 @@ func (s *mongodbStorage) Copy(localName, remoteName string, toRemote bool, check
 
 func (s *mongodbStorage) GetNextRevision(id string) (int, error) {
 	query := s.Database.C("manifest").Find(bson.M{"id": id}).Sort("-revision")
-var manifest ProblemManifest
-if err := query.One(&manifest); err != nil {
-return 1, nil
-}
-return manifest.Revision + 1, nil
+	var manifest ProblemManifest
+	if err := query.One(&manifest); err != nil {
+		return 1, nil
+	}
+	return manifest.Revision + 1, nil
 }
 
 func (s *mongodbStorage) SetManifest(manifest *ProblemManifest) error {

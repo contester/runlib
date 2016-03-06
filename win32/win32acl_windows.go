@@ -1,9 +1,9 @@
 package win32
 
 import (
+	"os"
 	"syscall"
 	"unsafe"
-	"os"
 
 	"github.com/contester/runlib/tools"
 )

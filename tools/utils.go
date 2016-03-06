@@ -1,8 +1,8 @@
 package tools
 
 import (
-	"unsafe"
 	"os"
+	"unsafe"
 )
 
 // Return byte slice of given size, aligned at given offset.

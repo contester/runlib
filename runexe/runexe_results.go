@@ -68,7 +68,7 @@ func printTag(tag, content string) {
 }
 
 func xmlTime(t time.Duration) string {
-	return strconv.FormatUint(uint64(t.Nanoseconds() / 1000000), 10)
+	return strconv.FormatUint(uint64(t.Nanoseconds()/1000000), 10)
 }
 
 func PrintResultXml(result *RunResult) {

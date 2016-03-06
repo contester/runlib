@@ -2,12 +2,12 @@ package platform
 
 import (
 	"os"
+	"runtime"
 	"strconv"
 	"syscall"
-	"runtime"
 
-	"github.com/contester/runlib/win32"
 	log "github.com/Sirupsen/logrus"
+	"github.com/contester/runlib/win32"
 )
 
 type ContesterDesktop struct {

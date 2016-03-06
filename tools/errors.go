@@ -1,8 +1,8 @@
 package tools
 
 import (
-	"strings"
 	"os"
+	"strings"
 )
 
 type annotatedError struct {
@@ -11,7 +11,7 @@ type annotatedError struct {
 }
 
 func mergePrevious(current, previous []string) []string {
-	if len(previous) > 0 && previous[0] == current[len(current) - 1] {
+	if len(previous) > 0 && previous[0] == current[len(current)-1] {
 		previous = previous[1:]
 	}
 	return append(current, previous...)
@@ -20,7 +20,7 @@ func mergePrevious(current, previous []string) []string {
 /*
 Create a nested component error. Will take err, and create a new one with the list of components
 that's supposed to tell you where it has occured.
- */
+*/
 func NewError(err error, c ...string) error {
 	if err != nil {
 		var result annotatedError
@@ -31,7 +31,7 @@ func NewError(err error, c ...string) error {
 		case *annotatedError:
 			result.error, result.components = e.error, mergePrevious(c, e.components)
 		case *os.SyscallError:
-			result.error, result.components = e.Err, mergePrevious(c, []string{"syscall:" + e.Syscall,})
+			result.error, result.components = e.Err, mergePrevious(c, []string{"syscall:" + e.Syscall})
 		default:
 			result.error, result.components = err, c
 		}
@@ -67,5 +67,5 @@ func HasAnnotation(err error, component string) bool {
 type ErrorContext string
 
 func (c ErrorContext) NewError(err error, s ...string) error {
-	return NewError(err, append([]string{string(c),}, s...)...)
+	return NewError(err, append([]string{string(c)}, s...)...)
 }

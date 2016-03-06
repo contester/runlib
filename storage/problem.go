@@ -1,10 +1,10 @@
 package storage
 
 import (
-	"strconv"
+	"bufio"
 	"net/url"
 	"os"
-	"bufio"
+	"strconv"
 	"strings"
 )
 
@@ -17,10 +17,10 @@ type ProblemStore interface {
 }
 
 type ProblemManifest struct {
-	Key        string `bson:"_id"`
+	Key string `bson:"_id"`
 
-	Id              string
-	Revision        int
+	Id       string
+	Revision int
 
 	TestCount       int    `bson:"testCount"`
 	TimeLimitMicros int64  `bson:"timeLimitMicros"`
@@ -76,4 +76,3 @@ func readFirstLine(filename string) (string, error) {
 	}
 	return "", nil
 }
-

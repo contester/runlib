@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"
-	log "github.com/Sirupsen/logrus"
 )
 
 var version string
@@ -20,24 +20,24 @@ type ProcessConfig struct {
 	CurrentDirectory string
 	Parameters       []string
 
-	TimeLimit   TimeLimitFlag
-	HardTimeLimit TimeLimitFlag
-	MemoryLimit MemoryLimitFlag
-	Environment EnvFlag
+	TimeLimit       TimeLimitFlag
+	HardTimeLimit   TimeLimitFlag
+	MemoryLimit     MemoryLimitFlag
+	Environment     EnvFlag
 	ProcessAffinity ProcessAffinityFlag
 
 	LoginName string
 	Password  string
 	InjectDLL string
 
-	StdIn  string
-	StdOut string
-	StdErr string
+	StdIn         string
+	StdOut        string
+	StdErr        string
 	JoinStdOutErr bool
 
 	TrustedMode bool
 	NoIdleCheck bool
-	NoJob bool
+	NoJob       bool
 }
 
 type RunexeConfig struct {

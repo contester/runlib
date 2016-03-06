@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	log "github.com/Sirupsen/logrus"
 )
 
 func tryClearPath(path string) (bool, error) {

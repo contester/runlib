@@ -1,8 +1,8 @@
 package tools
 
 import (
-	"testing"
 	"errors"
+	"testing"
 )
 
 func checkErr(t *testing.T, err error, value string, comps ...string) {

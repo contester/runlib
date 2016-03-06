@@ -8,9 +8,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/contester/runlib/win32"
-	"github.com/contester/runlib/tools"
 	log "github.com/Sirupsen/logrus"
+	"github.com/contester/runlib/tools"
+	"github.com/contester/runlib/win32"
 )
 
 type PlatformData struct {
@@ -128,7 +128,6 @@ func (d *PlatformData) terminateAndClose() (err error) {
 	syscall.CloseHandle(d.hProcess)
 	return
 }
-
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d := &SubprocessData{}
@@ -378,7 +377,7 @@ func (d *SubprocessData) Unfreeze() error {
 }
 
 func ns100toDuration(ns100 uint64) time.Duration {
-	return time.Nanosecond * time.Duration(ns100 * 100)
+	return time.Nanosecond * time.Duration(ns100*100)
 }
 
 func filetimeToDuration(ft *syscall.Filetime) time.Duration {
@@ -462,7 +461,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult)
 	var runState runningState
 
 	for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
-		waitResult, _ = syscall.WaitForSingleObject(hProcess, uint32(sub.TimeQuantum.Nanoseconds() / 1000000))
+		waitResult, _ = syscall.WaitForSingleObject(hProcess, uint32(sub.TimeQuantum.Nanoseconds()/1000000))
 		if waitResult != syscall.WAIT_TIMEOUT {
 			break
 		}

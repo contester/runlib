@@ -79,12 +79,12 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 		}
 
 		if err = storeIfExists(backend, filepath.Join(testRoot, "Input", "input.txt"),
-						gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/input.txt"); err != nil {
+			gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/input.txt"); err != nil {
 			continue
 		}
 
 		if err = storeIfExists(backend, filepath.Join(testRoot, "Add-ons", "answer.txt"),
-						gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/answer.txt"); err == nil {
+			gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/answer.txt"); err == nil {
 			manifest.Answers = append(manifest.Answers, int(testId))
 		}
 
@@ -179,13 +179,12 @@ func main() {
 		return
 	}
 
-	stor := storage.NewStorage()
-	err := stor.SetDefault(*storageUrl)
+	stor, err := storage.NewBackend(*storageUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	backend := stor.Default.(storage.ProblemStore)
+	backend := stor.(storage.ProblemStore)
 
 	if *mode == "import" {
 		err = importProblems(flag.Arg(0), backend)

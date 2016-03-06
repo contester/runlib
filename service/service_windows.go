@@ -16,4 +16,3 @@ func OnOsCreateError(err error) (bool, error) {
 	}
 	return false, nil
 }
-

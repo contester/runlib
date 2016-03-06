@@ -41,8 +41,8 @@ type TimeStats struct {
 }
 
 type SubprocessResult struct {
-	SuccessCode    uint32
-	ExitCode       uint32
+	SuccessCode uint32
+	ExitCode    uint32
 	TimeStats
 	PeakMemory     uint64
 	TotalProcesses uint64
@@ -62,23 +62,23 @@ type Subprocess struct {
 	CurrentDirectory *string
 	Environment      *[]string
 
-	NoJob         bool
-	RestrictUi    bool
-	ProcessLimit  uint32
+	NoJob                    bool
+	RestrictUi               bool
+	ProcessLimit             uint32
 	FailOnJobCreationFailure bool
 
-	TimeLimit       time.Duration
-	HardTimeLimit   time.Duration
-	CheckIdleness bool
-	MemoryLimit     uint64
-	HardMemoryLimit uint64
-	TimeQuantum     time.Duration
+	TimeLimit           time.Duration
+	HardTimeLimit       time.Duration
+	CheckIdleness       bool
+	MemoryLimit         uint64
+	HardMemoryLimit     uint64
+	TimeQuantum         time.Duration
 	ProcessAffinityMask uint64
 
 	Cmd                   *CommandLine
 	Login                 *LoginInfo
 	StdIn, StdOut, StdErr *Redirect
-	JoinStdOutErr bool
+	JoinStdOutErr         bool
 
 	Options *PlatformOptions
 }
@@ -147,7 +147,7 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 }
 
 type runningState struct {
-	lastTimeUsed time.Duration
+	lastTimeUsed    time.Duration
 	noTimeUsedCount uint
 }
 

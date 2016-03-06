@@ -9,8 +9,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/contester/runlib/tools"
 	log "github.com/Sirupsen/logrus"
+	"github.com/contester/runlib/tools"
 )
 
 type Cgroups struct {
@@ -112,7 +112,7 @@ func cgAttach(name string, pid int) error {
 	defer f.Close()
 	_, err = f.WriteString(strconv.Itoa(pid) + "\n")
 	if err != nil {
-                log.Error("Can't attach to cgroup %s, pid %d: %s", name, pid, err)
+		log.Error("Can't attach to cgroup %s, pid %d: %s", name, pid, err)
 		return err
 	}
 	return nil
@@ -121,7 +121,7 @@ func cgAttach(name string, pid int) error {
 func cgSetup(name string, pid int) error {
 	_, err := os.Stat(name)
 	if tools.IsStatErrorFileNotFound(err) {
-		err = os.MkdirAll(name, os.ModeDir | 0755)
+		err = os.MkdirAll(name, os.ModeDir|0755)
 		if err != nil {
 			log.Error(err)
 			return err

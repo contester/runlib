@@ -3,14 +3,14 @@ package subprocess
 import (
 	"fmt"
 	"os/user"
+	"runtime"
 	"strconv"
 	"syscall"
 	"time"
-	"runtime"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/linux"
 	"github.com/contester/runlib/tools"
-	log "github.com/Sirupsen/logrus"
 )
 
 type LoginInfo struct {

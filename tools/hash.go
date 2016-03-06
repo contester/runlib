@@ -1,11 +1,11 @@
 package tools
 
 import (
-	"os"
 	"crypto/sha1"
-	"io"
-	"strings"
 	"encoding/hex"
+	"io"
+	"os"
+	"strings"
 )
 
 func HashFileString(name string) (string, error) {
@@ -32,9 +32,8 @@ func HashFile(name string) ([]byte, error) {
 		return nil, ec.NewError(err, "io.Copy")
 	}
 	if err = source.Close(); err != nil {
-		return nil, ec.NewError(err,"source.Close")
+		return nil, ec.NewError(err, "source.Close")
 	}
 
 	return destination.Sum(nil), nil
 }
-

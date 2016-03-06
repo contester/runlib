@@ -5,9 +5,9 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/contester/runlib/win32"
-	"github.com/contester/runlib/tools"
 	log "github.com/Sirupsen/logrus"
+	"github.com/contester/runlib/tools"
+	"github.com/contester/runlib/win32"
 )
 
 // Loads user profile, using handle and username.

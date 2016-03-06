@@ -2,9 +2,9 @@ package contester_proto
 
 import (
 	"bytes"
-	"github.com/golang/protobuf/proto"
 	"compress/zlib"
 	"crypto/sha1"
+	"github.com/golang/protobuf/proto"
 	"io"
 )
 

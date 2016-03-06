@@ -3,13 +3,14 @@ package storage
 import (
 	"compress/zlib"
 	"fmt"
-	"github.com/contester/runlib/contester_proto"
-	"github.com/contester/runlib/tools"
 	"io"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"os"
 	"strings"
+
+	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/tools"
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 )
 
 type mongodbStorage struct {

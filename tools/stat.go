@@ -1,9 +1,10 @@
 package tools
 
 import (
+	"os"
+
 	"github.com/contester/runlib/contester_proto"
 	"github.com/golang/protobuf/proto"
-	"os"
 )
 
 func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {

@@ -1,17 +1,18 @@
 package service
 
 import (
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+
 	"code.google.com/p/goconf/conf"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/storage"
 	"github.com/contester/runlib/subprocess"
 	"github.com/golang/protobuf/proto"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 type Contester struct {

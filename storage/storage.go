@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
 )
 

@@ -1,9 +1,10 @@
 package service
 
 import (
+	"path/filepath"
+
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"path/filepath"
 )
 
 func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.FileStats) error {

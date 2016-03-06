@@ -7,11 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/contester/runlib/storage"
 	"log"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/contester/runlib/storage"
 )
 
 func readFirstLine(filename string) (string, error) {

@@ -1,10 +1,11 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/contester/runlib/linux"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"
-	"strings"
 )
 
 func CreateDesktopIfNeeded(program, interactor *ProcessConfig) (*platform.ContesterDesktop, error) {

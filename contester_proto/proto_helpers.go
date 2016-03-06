@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"compress/zlib"
 	"crypto/sha1"
-	"github.com/golang/protobuf/proto"
 	"io"
+
+	"github.com/golang/protobuf/proto"
 )
 
 func (blob *Blob) Reader() (io.Reader, error) {

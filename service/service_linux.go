@@ -1,9 +1,10 @@
 package service
 
 import (
-	"code.google.com/p/goconf/conf"
 	"os/exec"
 	"strconv"
+
+	"code.google.com/p/goconf/conf"
 )
 
 const PLATFORM_ID = "linux"

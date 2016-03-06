@@ -1,9 +1,10 @@
 package subprocess
 
 import (
-	"github.com/contester/runlib/win32"
 	"os"
 	"syscall"
+
+	"github.com/contester/runlib/win32"
 )
 
 func OpenFileForRedirect(name string, read bool) (*os.File, error) {

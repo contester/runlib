@@ -1,9 +1,10 @@
 package service
 
 import (
+	"os"
+
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"os"
 )
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.FileStat) error {

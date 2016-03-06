@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/contester/runlib/subprocess"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/contester/runlib/subprocess"
 )
 
 type Verdict int

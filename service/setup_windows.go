@@ -1,9 +1,10 @@
 package service
 
 import (
-	"code.google.com/p/goconf/conf"
 	"os/exec"
 	"strings"
+
+	"code.google.com/p/goconf/conf"
 )
 
 const PLATFORM_ID = "win32"

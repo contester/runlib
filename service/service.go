@@ -7,12 +7,12 @@ import (
 	"strings"
 	"sync"
 
-	"code.google.com/p/goconf/conf"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/storage"
 	"github.com/contester/runlib/subprocess"
 	"github.com/golang/protobuf/proto"
+	"gopkg.in/gcfg.v1"
 )
 
 type Contester struct {
@@ -51,15 +51,9 @@ func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {
 	return result
 }
 
-func configureSandboxes(config *conf.ConfigFile) ([]SandboxPair, error) {
-	basePath, err := config.GetString("default", "path")
-	if err != nil {
-		return nil, err
-	}
-	passwords, err := getPasswords(config)
-	if err != nil {
-		return nil, err
-	}
+func configureSandboxes(config *contesterConfig) ([]SandboxPair, error) {
+	basePath := config.Default.Path
+	passwords := getPasswords(config)
 	result := make([]SandboxPair, len(passwords))
 	for index, password := range passwords {
 		localBase := filepath.Join(basePath, strconv.Itoa(index))
@@ -109,9 +103,16 @@ func checkSandbox(path string) error {
 	return nil
 }
 
+type contesterConfig struct {
+	Default struct {
+		Server, Passwords, Path string
+		SandboxCount            int
+	}
+}
+
 func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
-	config, err := conf.ReadConfigFile(configFile)
-	if err != nil {
+	var config contesterConfig
+	if err := gcfg.ReadFileInto(&config, configFile); err != nil {
 		return nil, err
 	}
 
@@ -119,17 +120,14 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 
 	result.InvokerId = getHostname()
 	result.Env = getLocalEnvironment()
-	result.ServerAddress, err = config.GetString("default", "server")
-	if err != nil {
-		return nil, err
-	}
+	result.ServerAddress = config.Default.Server
 	result.Platform = PLATFORM_ID
 	result.Disks = PLATFORM_DISKS
 	result.ProgramFiles = PLATFORM_PFILES
 	result.PathSeparator = string(os.PathSeparator)
 	result.GData = gData
 
-	result.Sandboxes, err = configureSandboxes(config)
+	result.Sandboxes, err = configureSandboxes(&config)
 	if err != nil {
 		return nil, err
 	}

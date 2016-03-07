@@ -3,8 +3,6 @@ package service
 import (
 	"os/exec"
 	"strconv"
-
-	"code.google.com/p/goconf/conf"
 )
 
 const PLATFORM_ID = "linux"
@@ -18,16 +16,12 @@ func OnOsCreateError(err error) (bool, error) {
 	return false, err
 }
 
-func getPasswords(c *conf.ConfigFile) ([]string, error) {
-	count, err := c.GetInt("default", "sandboxCount")
-	if err != nil {
-		return nil, err
-	}
-	result := make([]string, count)
+func getPasswords(c *contesterConfig) []string {
+	result := make([]string, c.Default.SandboxCount)
 	for i := range result {
 		result[i] = "password" + strconv.Itoa(i)
 	}
-	return result, nil
+	return result
 }
 
 func setAcl(path, username string) error {

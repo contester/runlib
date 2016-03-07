@@ -7,3 +7,9 @@
 [submodule "vendor/github.com/contester/rpc4"]
 	path = vendor/github.com/contester/rpc4
 	url = https://github.com/contester/rpc4
+[submodule "vendor/gopkg.in/gcfg.v1"]
+	path = vendor/gopkg.in/gcfg.v1
+	url = https://gopkg.in/gcfg.v1
+[submodule "vendor/gopkg.in/mgo.v2"]
+	path = vendor/gopkg.in/mgo.v2
+	url = https://gopkg.in/mgo.v2

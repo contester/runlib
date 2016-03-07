@@ -127,6 +127,7 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	result.PathSeparator = string(os.PathSeparator)
 	result.GData = gData
 
+	var err error
 	result.Sandboxes, err = configureSandboxes(&config)
 	if err != nil {
 		return nil, err

@@ -6,30 +6,27 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type mongodbStorage struct {
-	URL string
-	*mgo.Session
-	*mgo.Database
-	*mgo.GridFS
+	URL     string
+	mu      sync.RWMutex
+	session *mgo.Session
 }
 
 func NewMongoDB(url string) (Backend, error) {
 	var result mongodbStorage
 	var err error
 	result.URL = url
-	result.Session, err = mgo.Dial(result.URL)
-	if err != nil {
+	if result.session, err = mgo.Dial(url); err != nil {
 		return nil, err
 	}
-	result.Database = result.Session.DB("")
-	result.GridFS = result.Database.GridFS("fs")
 	return &result, nil
 }
 
@@ -38,7 +35,10 @@ func (s *mongodbStorage) String() string {
 }
 
 func (s *mongodbStorage) Close() {
-	s.Session.Close()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.session.Close()
+	s.session = nil
 }
 
 type fileMetadata struct {
@@ -46,6 +46,14 @@ type fileMetadata struct {
 	ModuleType      string `bson:"moduleType,omitempty"`
 	CompressionType string `bson:"compressionType,omitempty"`
 	OriginalSize    uint64 `bson:"originalSize"`
+}
+
+func (s *mongodbStorage) db() *mgo.Database {
+	return s.session.DB("")
+}
+
+func (s *mongodbStorage) gridfs() *mgo.GridFS {
+	return s.db().GridFS("fs")
 }
 
 func (s *mongodbStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
@@ -80,15 +88,19 @@ func (s *mongodbStorage) Copy(localName, remoteName string, toRemote bool, check
 	}
 	defer local.Close()
 
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	gridfs := s.gridfs()
+
 	var remote *mgo.GridFile
 	if toRemote {
 		// Remove all files with the same remoteName.
-		if err = s.GridFS.Remove(remoteName); err != nil {
+		if err = gridfs.Remove(remoteName); err != nil {
 			return nil, ec.NewError(err, "remote.Remove")
 		}
-		remote, err = s.GridFS.Create(remoteName)
+		remote, err = gridfs.Create(remoteName)
 	} else {
-		remote, err = s.GridFS.Open(remoteName)
+		remote, err = gridfs.Open(remoteName)
 	}
 	if err != nil {
 		return nil, ec.NewError(err, "remote.Open")
@@ -153,7 +165,9 @@ func (s *mongodbStorage) Copy(localName, remoteName string, toRemote bool, check
 }
 
 func (s *mongodbStorage) GetNextRevision(id string) (int, error) {
-	query := s.Database.C("manifest").Find(bson.M{"id": id}).Sort("-revision")
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	query := s.db().C("manifest").Find(bson.M{"id": id}).Sort("-revision")
 	var manifest ProblemManifest
 	if err := query.One(&manifest); err != nil {
 		return 1, nil
@@ -162,17 +176,19 @@ func (s *mongodbStorage) GetNextRevision(id string) (int, error) {
 }
 
 func (s *mongodbStorage) SetManifest(manifest *ProblemManifest) error {
-	return s.Database.C("manifest").Insert(manifest)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.db().C("manifest").Insert(manifest)
 }
 
 func (s *mongodbStorage) getAllProblemIds() []string {
 	var ids []string
-	s.Database.C("manifest").Find(nil).Distinct("id", &ids)
+	s.db().C("manifest").Find(nil).Distinct("id", &ids)
 	return ids
 }
 
 func (s *mongodbStorage) doCleanup(id string, latest int) error {
-	iter := s.Database.C("manifest").Find(bson.M{"id": id}).Sort("-revision").Iter()
+	iter := s.db().C("manifest").Find(bson.M{"id": id}).Sort("-revision").Iter()
 	defer iter.Close()
 	var manifest ProblemManifest
 
@@ -180,14 +196,14 @@ func (s *mongodbStorage) doCleanup(id string, latest int) error {
 		if latest--; latest >= 0 {
 			continue
 		}
-		s.Database.C("manifest").RemoveId(manifest.Key)
+		s.db().C("manifest").RemoveId(manifest.Key)
 	}
 	return nil
 }
 
 func (s *mongodbStorage) getAllGridPrefixes() []string {
 	var ids []string
-	iter := s.Database.C("manifest").Find(nil).Iter()
+	iter := s.db().C("manifest").Find(nil).Iter()
 	defer iter.Close()
 	var m ProblemManifest
 	for iter.Next(&m) {
@@ -206,21 +222,24 @@ func hasAnyPrefix(s string, p []string) bool {
 }
 
 func (s *mongodbStorage) Cleanup(latest int) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	pids := s.getAllProblemIds()
 	for _, v := range pids {
 		s.doCleanup(v, latest)
 	}
 
 	pids = s.getAllGridPrefixes()
-	iter := s.GridFS.Find(nil).Sort("filename").Iter()
+	gridfs := s.gridfs()
+	iter := gridfs.Find(nil).Sort("filename").Iter()
 	var f *mgo.GridFile
-	for s.GridFS.OpenNext(iter, &f) {
+	for gridfs.OpenNext(iter, &f) {
 		if !strings.HasPrefix(f.Name(), "problem/") {
 			continue
 		}
 		if !hasAnyPrefix(f.Name(), pids) {
-			fmt.Printf("Remove: %s\n", f.Name())
-			s.GridFS.RemoveId(f.Id())
+			gridfs.RemoveId(f.Id())
 		}
 	}
 	return nil

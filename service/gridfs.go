@@ -5,6 +5,7 @@ import (
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
+	log "github.com/Sirupsen/logrus"
 )
 
 func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response *contester_proto.FileStats) error {
@@ -40,9 +41,15 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 		stat, err := s.Storage.Copy(resolved, item.GetRemoteLocation(), item.GetUpload(),
 			item.GetChecksum(), item.GetModuleType())
 
+		if err != nil {
+			log.Errorf("gridfs copy error: %+v", err)
+			continue
+		}
+
 		if !item.GetUpload() && sandbox != nil {
 			err = sandbox.Own(resolved)
 			if err != nil {
+				log.Errorf("sandbox.Own error: %+v", err)
 				continue
 			}
 		}

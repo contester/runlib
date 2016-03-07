@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	log "github.com/Sirupsen/logrus"
 )
 
 func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response *contester_proto.FileStats) error {

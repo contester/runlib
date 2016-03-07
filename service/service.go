@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/storage"
@@ -115,6 +116,8 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	if err := gcfg.ReadFileInto(&config, configFile); err != nil {
 		return nil, err
 	}
+
+	log.Infof("Loaded contester config %+v", &config)
 
 	var result Contester
 

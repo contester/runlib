@@ -209,6 +209,7 @@ func exportProblem(backend storage.ProblemStore, manifest storage.ProblemManifes
 			fmt.Printf(" ")
 		}
 		fmt.Printf("%d", i)
+		os.Stdout.Sync()
 		test := filepath.Join(dest, fmt.Sprintf("Test.%d", i))
 		if err := mkdirAndCopy(backend, filepath.Join(test, "Input"),
 			"input.txt", gridprefix+fmt.Sprintf("tests/%d/input.txt", i)); err != nil {
@@ -248,7 +249,8 @@ func exportProblems(backend storage.ProblemStore, dest string) error {
 	}
 
 	for pidint, v := range probs {
-		fmt.Printf("Exporting problem %d ... [")
+		fmt.Printf("Exporting problem %d ... [", pidint)
+		os.Stdout.Sync()
 		if err = exportProblem(backend, v, filepath.Join(dest, fmt.Sprintf("Task.%d", pidint))); err != nil {
 			return err
 		}

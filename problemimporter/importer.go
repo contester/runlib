@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/contester/runlib/storage"
+	"io/ioutil"
 )
 
 func readFirstLine(filename string) (string, error) {
@@ -170,19 +171,90 @@ func importProblems(root string, backend storage.ProblemStore) error {
 	return nil
 }
 
-func exportProblems(backend storage.ProblemStore) error {
+func mkdirAndCopy(backend storage.ProblemStore, dir, name, gridname string) error {
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+	if _, err := backend.Copy(filepath.Join(dir, name),
+		gridname, false, "", ""); err != nil {
+		return err
+	}
+	return nil
+}
+
+func exportProblem(backend storage.ProblemStore, manifest storage.ProblemManifest, dest string) error {
+	if err := os.MkdirAll(dest, os.ModePerm); err != nil {
+		return err
+	}
+	gridprefix := manifest.GetGridPrefix()
+	if manifest.TesterName != "" {
+		if _, err := backend.Copy(filepath.Join(dest, manifest.TesterName), gridprefix+"checker", false, "", ""); err != nil {
+			return err
+		}
+	}
+	if err := ioutil.WriteFile(filepath.Join(dest, "memlimit"), string(fmt.Sprintf("%d", manifest.MemoryLimit)), os.ModePerm); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(filepath.Join(dest, "timex"), string(fmt.Sprintf("%f", float64(manifest.TimeLimitMicros)/1000000)), os.ModePerm); err != nil {
+		return err
+	}
+
+	answers := make(map[int]struct{})
+	for _, v := range manifest.Answers {
+		answers[v] = struct{}{}
+	}
+
+	for i := 1; i <= manifest.TestCount; i++ {
+		if i > 1 {
+			fmt.Printf(" ")
+		}
+		fmt.Printf("%d", i)
+		test := filepath.Join(dest, fmt.Sprintf("Test.%d", i))
+		if err := mkdirAndCopy(backend, filepath.Join(test, "Input"),
+			"input.txt", gridprefix+fmt.Sprintf("tests/%d/input.txt", i)); err != nil {
+			return err
+		}
+		if _, ok := answers[i]; !ok {
+			continue
+		}
+		if err := mkdirAndCopy(backend, filepath.Join(test, "Add-ons"),
+			"answer.txt", gridprefix+fmt.Sprintf("tests/%d/answer.txt", i)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func exportProblems(backend storage.ProblemStore, dest string) error {
 	m, err := backend.GetAllManifests()
 	if err != nil {
 		return err
 	}
 
+	probs := make(map[int64]storage.ProblemManifest)
+
 	for _, v := range m {
-		b, err := json.MarshalIndent(v, "", "  ")
+		if !strings.HasPrefix(v.Id, "direct://school.sgu.ru/moodle/") {
+			continue
+		}
+		pidstr := strings.TrimPrefix(v.Id, "direct://school.sgu.ru/moodle/")
+		pidint, err := strconv.ParseInt(pidstr, 10, 64)
 		if err != nil {
+			continue
+		}
+		if prev, ok := probs[pidint]; !ok || prev.Revision < v.Revision {
+			probs[pidint] = v
+		}
+	}
+
+	for pidint, v := range probs {
+		fmt.Printf("Exporting problem %d ... [")
+		if err = exportProblem(backend, v, filepath.Join(dest, fmt.Sprintf("Task.%d", pidint))); err != nil {
 			return err
 		}
-		os.Stdout.Write(b)
+		fmt.Printf("]\n")
 	}
+
 	return nil
 }
 

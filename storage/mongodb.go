@@ -201,6 +201,11 @@ func (s *mongodbStorage) doCleanup(id string, latest int) error {
 	return nil
 }
 
+func (s *mongodbStorage) GetAllManifests() (result []ProblemManifest, err error) {
+	err = s.db().C("manifest").Find(nil).All(&result)
+	return
+}
+
 func (s *mongodbStorage) getAllGridPrefixes() []string {
 	var ids []string
 	iter := s.db().C("manifest").Find(nil).Iter()

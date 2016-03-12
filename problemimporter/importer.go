@@ -2,12 +2,12 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
-
-	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -170,6 +170,22 @@ func importProblems(root string, backend storage.ProblemStore) error {
 	return nil
 }
 
+func exportProblems(backend storage.ProblemStore) error {
+	m, err := backend.GetAllManifests()
+	if err != nil {
+		return err
+	}
+
+	for _, v := range m {
+		b, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			return err
+		}
+		os.Stdout.Write(b)
+	}
+	return nil
+}
+
 func main() {
 	storageUrl := flag.String("url", "", "")
 	mode := flag.String("mode", "", "")
@@ -187,14 +203,15 @@ func main() {
 
 	backend := stor.(storage.ProblemStore)
 
-	if *mode == "import" {
+	switch *mode {
+	case "import":
 		err = importProblems(flag.Arg(0), backend)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	if *mode == "cleanup" {
+	case "cleanup":
 		backend.Cleanup(1)
+	case "export":
+		err = exportProblems(backend)
+	}
+	if err != nil {
+		log.Fatal(err)
 	}
 }

@@ -13,6 +13,7 @@ type ProblemStore interface {
 
 	GetNextRevision(id string) (int, error)
 	SetManifest(manifest *ProblemManifest) error
+	GetAllManifests() ([]ProblemManifest, error)
 	Cleanup(latest int) error
 }
 

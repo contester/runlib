@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -12,8 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/contester/runlib/storage"
 	"io/ioutil"
+
+	"github.com/contester/runlib/storage"
 )
 
 func readFirstLine(filename string) (string, error) {

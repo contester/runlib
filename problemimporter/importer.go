@@ -192,10 +192,10 @@ func exportProblem(backend storage.ProblemStore, manifest storage.ProblemManifes
 			return err
 		}
 	}
-	if err := ioutil.WriteFile(filepath.Join(dest, "memlimit"), string(fmt.Sprintf("%d", manifest.MemoryLimit)), os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(dest, "memlimit"), []byte(fmt.Sprintf("%d", manifest.MemoryLimit)), os.ModePerm); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(dest, "timex"), string(fmt.Sprintf("%f", float64(manifest.TimeLimitMicros)/1000000)), os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(dest, "timex"), []byte(fmt.Sprintf("%f", float64(manifest.TimeLimitMicros)/1000000)), os.ModePerm); err != nil {
 		return err
 	}
 

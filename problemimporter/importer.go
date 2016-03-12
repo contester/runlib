@@ -281,7 +281,7 @@ func main() {
 	case "cleanup":
 		backend.Cleanup(1)
 	case "export":
-		err = exportProblems(backend)
+		err = exportProblems(backend, flag.Arg(0))
 	}
 	if err != nil {
 		log.Fatal(err)

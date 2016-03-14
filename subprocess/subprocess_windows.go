@@ -460,6 +460,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan <- *SubprocessResu
 	waitResult = syscall.WAIT_TIMEOUT
 
 	var runState runningState
+	var err error
 
 	for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
 		waitResult, err = syscall.WaitForSingleObject(hProcess, uint32(sub.TimeQuantum.Nanoseconds()/1000000))

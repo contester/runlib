@@ -13,7 +13,7 @@ type weedfilerStorage struct {
 	mu sync.RWMutex
 }
 
-
+/*
 func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
 	ec := tools.ErrorContext("mongodb.Copy")
 
@@ -121,3 +121,4 @@ func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, che
 
 	return stat, nil
 }
+*/

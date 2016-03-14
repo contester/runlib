@@ -136,7 +136,7 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 		return nil, err // we must die here
 	}
 
-	sig := make(chan *SubprocessResult)
+	sig := make(chan *SubprocessResult, 1)
 	go sub.BottomHalf(d, sig)
 
 	if err = d.Unfreeze(); err != nil {

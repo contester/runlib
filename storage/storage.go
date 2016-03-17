@@ -19,5 +19,8 @@ func NewBackend(url string) (Backend, error) {
 	if strings.HasPrefix(url, "mongodb:") {
 		return NewMongoDB(url)
 	}
+	if strings.HasPrefix(url, "http:") {
+		return NewWeed(url), nil
+	}
 	return nil, fmt.Errorf("Can't parse storage url: %s", url)
 }

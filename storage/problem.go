@@ -20,17 +20,17 @@ type ProblemStore interface {
 type ProblemManifest struct {
 	Key string `bson:"_id"`
 
-	Id       string
-	Revision int
+	Id       string `json:"id"`
+	Revision int    `json:"revision"`
 
-	TestCount       int    `bson:"testCount"`
-	TimeLimitMicros int64  `bson:"timeLimitMicros"`
-	MemoryLimit     int64  `bson:"memoryLimit"`
-	Stdio           bool   `bson:"stdio"`
-	TesterName      string `bson:"testerName"`
-	Answers         []int  `bson:"answers"`
-	InteractorName  string `bson:"interactorName,omitempty"`
-	CombinedHash    string `bson:"combinedHash,omitempty"`
+	TestCount       int    `bson:"testCount",json:"test_count"`
+	TimeLimitMicros int64  `bson:"timeLimitMicros",json:"time_limit_micros"`
+	MemoryLimit     int64  `bson:"memoryLimit",json:"memory_limit"`
+	Stdio           bool   `bson:"stdio",json:"stdio,omitempty"`
+	TesterName      string `bson:"testerName",json:"tester_name"`
+	Answers         []int  `bson:"answers",json:"answers,omitempty"`
+	InteractorName  string `bson:"interactorName,omitempty",json:"interactor_name,omitempty"`
+	CombinedHash    string `bson:"combinedHash,omitempty",json:"combined_hash,omitempty"`
 }
 
 func (s *ProblemManifest) GetGridPrefix() string {

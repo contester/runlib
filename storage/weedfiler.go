@@ -1,21 +1,29 @@
 package storage
 
-
 import (
-	"sync"
-	"github.com/contester/runlib/contester_proto"
-"github.com/contester/runlib/tools"
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"os"
-	"io"
-	"compress/zlib"
 	"net/http"
-"github.com/Sirupsen/logrus"
+	"net/url"
+	"os"
+	"sync"
+
+	"github.com/contester/runlib/contester_proto"
+	"github.com/contester/runlib/tools"
 )
+
+var _ ProblemStore = &weedfilerStorage{}
 
 type weedfilerStorage struct {
 	URL string
-	mu sync.RWMutex
+	mu  sync.RWMutex
+}
+
+func NewWeed(url string) *weedfilerStorage {
+	return &weedfilerStorage{
+		URL: url,
+	}
 }
 
 func (s *weedfilerStorage) upload(localName, remoteName string) error {
@@ -26,18 +34,14 @@ func (s *weedfilerStorage) upload(localName, remoteName string) error {
 	}
 	defer local.Close()
 
-	pr, pw := io.Pipe()
-	go func() {
-		dest := zlib.NewWriter(pw)
-		io.Copy(dest, local)
-	}()
-
-	req, err := http.NewRequest(s.URL + "fs/" + remoteName, "PUT", pr)
+	req, err := http.NewRequest("PUT", s.URL+"fs/"+remoteName, local)
 	if err != nil {
 		return err
 	}
 	resp, err := http.DefaultClient.Do(req)
-	logrus.Info(resp, err)
+	if err == nil {
+		resp.Body.Close()
+	}
 	return err
 }
 
@@ -65,5 +69,57 @@ func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, che
 		err = s.upload(localName, remoteName)
 	}
 
-	return stat, nil
+	return stat, err
+}
+
+func (s *weedfilerStorage) Cleanup(latest int) error {
+	return nil
+}
+
+func (s *weedfilerStorage) Close() {
+}
+
+func (s *weedfilerStorage) GetAllManifests() ([]ProblemManifest, error) {
+	resp, err := http.Get(s.URL + "problem/get/")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var result []ProblemManifest
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return result, err
+}
+
+func (s *weedfilerStorage) GetNextRevision(id string) (int, error) {
+	resp, err := http.Get(s.URL + "problem/get/?id=" + url.QueryEscape(id))
+	if err != nil {
+		return 1, err
+	}
+	defer resp.Body.Close()
+	var result []ProblemManifest
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return 1, err
+	}
+	if len(result) == 0 {
+		return 1, nil
+	}
+	return result[0].Revision + 1, nil
+}
+
+func (s *weedfilerStorage) SetManifest(manifest *ProblemManifest) error {
+	data, err := json.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(s.URL+"problem/set/", "application/octet-stream", bytes.NewReader(data))
+	if err == nil {
+		resp.Body.Close()
+	}
+	return err
+}
+
+func (s *weedfilerStorage) String() string {
+	return s.URL
 }

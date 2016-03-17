@@ -103,7 +103,6 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 
 	memlimitString, err := readFirstLine(filepath.Join(root, "memlimit"))
 	if err == nil {
-		fmt.Println(memlimitString)
 		manifest.MemoryLimit, err = strconv.ParseInt(string(memlimitString), 10, 64)
 		if err != nil {
 			fmt.Println(err)
@@ -117,7 +116,6 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 
 	timexString, err := readFirstLine(filepath.Join(root, "timex"))
 	if err == nil {
-		fmt.Println(timexString)
 		timex, err := strconv.ParseFloat(string(timexString), 64)
 		if err == nil {
 			manifest.TimeLimitMicros = int64(timex * 1000000)
@@ -188,7 +186,10 @@ func exportProblem(backend storage.ProblemStore, manifest storage.ProblemManifes
 	}
 	gridprefix := manifest.GetGridPrefix()
 	if manifest.TesterName != "" {
-		if _, err := backend.Copy(filepath.Join(dest, manifest.TesterName), gridprefix+"checker", false, "", ""); err != nil {
+		if err := os.MkdirAll(filepath.Join(dest, "Tester"), os.ModePerm); err != nil {
+			return err
+		}
+		if _, err := backend.Copy(filepath.Join(dest, "Tester", manifest.TesterName), gridprefix+"checker", false, "", ""); err != nil {
 			return err
 		}
 	}

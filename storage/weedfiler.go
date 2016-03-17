@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -83,9 +84,29 @@ func (s *weedfilerStorage) upload(localName, remoteName, checksum, moduleType st
 	return stat, nil
 }
 
+func (s *weedfilerStorage) download(localName, remoteName string) (stat *contester_proto.FileStat, err error) {
+	local, err := os.Create(localName)
+	if err != nil {
+		return nil, err
+	}
+	defer local.Close()
+	resp, err := http.Get(s.URL + "fs/" + remoteName)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if _, err = io.Copy(local, resp.Body); err != nil {
+		return nil, err
+	}
+	local.Close()
+	return tools.StatFile(localName, true)
+}
+
 func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
 	if toRemote {
 		return s.upload(localName, remoteName, checksum, moduleType)
+	} else {
+		return s.download(localName, remoteName)
 	}
 
 	return stat, err

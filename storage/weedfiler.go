@@ -1,12 +1,16 @@
 package storage
 
-/*
+
 import (
 	"sync"
 	"github.com/contester/runlib/contester_proto"
 "github.com/contester/runlib/tools"
 	"fmt"
 	"os"
+	"io"
+	"compress/zlib"
+	"net/http"
+"github.com/Sirupsen/logrus"
 )
 
 type weedfilerStorage struct {
@@ -14,6 +18,28 @@ type weedfilerStorage struct {
 	mu sync.RWMutex
 }
 
+func (s *weedfilerStorage) upload(localName, remoteName string) error {
+	ec := tools.ErrorContext("weedfiler.upload")
+	local, err := os.Open(localName)
+	if err != nil {
+		return ec.NewError(err, "local.Open")
+	}
+	defer local.Close()
+
+	pr, pw := io.Pipe()
+	go func() {
+		dest := zlib.NewWriter(pw)
+		io.Copy(dest, local)
+	}()
+
+	req, err := http.NewRequest(s.URL + "fs/" + remoteName, "PUT", pr)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	logrus.Info(resp, err)
+	return err
+}
 
 func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
 	ec := tools.ErrorContext("mongodb.Copy")
@@ -35,91 +61,9 @@ func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, che
 		checksum = *stat.Checksum
 	}
 
-	var local *os.File
 	if toRemote {
-		local, err = os.Open(localName)
-	} else {
-		local, err = os.Create(localName)
-	}
-
-	if err != nil {
-		return nil, ec.NewError(err, "local.Open")
-	}
-	defer local.Close()
-
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	gridfs := s.gridfs()
-
-	var remote *mgo.GridFile
-	if toRemote {
-		// Remove all files with the same remoteName.
-		if err = gridfs.Remove(remoteName); err != nil {
-			return nil, ec.NewError(err, "remote.Remove")
-		}
-		remote, err = gridfs.Create(remoteName)
-	} else {
-		remote, err = gridfs.Open(remoteName)
-	}
-	if err != nil {
-		return nil, ec.NewError(err, "remote.Open")
-	}
-	defer remote.Close()
-
-	var source io.ReadCloser
-	if toRemote {
-		source = local
-	} else {
-		source = remote
-		var meta fileMetadata
-		if err = remote.GetMeta(&meta); err != nil {
-			return nil, ec.NewError(err, "remote.GetMeta")
-		}
-		if meta.CompressionType == "ZLIB" {
-			source, err = zlib.NewReader(source)
-			if err != nil {
-				return nil, ec.NewError(err, "zlib.NewReader")
-			}
-		}
-	}
-
-	var destination io.WriteCloser
-	if toRemote {
-		destination = zlib.NewWriter(remote)
-	} else {
-		destination = local
-	}
-
-	size, err := io.Copy(destination, source)
-	if err != nil {
-		return nil, ec.NewError(err, "io.Copy")
-	}
-
-	if toRemote {
-		var meta fileMetadata
-		meta.OriginalSize = uint64(size)
-		meta.CompressionType = "ZLIB"
-		meta.Checksum = *stat.Checksum
-		meta.ModuleType = moduleType
-
-		remote.SetMeta(meta)
-	}
-
-	if err = destination.Close(); err != nil {
-		return nil, ec.NewError(err, "destination.Close")
-	}
-
-	if err = source.Close(); err != nil {
-		return nil, ec.NewError(err, "source.Close")
-	}
-
-	if !toRemote {
-		stat, err = tools.StatFile(localName, true)
-		if err != nil {
-			return nil, ec.NewError(err, "StatFile")
-		}
+		err = s.upload(localName, remoteName)
 	}
 
 	return stat, nil
 }
-*/

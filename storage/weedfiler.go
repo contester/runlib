@@ -2,13 +2,18 @@ package storage
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 
+	//log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
 )
@@ -26,47 +31,61 @@ func NewWeed(url string) *weedfilerStorage {
 	}
 }
 
-func (s *weedfilerStorage) upload(localName, remoteName string) error {
-	ec := tools.ErrorContext("weedfiler.upload")
+type uploadStatus struct {
+	Size    int64
+	Digests map[string]string
+}
+
+func (s *weedfilerStorage) upload(localName, remoteName, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+	ec := tools.ErrorContext("upload")
+	if stat, err = tools.StatFile(localName, true); err != nil || stat == nil {
+		return stat, err
+	}
+	if checksum != "" && stat.GetChecksum() != checksum {
+		return nil, fmt.Errorf("Checksum mismatch, local %s != %s", stat.GetChecksum(), checksum)
+	}
+	checksum = stat.GetChecksum()
+
 	local, err := os.Open(localName)
 	if err != nil {
-		return ec.NewError(err, "local.Open")
+		return nil, ec.NewError(err, "local.Open")
 	}
 	defer local.Close()
 
 	req, err := http.NewRequest("PUT", s.URL+"fs/"+remoteName, local)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if moduleType != "" {
+		req.Header.Add("X-FS-Module-Type", moduleType)
+	}
+	req.Header.Add("X-FS-Content-Length", strconv.FormatUint(stat.GetSize(), 10))
+	var base64sha1 string
+	if checksum != "" && strings.HasPrefix(checksum, "sha1:") {
+		if data, err := hex.DecodeString(strings.TrimPrefix(checksum, "sha1:")); err == nil {
+			base64sha1 = base64.StdEncoding.EncodeToString(data)
+			req.Header.Add("Digest", "SHA="+base64sha1)
+		}
 	}
 	resp, err := http.DefaultClient.Do(req)
-	if err == nil {
-		resp.Body.Close()
+	if err != nil {
+		return nil, err
 	}
-	return err
+	defer resp.Body.Close()
+	var st uploadStatus
+	err = json.NewDecoder(resp.Body).Decode(&st)
+	if err != nil {
+		return nil, err
+	}
+	if st.Size != int64(stat.GetSize()) || (base64sha1 != "" && base64sha1 != st.Digests["SHA"]) {
+		return nil, fmt.Errorf("upload integrity verification failed")
+	}
+	return stat, nil
 }
 
 func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
-	ec := tools.ErrorContext("mongodb.Copy")
-
 	if toRemote {
-		stat, err = tools.StatFile(localName, true)
-		if err != nil {
-			err = ec.NewError(err, "local.CalculateChecksum")
-		}
-		// If file doesn't exist then stat == nil.
-		if err != nil || stat == nil {
-			return
-		}
-
-		if checksum != "" && *stat.Checksum != checksum {
-			return nil, ec.NewError(fmt.Errorf("Checksum mismatch, local %s != %s", stat.Checksum, checksum))
-		}
-
-		checksum = *stat.Checksum
-	}
-
-	if toRemote {
-		err = s.upload(localName, remoteName)
+		return s.upload(localName, remoteName, checksum, moduleType)
 	}
 
 	return stat, err

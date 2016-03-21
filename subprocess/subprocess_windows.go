@@ -400,21 +400,18 @@ func filetimeToDuration(ft *syscall.Filetime) time.Duration {
 }
 
 func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished bool) error {
-	creation := &syscall.Filetime{}
-	end := &syscall.Filetime{}
-	user := &syscall.Filetime{}
-	kernel := &syscall.Filetime{}
+	var creation, end, user, kernel syscall.Filetime
 
-	err := syscall.GetProcessTimes(pdata.hProcess, creation, end, kernel, user)
+	err := syscall.GetProcessTimes(pdata.hProcess, &creation, &end, &kernel, &user)
 	if err != nil {
 		return err
 	}
 
 	if !finished {
-		syscall.GetSystemTimeAsFileTime(end)
+		syscall.GetSystemTimeAsFileTime(&end)
 	}
 
-	result.WallTime = filetimeToDuration(end) - filetimeToDuration(creation)
+	result.WallTime = filetimeToDuration(&end) - filetimeToDuration(&creation)
 
 	var jinfo *win32.JobObjectBasicAccountingInformation
 
@@ -430,8 +427,8 @@ func UpdateProcessTimes(pdata *PlatformData, result *SubprocessResult, finished 
 		result.KernelTime = ns100toDuration(jinfo.TotalKernelTime)
 		result.TotalProcesses = uint64(jinfo.TotalProcesses)
 	} else {
-		result.UserTime = filetimeToDuration(user)
-		result.KernelTime = filetimeToDuration(kernel)
+		result.UserTime = filetimeToDuration(&user)
+		result.KernelTime = filetimeToDuration(&kernel)
 	}
 
 	return nil

@@ -11,7 +11,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/tools"
 	"github.com/contester/runlib/win32"
-	"github.com/Sirupsen/logrus"
 )
 
 type PlatformData struct {
@@ -372,7 +371,22 @@ func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
 
 func (d *SubprocessData) Unfreeze() error {
 	hThread := d.platformData.hThread
-	win32.ResumeThread(hThread)
+	var err error
+	retries := 10
+	for {
+		var oldCount int
+		retries--
+		oldCount, err = win32.ResumeThread(hThread)
+		if oldCount <= 1 && err == nil {
+			break
+		}
+		log.Errorf("unfreeze: oldcount %d, error %s", oldCount, err)
+		if retries <= 0 {
+			// crash
+			log.Fatalf("UNSUSPEND FAILED, CRASHING")
+		}
+		time.Sleep(time.Second / 10)
+	}
 	syscall.CloseHandle(hThread)
 	return nil
 }
@@ -468,7 +482,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan <- *SubprocessResu
 			break
 		}
 		if err != nil {
-			logrus.Errorf("Error waiting for process %d: %s", hProcess, err)
+			log.Errorf("Error waiting for process %d: %s", hProcess, err)
 		}
 
 		_ = UpdateProcessTimes(&d.platformData, result, false)
@@ -482,22 +496,22 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan <- *SubprocessResu
 	switch waitResult {
 	case syscall.WAIT_OBJECT_0:
 		if err = syscall.GetExitCodeProcess(hProcess, &result.ExitCode); err != nil {
-			logrus.Errorf("Error getting exit code %d: %s", hProcess, err)
+			log.Errorf("Error getting exit code %d: %s", hProcess, err)
 		}
 
 	case syscall.WAIT_TIMEOUT:
 		for waitResult == syscall.WAIT_TIMEOUT {
 			err = syscall.TerminateProcess(hProcess, 0)
 			if err != nil {
-				logrus.Errorf("Error terminating process %d: %s", hProcess, err)
+				log.Errorf("Error terminating process %d: %s", hProcess, err)
 			}
 			waitResult, err = syscall.WaitForSingleObject(hProcess, 100)
 			if err != nil {
-				logrus.Errorf("Error waiting for kill %d: %s", hProcess, err)
+				log.Errorf("Error waiting for kill %d: %s", hProcess, err)
 			}
 		}
 		default:
-		logrus.Errorf("Unexpected waitResult %d: %d", hProcess, waitResult)
+		log.Errorf("Unexpected waitResult %d: %d", hProcess, waitResult)
 	}
 
 	_ = UpdateProcessTimes(&d.platformData, result, true)

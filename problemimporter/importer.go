@@ -53,7 +53,6 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 
 	gridprefix := manifest.GetGridPrefix()
 
-	// tests, err := filepath.Glob(filepath.Join(root, "Test.*"))
 	rootDir, err := os.Open(root)
 	if err != nil {
 		return err

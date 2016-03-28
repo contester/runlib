@@ -15,6 +15,23 @@ type Backend interface {
 
 // mongodb://...
 
+type statelessBackend struct{}
+
+var statelessBackendSingleton statelessBackend
+
+func (s statelessBackend) String() string {
+	return "Stateless"
+}
+
+func (s statelessBackend) Close() {}
+
+func (s statelessBackend) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+	if fr := isFilerRemote(remoteName); fr != "" {
+		return filerCopy(localName, fr, toRemote, checksum, moduleType)
+	}
+	return nil, fmt.Errorf("can't use stateless backend")
+}
+
 func NewBackend(url string) (Backend, error) {
 	if strings.HasPrefix(url, "mongodb:") {
 		return NewMongoDB(url)
@@ -22,5 +39,5 @@ func NewBackend(url string) (Backend, error) {
 	if strings.HasPrefix(url, "http:") {
 		return NewWeed(url), nil
 	}
-	return nil, fmt.Errorf("Can't parse storage url: %s", url)
+	return statelessBackendSingleton
 }

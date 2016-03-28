@@ -463,7 +463,7 @@ func UpdateProcessMemory(pdata *PlatformData, result *SubprocessResult) {
 	}
 }
 
-func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan <- *SubprocessResult) {
+func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan<- *SubprocessResult) {
 	hProcess := d.platformData.hProcess
 	hJob := d.platformData.hJob
 	result := &SubprocessResult{}
@@ -507,7 +507,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan <- *SubprocessResu
 				log.Errorf("Error waiting for kill %d: %s", hProcess, err)
 			}
 		}
-		default:
+	default:
 		log.Errorf("Unexpected waitResult %d: %d", hProcess, waitResult)
 	}
 

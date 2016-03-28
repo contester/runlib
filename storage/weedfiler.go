@@ -37,7 +37,7 @@ type uploadStatus struct {
 	Digests map[string]string
 }
 
-func (s *weedfilerStorage) upload(localName, remoteName, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+func filerUpload(localName, remoteName, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
 	ec := tools.ErrorContext("upload")
 	if stat, err = tools.StatFile(localName, true); err != nil || stat == nil {
 		return stat, err
@@ -53,7 +53,7 @@ func (s *weedfilerStorage) upload(localName, remoteName, checksum, moduleType st
 	}
 	defer local.Close()
 
-	req, err := http.NewRequest("PUT", s.URL+"fs/"+remoteName, local)
+	req, err := http.NewRequest("PUT", remoteName, local)
 	if err != nil {
 		return nil, err
 	}
@@ -84,13 +84,14 @@ func (s *weedfilerStorage) upload(localName, remoteName, checksum, moduleType st
 	return stat, nil
 }
 
-func (s *weedfilerStorage) download(localName, remoteName string) (stat *contester_proto.FileStat, err error) {
+// remoteName must be full URL.
+func filerDownload(localName, remoteName string) (stat *contester_proto.FileStat, err error) {
 	local, err := os.Create(localName)
 	if err != nil {
 		return nil, err
 	}
 	defer local.Close()
-	resp, err := http.Get(s.URL + "fs/" + remoteName)
+	resp, err := http.Get(remoteName)
 	if err != nil {
 		return nil, err
 	}
@@ -102,14 +103,26 @@ func (s *weedfilerStorage) download(localName, remoteName string) (stat *contest
 	return tools.StatFile(localName, true)
 }
 
-func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+func filerCopy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
 	if toRemote {
-		return s.upload(localName, remoteName, checksum, moduleType)
-	} else {
-		return s.download(localName, remoteName)
+		return filerUpload(localName, remoteName, checksum, moduleType)
 	}
+	return filerDownload(localName, remoteName)
+}
 
-	return stat, err
+func isFilerRemote(src string) string {
+	if strings.HasPrefix(src, "filer:") {
+		return strings.TrimPrefix(src, "filer:")
+	}
+	return ""
+}
+
+func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+	if fr := isFilerRemote(remoteName); fr != "" {
+		return filerCopy(localName, fr, toRemote, checksum, moduleType)
+	}
+	remoteName = s.URL + "fs/" + remoteName
+	return filerCopy(localName, remoteName, toRemote, checksum, moduleType)
 }
 
 func (s *weedfilerStorage) Cleanup(latest int) error {

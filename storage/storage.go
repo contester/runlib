@@ -39,5 +39,5 @@ func NewBackend(url string) (Backend, error) {
 	if strings.HasPrefix(url, "http:") {
 		return NewWeed(url), nil
 	}
-	return statelessBackendSingleton
+	return statelessBackendSingleton, nil
 }

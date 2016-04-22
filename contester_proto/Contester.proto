@@ -1,4 +1,5 @@
-import "Blobs.proto";
+syntax = "proto2";
+
 import "Local.proto";
 
 package contester.proto;

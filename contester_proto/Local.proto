@@ -151,6 +151,7 @@ message CopyOperation {
     optional bool upload = 3;
     optional string checksum = 4;
     optional string module_type = 5;
+    optional string authorization_token = 6;
 };
 
 message CopyOperations {

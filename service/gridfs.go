@@ -39,7 +39,7 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 		}
 
 		stat, err := s.Storage.Copy(resolved, item.GetRemoteLocation(), item.GetUpload(),
-			item.GetChecksum(), item.GetModuleType())
+			item.GetChecksum(), item.GetModuleType(), item.GetAuthorizationToken())
 
 		if err != nil {
 			log.Errorf("gridfs copy error: %+v", err)

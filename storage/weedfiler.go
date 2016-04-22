@@ -37,7 +37,7 @@ type uploadStatus struct {
 	Digests map[string]string
 }
 
-func filerUpload(localName, remoteName, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+func filerUpload(localName, remoteName, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
 	ec := tools.ErrorContext("upload")
 	if stat, err = tools.StatFile(localName, true); err != nil || stat == nil {
 		return stat, err
@@ -59,6 +59,9 @@ func filerUpload(localName, remoteName, checksum, moduleType string) (stat *cont
 	}
 	if moduleType != "" {
 		req.Header.Add("X-FS-Module-Type", moduleType)
+	}
+	if authToken != "" {
+		req.Header.Add("Authorization", "bearer " + authToken)
 	}
 	req.Header.Add("X-FS-Content-Length", strconv.FormatUint(stat.GetSize(), 10))
 	var base64sha1 string
@@ -85,13 +88,20 @@ func filerUpload(localName, remoteName, checksum, moduleType string) (stat *cont
 }
 
 // remoteName must be full URL.
-func filerDownload(localName, remoteName string) (stat *contester_proto.FileStat, err error) {
+func filerDownload(localName, remoteName, authToken string) (stat *contester_proto.FileStat, err error) {
 	local, err := os.Create(localName)
 	if err != nil {
 		return nil, err
 	}
 	defer local.Close()
-	resp, err := http.Get(remoteName)
+	req, err := http.NewRequest("GET", remoteName, nil)
+	if err != nil {
+		return nil, err
+	}
+	if authToken != "" {
+		req.Header.Add("Authorization", "bearer " + authToken)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -103,11 +113,11 @@ func filerDownload(localName, remoteName string) (stat *contester_proto.FileStat
 	return tools.StatFile(localName, true)
 }
 
-func filerCopy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+func filerCopy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
 	if toRemote {
-		return filerUpload(localName, remoteName, checksum, moduleType)
+		return filerUpload(localName, remoteName, checksum, moduleType, authToken)
 	}
-	return filerDownload(localName, remoteName)
+	return filerDownload(localName, remoteName, authToken)
 }
 
 func isFilerRemote(src string) string {
@@ -117,12 +127,12 @@ func isFilerRemote(src string) string {
 	return ""
 }
 
-func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+func (s *weedfilerStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
 	if fr := isFilerRemote(remoteName); fr != "" {
-		return filerCopy(localName, fr, toRemote, checksum, moduleType)
+		return filerCopy(localName, fr, toRemote, checksum, moduleType, authToken)
 	}
 	remoteName = s.URL + "fs/" + remoteName
-	return filerCopy(localName, remoteName, toRemote, checksum, moduleType)
+	return filerCopy(localName, remoteName, toRemote, checksum, moduleType, authToken)
 }
 
 func (s *weedfilerStorage) Cleanup(latest int) error {

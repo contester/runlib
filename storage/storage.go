@@ -9,7 +9,7 @@ import (
 
 type Backend interface {
 	String() string
-	Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error)
+	Copy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error)
 	Close()
 }
 
@@ -25,7 +25,7 @@ func (s statelessBackend) String() string {
 
 func (s statelessBackend) Close() {}
 
-func (s statelessBackend) Copy(localName, remoteName string, toRemote bool, checksum, moduleType string) (stat *contester_proto.FileStat, err error) {
+func (s statelessBackend) Copy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
 	if fr := isFilerRemote(remoteName); fr != "" {
 		return filerCopy(localName, fr, toRemote, checksum, moduleType)
 	}

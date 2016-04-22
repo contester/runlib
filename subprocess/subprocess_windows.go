@@ -256,6 +256,8 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		} else {
 			e = win32.AssignProcessToJobObject(d.platformData.hJob, d.platformData.hProcess)
 			if e != nil {
+				log.Errorf("CreateFrozen/AssignProcessToJobObject: %s, hJob: %d, hProcess: %d", e,
+					d.platformData.hJob, d.platformData.hProcess)
 				syscall.CloseHandle(d.platformData.hJob)
 				d.platformData.hJob = syscall.InvalidHandle
 				if sub.FailOnJobCreationFailure {
@@ -263,7 +265,6 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 					return nil, ec.NewError(e, "AssignProcessToJobObject")
 				}
-				log.Error("CreateFrozen/AssignProcessToJobObject: %s", e)
 			}
 		}
 	}

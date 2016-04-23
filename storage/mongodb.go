@@ -58,7 +58,7 @@ func (s *mongodbStorage) gridfs() *mgo.GridFS {
 
 func (s *mongodbStorage) Copy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
 	if fr := isFilerRemote(remoteName); fr != "" {
-		return filerCopy(localName, fr, toRemote, checksum, moduleType)
+		return filerCopy(localName, fr, toRemote, checksum, moduleType, authToken)
 	}
 	ec := tools.ErrorContext("mongodb.Copy")
 

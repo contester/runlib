@@ -27,7 +27,7 @@ func (s statelessBackend) Close() {}
 
 func (s statelessBackend) Copy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
 	if fr := isFilerRemote(remoteName); fr != "" {
-		return filerCopy(localName, fr, toRemote, checksum, moduleType)
+		return filerCopy(localName, fr, toRemote, checksum, moduleType, authToken)
 	}
 	return nil, fmt.Errorf("can't use stateless backend")
 }

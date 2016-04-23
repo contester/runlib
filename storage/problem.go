@@ -1,11 +1,8 @@
 package storage
 
 import (
-	"bufio"
 	"net/url"
-	"os"
 	"strconv"
-	"strings"
 )
 
 type ProblemStore interface {
@@ -49,31 +46,4 @@ func idToGridPrefix(id string) string {
 		return "problem/direct/" + u.Host + u.Path
 	}
 	return ""
-}
-
-func storeIfExists(backend Backend, filename, gridname string) error {
-	if _, err := os.Stat(filename); err != nil {
-		return err
-	}
-
-	_, err := backend.Copy(filename, gridname, true, "", "")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func readFirstLine(filename string) (string, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	r := bufio.NewScanner(f)
-
-	if r.Scan() {
-		return strings.TrimSpace(r.Text()), nil
-	}
-	return "", nil
 }

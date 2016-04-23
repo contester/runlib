@@ -61,7 +61,7 @@ func filerUpload(localName, remoteName, checksum, moduleType, authToken string) 
 		req.Header.Add("X-FS-Module-Type", moduleType)
 	}
 	if authToken != "" {
-		req.Header.Add("Authorization", "bearer " + authToken)
+		req.Header.Add("Authorization", "bearer "+authToken)
 	}
 	req.Header.Add("X-FS-Content-Length", strconv.FormatUint(stat.GetSize_(), 10))
 	var base64sha1 string
@@ -99,7 +99,7 @@ func filerDownload(localName, remoteName, authToken string) (stat *contester_pro
 		return nil, err
 	}
 	if authToken != "" {
-		req.Header.Add("Authorization", "bearer " + authToken)
+		req.Header.Add("Authorization", "bearer "+authToken)
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

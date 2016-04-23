@@ -36,7 +36,7 @@ func storeIfExists(backend storage.Backend, filename, gridname string) error {
 		return err
 	}
 
-	_, err := backend.Copy(filename, gridname, true, "", "")
+	_, err := backend.Copy(filename, gridname, true, "", "", *authToken)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func mkdirAndCopy(backend storage.ProblemStore, dir, name, gridname string) erro
 		return err
 	}
 	if _, err := backend.Copy(filepath.Join(dir, name),
-		gridname, false, "", ""); err != nil {
+		gridname, false, "", "", *authToken); err != nil {
 		return err
 	}
 	return nil
@@ -188,7 +188,7 @@ func exportProblem(backend storage.ProblemStore, manifest storage.ProblemManifes
 		if err := os.MkdirAll(filepath.Join(dest, "Tester"), os.ModePerm); err != nil {
 			return err
 		}
-		if _, err := backend.Copy(filepath.Join(dest, "Tester", manifest.TesterName), gridprefix+"checker", false, "", ""); err != nil {
+		if _, err := backend.Copy(filepath.Join(dest, "Tester", manifest.TesterName), gridprefix+"checker", false, "", "", *authToken); err != nil {
 			return err
 		}
 	}
@@ -260,9 +260,13 @@ func exportProblems(backend storage.ProblemStore, dest string) error {
 	return nil
 }
 
+var (
+	storageUrl = flag.String("url", "", "")
+	mode       = flag.String("mode", "", "")
+	authToken  = flag.String("auth_token", "", "")
+)
+
 func main() {
-	storageUrl := flag.String("url", "", "")
-	mode := flag.String("mode", "", "")
 
 	flag.Parse()
 

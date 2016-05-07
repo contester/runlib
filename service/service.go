@@ -140,7 +140,7 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 }
 
 func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response *contester_proto.IdentifyResponse) error {
-	backend, err := storage.NewBackend(*request.MongoHost)
+	backend, err := storage.NewBackend(request.GetMongoHost())
 	if err != nil {
 		return err
 	}

@@ -219,6 +219,8 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		return nil, ec.NewError(e, syscallName)
 	}
 
+	log.Infof("processInfo: %+v", &pi)
+
 	d.platformData.hProcess = pi.Process
 	d.platformData.hThread = pi.Thread
 	d.platformData.hJob = syscall.InvalidHandle
@@ -256,8 +258,8 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		} else {
 			e = win32.AssignProcessToJobObject(d.platformData.hJob, d.platformData.hProcess)
 			if e != nil {
-				log.Errorf("CreateFrozen/AssignProcessToJobObject: %s, hJob: %d, hProcess: %d", e,
-					d.platformData.hJob, d.platformData.hProcess)
+				log.Errorf("CreateFrozen/AssignProcessToJobObject: %s, hJob: %d, hProcess: %d, pd: %+v", e,
+					d.platformData.hJob, d.platformData.hProcess, d.platformData)
 				syscall.CloseHandle(d.platformData.hJob)
 				d.platformData.hJob = syscall.InvalidHandle
 				if sub.FailOnJobCreationFailure {

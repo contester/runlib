@@ -4,6 +4,7 @@ import (
 	"os"
 	"syscall"
 	"unsafe"
+	"runtime"
 )
 
 var (
@@ -195,7 +196,7 @@ func CreateProcessWithLogonW(
 	currentDirectory *uint16,
 	startupInfo *syscall.StartupInfo,
 	processInformation *syscall.ProcessInformation) error {
-	if r1, _, e1 := procCreateProcessWithLogonW.Call(
+	r1, _, e1 := procCreateProcessWithLogonW.Call(
 		uintptr(unsafe.Pointer(username)),
 		uintptr(unsafe.Pointer(domain)),
 		uintptr(unsafe.Pointer(password)),
@@ -206,7 +207,17 @@ func CreateProcessWithLogonW(
 		uintptr(unsafe.Pointer(environment)), // env
 		uintptr(unsafe.Pointer(currentDirectory)),
 		uintptr(unsafe.Pointer(startupInfo)),
-		uintptr(unsafe.Pointer(processInformation))); int(r1) == 0 {
+		uintptr(unsafe.Pointer(processInformation)))
+	runtime.KeepAlive(username)
+	runtime.KeepAlive(domain)
+	runtime.KeepAlive(password)
+	runtime.KeepAlive(applicationName)
+	runtime.KeepAlive(commandLine)
+	runtime.KeepAlive(environment)
+	runtime.KeepAlive(currentDirectory)
+	runtime.KeepAlive(startupInfo)
+	runtime.KeepAlive(processInformation)
+	if int(r1) == 0 {
 		return os.NewSyscallError("CreateProcessWithLogonW", e1)
 	}
 	return nil
@@ -232,7 +243,7 @@ func CreateProcessAsUser(
 	startupInfo *syscall.StartupInfo,
 	processInformation *syscall.ProcessInformation) error {
 
-	if r1, _, e1 := procCreateProcessAsUserW.Call(
+	r1, _, e1 := procCreateProcessAsUserW.Call(
 		uintptr(token),
 		uintptr(unsafe.Pointer(applicationName)),
 		uintptr(unsafe.Pointer(commandLine)),
@@ -243,46 +254,62 @@ func CreateProcessAsUser(
 		uintptr(unsafe.Pointer(environment)), // env
 		uintptr(unsafe.Pointer(currentDirectory)),
 		uintptr(unsafe.Pointer(startupInfo)),
-		uintptr(unsafe.Pointer(processInformation))); int(r1) == 0 {
+		uintptr(unsafe.Pointer(processInformation)))
+	runtime.KeepAlive(applicationName)
+	runtime.KeepAlive(commandLine)
+	runtime.KeepAlive(procSecurity)
+	runtime.KeepAlive(threadSecurity)
+	runtime.KeepAlive(environment)
+	runtime.KeepAlive(currentDirectory)
+	runtime.KeepAlive(startupInfo)
+	runtime.KeepAlive(processInformation)
+	if int(r1) == 0 {
 		return os.NewSyscallError("CreateProcessAsUser", e1)
 	}
 	return nil
 }
 
 func ResumeThread(thread syscall.Handle) (suspendCount int, err error) {
-	if r1, _, e1 := procResumeThread.Call(uintptr(thread)); int(r1) == -1 {
+	r1, _, e1 := procResumeThread.Call(uintptr(thread))
+	if int(r1) == -1 {
 		return -1, os.NewSyscallError("ResumeThread", e1)
-	} else {
-		return int(r1), nil
 	}
+	return int(r1), nil
 }
 
 func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx, err error) {
-	pmc = &ProcessMemoryCountersEx{}
-	pmc.Cb = uint32(unsafe.Sizeof(*pmc))
-	if r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(pmc)), uintptr(pmc.Cb)); int(r1) == 0 {
+	var pmc ProcessMemoryCountersEx
+	pmc.Cb = uint32(unsafe.Sizeof(pmc))
+	if r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(&pmc)),
+		uintptr(pmc.Cb)); int(r1) == 0 {
 		return nil, os.NewSyscallError("GetProcessMemoryInfo", e1)
 	}
-	return pmc, nil
+	return &pmc, nil
 }
 
 func LogonUser(username *uint16, domain *uint16, password *uint16, logonType uint32, logonProvider uint32) (token syscall.Handle, err error) {
-	if r1, _, e1 := procLogonUserW.Call(
+	r1, _, e1 := procLogonUserW.Call(
 		uintptr(unsafe.Pointer(username)),
 		uintptr(unsafe.Pointer(domain)),
 		uintptr(unsafe.Pointer(password)),
 		uintptr(logonType),
 		uintptr(logonProvider),
-		uintptr(unsafe.Pointer(&token))); int(r1) == 0 {
+		uintptr(unsafe.Pointer(&token)))
+	runtime.KeepAlive(username)
+	runtime.KeepAlive(domain)
+	runtime.KeepAlive(password)
+	if int(r1) == 0 {
 		return syscall.InvalidHandle, os.NewSyscallError("LogonUser", e1)
 	}
 	return
 }
 
 func LoadUserProfile(token syscall.Handle, pinfo *ProfileInfo) error {
-	if r1, _, e1 := procLoadUserProfileW.Call(
+	r1, _, e1 := procLoadUserProfileW.Call(
 		uintptr(token),
-		uintptr(unsafe.Pointer(pinfo))); int(r1) == 0 {
+		uintptr(unsafe.Pointer(pinfo)))
+	runtime.KeepAlive(pinfo)
+	if int(r1) == 0 {
 		return os.NewSyscallError("LoadUserProfile", e1)
 	}
 	return nil
@@ -325,6 +352,8 @@ func CreateWindowStation(winsta *uint16, flags, desiredAccess uint32, sa *syscal
 		uintptr(flags),
 		uintptr(desiredAccess),
 		uintptr(unsafe.Pointer(sa)))
+	runtime.KeepAlive(winsta)
+	runtime.KeepAlive(sa)
 	if int(r1) == 0 {
 		return Hwinsta(r1), os.NewSyscallError("CreateWindowStation", e1)
 	}
@@ -348,6 +377,9 @@ func CreateDesktop(desktop, device *uint16, devmode uintptr, flags, desiredAcces
 		uintptr(flags),
 		uintptr(desiredAccess),
 		uintptr(unsafe.Pointer(sa)))
+	runtime.KeepAlive(desktop)
+	runtime.KeepAlive(device)
+	runtime.KeepAlive(sa)
 	if int(r1) == 0 {
 		return Hdesk(r1), os.NewSyscallError("CreateDesktop", e1)
 	}
@@ -375,6 +407,7 @@ func GetUserObjectInformation(obj syscall.Handle, index int, info unsafe.Pointer
 		uintptr(info),
 		uintptr(length),
 		uintptr(unsafe.Pointer(&nLength)))
+	runtime.KeepAlive(&nLength)
 	if int(r1) == 0 {
 		return nLength, os.NewSyscallError("GetUserObjectInformation", e1)
 	}
@@ -403,6 +436,8 @@ func CreateJobObject(sa *syscall.SecurityAttributes, name *uint16) (syscall.Hand
 	r1, _, e1 := procCreateJobObjectW.Call(
 		uintptr(unsafe.Pointer(sa)),
 		uintptr(unsafe.Pointer(name)))
+	runtime.KeepAlive(sa)
+	runtime.KeepAlive(name)
 	if int(r1) == 0 {
 		return syscall.InvalidHandle, os.NewSyscallError("CreateJobObject", e1)
 	}
@@ -417,7 +452,7 @@ func QueryInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe
 		uintptr(info),
 		uintptr(length),
 		uintptr(unsafe.Pointer(&nLength)))
-
+	runtime.KeepAlive(&nLength)
 	if int(r1) == 0 {
 		return nLength, os.NewSyscallError("QueryInformationJobObject", e1)
 	}
@@ -430,7 +465,6 @@ func SetInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe.P
 		uintptr(infoclass),
 		uintptr(info),
 		uintptr(length))
-
 	if int(r1) == 0 {
 		return os.NewSyscallError("SetInformationJobObject", e1)
 	}

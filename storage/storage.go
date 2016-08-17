@@ -13,8 +13,6 @@ type Backend interface {
 	Close()
 }
 
-// mongodb://...
-
 type statelessBackend struct{}
 
 var statelessBackendSingleton statelessBackend
@@ -33,9 +31,6 @@ func (s statelessBackend) Copy(localName, remoteName string, toRemote bool, chec
 }
 
 func NewBackend(url string) (Backend, error) {
-	if strings.HasPrefix(url, "mongodb:") {
-		return NewMongoDB(url)
-	}
 	if strings.HasPrefix(url, "http:") {
 		return NewWeed(url), nil
 	}

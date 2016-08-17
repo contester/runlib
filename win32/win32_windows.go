@@ -278,13 +278,13 @@ func ResumeThread(thread syscall.Handle) (suspendCount int, err error) {
 }
 
 func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx, err error) {
-	pmc := &ProcessMemoryCountersEx{}
+	pmc = &ProcessMemoryCountersEx{}
 	pmc.Cb = uint32(unsafe.Sizeof(*pmc))
 	if r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(pmc)),
 		uintptr(pmc.Cb)); int(r1) == 0 {
 		return nil, os.NewSyscallError("GetProcessMemoryInfo", e1)
 	}
-	return &pmc, nil
+	return pmc, nil
 }
 
 func LogonUser(username *uint16, domain *uint16, password *uint16, logonType uint32, logonProvider uint32) (token syscall.Handle, err error) {

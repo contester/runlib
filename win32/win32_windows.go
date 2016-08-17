@@ -278,9 +278,9 @@ func ResumeThread(thread syscall.Handle) (suspendCount int, err error) {
 }
 
 func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx, err error) {
-	var pmc ProcessMemoryCountersEx
-	pmc.Cb = uint32(unsafe.Sizeof(pmc))
-	if r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(&pmc)),
+	pmc := &ProcessMemoryCountersEx{}
+	pmc.Cb = uint32(unsafe.Sizeof(*pmc))
+	if r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(pmc)),
 		uintptr(pmc.Cb)); int(r1) == 0 {
 		return nil, os.NewSyscallError("GetProcessMemoryInfo", e1)
 	}

@@ -57,17 +57,15 @@ const (
 	INTERACTOR = ProcessType(1)
 )
 
-func (i *ProcessType) String() string {
-	if i == nil {
-		return "UNKNOWN"
-	}
-	switch *i {
+func (i ProcessType) String() string {
+	switch i {
 	case PROGRAM:
 		return "Program"
 	case INTERACTOR:
 		return "Interactor"
+	default:
+		return "UNKNOWN"
 	}
-	return "UNKNOWN"
 }
 
 func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {

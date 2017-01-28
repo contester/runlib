@@ -1,11 +1,9 @@
 package service
 
 import (
-	"fmt"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
-	"github.com/contester/runlib/tools"
+	"github.com/juju/errors"
 )
 
 func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response *contester_proto.FileStats) error {
@@ -14,7 +12,7 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 	if request.SandboxId != nil {
 		sandbox, err = getSandboxById(s.Sandboxes, *request.SandboxId)
 		if err != nil {
-			return tools.NewError(err, "GridfsGet", "getSandboxById")
+			return err
 		}
 		sandbox.Mutex.RLock()
 		defer sandbox.Mutex.RUnlock()
@@ -24,7 +22,7 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 	defer s.mu.RUnlock()
 
 	if s.Storage == nil {
-		return fmt.Errorf("can't gridfs.Copy if storage isn't set")
+		return errors.BadRequestf("can't gridfs.Copy if storage isn't set")
 	}
 
 	response.Entries = make([]*contester_proto.FileStat, 0, len(request.Entries))

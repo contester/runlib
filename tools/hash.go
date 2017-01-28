@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"github.com/juju/errors"
 )
 
 func HashFileString(name string) (string, error) {
@@ -17,11 +18,9 @@ func HashFileString(name string) (string, error) {
 }
 
 func HashFile(name string) ([]byte, error) {
-	ec := ErrorContext("HashFile")
-
 	source, err := os.Open(name)
 	if err != nil {
-		return nil, ec.NewError(err, "source.Open")
+		return nil, errors.Annotatef(err, "os.Open(%q)", name)
 	}
 	defer source.Close()
 
@@ -29,10 +28,10 @@ func HashFile(name string) ([]byte, error) {
 
 	_, err = io.Copy(destination, source)
 	if err != nil {
-		return nil, ec.NewError(err, "io.Copy")
+		return nil, errors.Annotate(err, "io.Copy")
 	}
 	if err = source.Close(); err != nil {
-		return nil, ec.NewError(err, "source.Close")
+		return nil, errors.Annotate(err, "source.Close")
 	}
 
 	return destination.Sum(nil), nil

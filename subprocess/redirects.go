@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/contester/runlib/tools"
+	"github.com/juju/errors"
 )
 
 type Redirect struct {
@@ -20,7 +20,7 @@ const MAX_MEM_OUTPUT = 1024 * 1024
 func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, tools.NewError(e, "SetupOutputMemory", "os.Pipe")
+		return nil, errors.Trace(e)
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
@@ -36,7 +36,7 @@ func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 func (d *SubprocessData) SetupFile(filename string, read bool) (*os.File, error) {
 	writer, e := OpenFileForRedirect(filename, read)
 	if e != nil {
-		return nil, tools.NewError(e, "SetupFile", "OpenFile")
+		return nil, e
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
@@ -67,7 +67,7 @@ func (d *SubprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 func (d *SubprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, tools.NewError(e, "SetupInputMemory", "os.Pipe")
+		return nil, errors.Annotate(e, "os.Pipe")
 	}
 	d.closeAfterStart = append(d.closeAfterStart, reader)
 	d.startAfterStart = append(d.startAfterStart, func() error {
@@ -114,12 +114,12 @@ func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
 
 	r1, w1, e := os.Pipe()
 	if e != nil {
-		return nil, nil, e
+		return nil, nil, errors.Trace(e)
 	}
 
 	r2, w2, e := os.Pipe()
 	if e != nil {
-		return nil, nil, e
+		return nil, nil, errors.Trace(e)
 	}
 
 	go recordingTee(w1, r2, d)
@@ -128,18 +128,16 @@ func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
 }
 
 func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File) error {
-	ec := tools.ErrorContext("Interconnect")
-
 	read1, write1, err := RecordingPipe(d1)
 	if err != nil {
-		return ec.NewError(err, "RecordingPipe")
+		return err
 	}
 
 	read2, write2, err := RecordingPipe(d2)
 	if err != nil {
 		read1.Close()
 		write1.Close()
-		return ec.NewError(err, "RecordingPipe")
+		return err
 	}
 
 	s1.StdIn = &Redirect{

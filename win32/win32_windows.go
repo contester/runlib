@@ -152,7 +152,7 @@ func MakeInheritSa() *syscall.SecurityAttributes {
 	return &sa
 }
 
-func StringPtrToUTF16Ptr(src *string) (result *uint16) {
+func StringPtrToUTF16Ptr(src *string) *uint16 {
 	if src != nil {
 		return syscall.StringToUTF16Ptr(*src)
 	}

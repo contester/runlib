@@ -5,11 +5,13 @@ import (
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/golang/protobuf/proto"
+	"github.com/juju/errors"
 )
 
 func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
-	result := &contester_proto.FileStat{}
-	result.Name = &name
+	result := contester_proto.FileStat{
+		Name: &name,
+	}
 	info, err := os.Stat(name)
 	if err != nil {
 		// Handle ERROR_FILE_NOT_FOUND - return no error and nil instead of stat struct
@@ -17,7 +19,7 @@ func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 			return nil, nil
 		}
 
-		return nil, NewError(err, "statFile", "os.Stat")
+		return nil, errors.Annotatef(err, "os.Stat(%q)", name)
 	}
 	if info.IsDir() {
 		result.IsDirectory = proto.Bool(true)
@@ -26,10 +28,10 @@ func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 		if hash_it {
 			checksum, err := HashFileString(name)
 			if err != nil {
-				return nil, NewError(err, "statFile", "hashFile")
+				return nil, err
 			}
 			result.Checksum = &checksum
 		}
 	}
-	return result, nil
+	return &result, nil
 }

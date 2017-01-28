@@ -5,6 +5,7 @@ import (
 	"syscall"
 
 	"github.com/contester/runlib/win32"
+	"github.com/juju/errors"
 )
 
 func OpenFileForRedirect(name string, read bool) (*os.File, error) {
@@ -27,7 +28,7 @@ func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 		0)
 
 	if e != nil {
-		return nil, e
+		return nil, errors.Trace(os.NewSyscallError("CreateFile", e))
 	}
 
 	return os.NewFile(uintptr(h), name), nil

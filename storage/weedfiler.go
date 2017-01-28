@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -14,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
-	//log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
+	"github.com/juju/errors"
 )
 
 var _ ProblemStore = &weedfilerStorage{}
@@ -38,24 +37,23 @@ type uploadStatus struct {
 }
 
 func filerUpload(localName, remoteName, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
-	ec := tools.ErrorContext("upload")
 	if stat, err = tools.StatFile(localName, true); err != nil || stat == nil {
 		return stat, err
 	}
 	if checksum != "" && stat.GetChecksum() != checksum {
-		return nil, fmt.Errorf("Checksum mismatch, local %s != %s", stat.GetChecksum(), checksum)
+		return nil, errors.BadRequestf("Checksum mismatch, local %q != %q", stat.GetChecksum(), checksum)
 	}
 	checksum = stat.GetChecksum()
 
 	local, err := os.Open(localName)
 	if err != nil {
-		return nil, ec.NewError(err, "local.Open")
+		return nil, errors.Annotatef(err, "os.Open(%q)", localName)
 	}
 	defer local.Close()
 
 	req, err := http.NewRequest("PUT", remoteName, local)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotatef(err, "http.NewRequest('PUT', %q, %q", remoteName, local)
 	}
 	if moduleType != "" {
 		req.Header.Add("X-FS-Module-Type", moduleType)
@@ -73,16 +71,16 @@ func filerUpload(localName, remoteName, checksum, moduleType, authToken string) 
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "http.Do")
 	}
 	defer resp.Body.Close()
 	var st uploadStatus
 	err = json.NewDecoder(resp.Body).Decode(&st)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "json.Decode")
 	}
 	if st.Size != int64(stat.GetSize_()) || (base64sha1 != "" && base64sha1 != st.Digests["SHA"]) {
-		return nil, fmt.Errorf("upload integrity verification failed")
+		return nil, errors.NotValidf("upload integrity verification failed")
 	}
 	return stat, nil
 }

@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/juju/errors"
 )
 
 func (blob *Blob) Reader() (io.Reader, error) {
@@ -14,7 +15,7 @@ func (blob *Blob) Reader() (io.Reader, error) {
 		buf := bytes.NewBuffer(blob.Data)
 		r, err := zlib.NewReader(buf)
 		if err != nil {
-			return nil, err
+			return nil, errors.Annotate(err, "zlib.NewReader")
 		}
 		return r, nil
 	}
@@ -29,7 +30,7 @@ func (blob *Blob) Bytes() ([]byte, error) {
 	var result bytes.Buffer
 	_, err = io.Copy(&result, reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "io.Copy")
 	}
 	return result.Bytes(), nil
 }
@@ -90,7 +91,7 @@ func BlobFromStream(r io.Reader) (*Blob, error) {
 
 	size, err := io.Copy(writer, r)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "io.Copy")
 	}
 	compressor.Close()
 	method := Blob_CompressionInfo_METHOD_ZLIB

@@ -5,14 +5,13 @@ import (
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
+	"github.com/juju/errors"
 )
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.FileStat) error {
-	ec := tools.ErrorContext("Put")
-
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, true)
 	if err != nil {
-		return ec.NewError(err, "resolvePath")
+		return err
 	}
 
 	if sandbox != nil {
@@ -27,7 +26,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		loop, err := OnOsCreateError(err)
 
 		if err != nil {
-			return ec.NewError(err, "os.Create")
+			return errors.Annotatef(err, "os.Create(%q)", resolved)
 		}
 		if !loop {
 			break
@@ -35,20 +34,20 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 	}
 	data, err := request.Data.Bytes()
 	if err != nil {
-		return ec.NewError(err, "request.Data.Bytes")
+		return err
 	}
 	_, err = destination.Write(data)
-	if err != nil {
-		return ec.NewError(err, "destination.Write")
-	}
 	destination.Close()
+	if err != nil {
+		return errors.Annotate(err, "destination.Write")
+	}
 	if sandbox != nil {
 		return sandbox.Own(resolved)
 	}
 
 	stat, err := tools.StatFile(resolved, true)
 	if err != nil {
-		return ec.NewError(err, "statFile")
+		return err
 	}
 
 	*response = *stat
@@ -56,10 +55,9 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 }
 
 func (s *Contester) Get(request *contester_proto.GetRequest, response *contester_proto.FileBlob) error {
-	ec := tools.ErrorContext("Get")
 	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, false)
 	if err != nil {
-		return ec.NewError(err, "resolvePath")
+		return err
 	}
 
 	if sandbox != nil {
@@ -69,7 +67,7 @@ func (s *Contester) Get(request *contester_proto.GetRequest, response *contester
 
 	source, err := os.Open(resolved)
 	if err != nil {
-		return ec.NewError(err, "os.Open")
+		return errors.Annotatef(err, "os.Open(%q)", resolved)
 	}
 	defer source.Close()
 

@@ -1,9 +1,24 @@
 package subprocess
 
-import "github.com/contester/runlib/tools"
-
-const ERR_USER = "HANDS"
+import (
+	"syscall"
+	"os"
+	"github.com/juju/errors"
+)
 
 func IsUserError(err error) bool {
-	return tools.HasAnnotation(err, ERR_USER)
+	return errors.IsBadRequest(err)
+}
+
+func extractErrno(e error) (syscall.Errno, bool) {
+	if e == nil {
+		return 0, false
+	}
+	if e2, ok := e.(*os.SyscallError); ok {
+		e = e2.Err
+	}
+	if errno, ok := e.(syscall.Errno); ok {
+		return errno, true
+	}
+	return 0, false
 }

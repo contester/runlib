@@ -1,31 +1,32 @@
 package subprocess
 
 import (
+	"fmt"
 	"runtime"
 	"syscall"
 	"unsafe"
 
-	log "github.com/Sirupsen/logrus"
-	"github.com/contester/runlib/tools"
 	"github.com/contester/runlib/win32"
+	"github.com/juju/errors"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // Loads user profile, using handle and username.
 func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
-	ec := tools.ErrorContext("loadProfile")
 	var pinfo win32.ProfileInfo
 	var err error
 	pinfo.Size = uint32(unsafe.Sizeof(pinfo))
 	pinfo.Flags = win32.PI_NOUI
 	pinfo.Username, err = syscall.UTF16PtrFromString(username)
 	if err != nil {
-		return syscall.InvalidHandle, ec.NewError(err, ERR_USER, "UTF16PtrFromString")
+		return syscall.InvalidHandle, errors.NewBadRequest(err, fmt.Sprintf("UTF16PtrFromString(%q)", username))
 	}
 
 	err = win32.LoadUserProfile(user, &pinfo)
 	if err != nil {
 		log.Debug("Error loading profile for %d/%s", user, username)
-		return syscall.InvalidHandle, ec.NewError(err, "LoadUserProfile")
+		return syscall.InvalidHandle, errors.Annotatef(err, "LoadUserProfile(%q, %+v)", user, &pinfo)
 	}
 	return pinfo.Profile, nil
 }
@@ -56,13 +57,11 @@ func logout(s *LoginInfo) {
 
 // Login and load user profile. Also, set finalizer on s to logout() above.
 func (s *LoginInfo) Prepare() error {
-	var err error
 	if s.Username == "" {
 		return nil
 	}
 
-	ec := tools.ErrorContext("LoginInfo.Prepare")
-
+	var err error
 	s.HUser, err = win32.LogonUser(
 		syscall.StringToUTF16Ptr(s.Username),
 		syscall.StringToUTF16Ptr("."),
@@ -71,7 +70,7 @@ func (s *LoginInfo) Prepare() error {
 		win32.LOGON32_PROVIDER_DEFAULT)
 
 	if err != nil {
-		return ec.NewError(err)
+		return errors.Trace(err)
 	}
 
 	s.HProfile, err = loadProfile(s.HUser, s.Username)
@@ -79,7 +78,7 @@ func (s *LoginInfo) Prepare() error {
 	if err != nil {
 		syscall.CloseHandle(s.HUser)
 		s.HUser = syscall.InvalidHandle
-		return ec.NewError(err)
+		return errors.Trace(err)
 	}
 
 	runtime.SetFinalizer(s, logout)

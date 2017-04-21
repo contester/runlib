@@ -10,7 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/linux"
-	"github.com/contester/runlib/tools"
+	"github.com/juju/errors"
 )
 
 type LoginInfo struct {
@@ -28,14 +28,13 @@ type PlatformData struct {
 }
 
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
-	ec := tools.ErrorContext("NewLoginInfo")
 	u, err := user.Lookup(username)
 	if err != nil {
-		return nil, ec.NewError(err, "user.Lookup")
+		return nil, errors.Annotatef(err, "user.Lookup(%q)", username)
 	}
 	uid, err := strconv.Atoi(u.Uid)
 	if err != nil {
-		return nil, ec.NewError(err, "strconv.Atoi")
+		return nil, errors.Annotatef(err, "strconv.Atoi(%q)", u.Uid)
 	}
 	return &LoginInfo{
 		Uid: uid,
@@ -58,17 +57,15 @@ func (d *SubprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) 
 }
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
-	ec := tools.ErrorContext("CreateFrozen")
-
 	if sub.Cmd.ApplicationName == nil {
-		return nil, ec.NewError(fmt.Errorf("Application name must be present"), "init")
+		return nil, errors.NotValidf("Application name must be present")
 	}
 	d := &SubprocessData{}
 	var stdh linux.StdHandles
 	err := d.wAllRedirects(sub, &stdh)
 	defer stdh.Close()
 	if err != nil {
-		return nil, ec.NewError(err, "Redirects")
+		return nil, errors.Trace(err)
 	}
 	var uid int
 	if sub.Login != nil {
@@ -77,18 +74,18 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d.platformData.params, err = linux.CreateCloneParams(
 		*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
-		return nil, ec.NewError(err, "CreateCloneParams")
+		return nil, errors.Annotate(err, "CreateCloneParams")
 	}
 	syscall.ForkLock.Lock()
 	d.platformData.Pid, err = d.platformData.params.CloneFrozen()
 	closeDescriptors(d.closeAfterStart)
 	syscall.ForkLock.Unlock()
 	if err != nil {
-		return nil, ec.NewError(err, "CloneFrozen")
+		return nil, errors.Annotate(err, "CloneFrozen")
 	}
 	err = SetupControlGroup(sub, d)
 	if err != nil {
-		return nil, ec.NewError(err, "SetupControlGroup")
+		return nil, errors.Annotate(err, "SetupControlGroup")
 	}
 	return d, nil
 }

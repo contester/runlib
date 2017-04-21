@@ -1,7 +1,6 @@
 package subprocess
 
 import (
-	"fmt"
 	"os/user"
 	"runtime"
 	"strconv"

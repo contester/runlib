@@ -11,6 +11,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/tools"
+	"github.com/juju/errors"
 )
 
 type Cgroups struct {
@@ -65,7 +66,7 @@ func openAndParse(filename string, parser func(io.Reader) map[string]string) (ma
 		defer f.Close()
 		return parser(f), nil
 	} else {
-		return nil, tools.NewError(err, "openAndParse", "os.Open")
+		return nil, errors.Annotate(err, "os.Open")
 	}
 }
 

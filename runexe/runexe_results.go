@@ -98,7 +98,7 @@ func strMemory(t uint64) string {
 	return strconv.FormatUint(t, 10)
 }
 
-func PrintResultText(kernelTime bool, result *RunResult) {
+func PrintResultText(kernelTime bool, result *RunResult, pipeRecords []subprocess.PipeRecordEntry) {
 	usuffix := "sec"
 	switch result.V {
 	case SUCCESS:
@@ -140,13 +140,17 @@ func PrintResultText(kernelTime bool, result *RunResult) {
 	fmt.Println("  time passed:  " + strTime(result.R.WallTime) + " sec")
 	fmt.Println("  peak memory:  " + strMemory(result.R.PeakMemory) + " bytes")
 	fmt.Println()
+
+	for _, v := range pipeRecords {
+		fmt.Printf("%+v\n", v)
+	}
 }
 
-func PrintResult(xml, kernelTime bool, result *RunResult) {
+func PrintResult(xml, kernelTime bool, result *RunResult, pipeRecords []subprocess.PipeRecordEntry) {
 	if xml {
 		PrintResultXml(result)
 	} else {
-		PrintResultText(kernelTime, result)
+		PrintResultText(kernelTime, result, pipeRecords)
 	}
 }
 

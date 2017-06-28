@@ -265,6 +265,8 @@ func main() {
 		Fail(globalFlags.Xml, err, "Setup main subprocess")
 	}
 
+	var recorder subprocess.OrderedRecorder
+
 	if interactorFlags != nil {
 		interactor, err = SetupSubprocess(interactorFlags, desktop, loadLibrary)
 		if err != nil {
@@ -286,7 +288,7 @@ func main() {
 			}
 		}
 
-		err = subprocess.Interconnect(program, interactor, recordI, recordO, nil)
+		err = subprocess.Interconnect(program, interactor, recordI, recordO, &recorder)
 		if err != nil {
 			Fail(globalFlags.Xml, err, "Interconnect")
 		}
@@ -322,7 +324,7 @@ func main() {
 			continue
 		}
 
-		PrintResult(globalFlags.Xml, globalFlags.ShowKernelModeTime, result)
+		PrintResult(globalFlags.Xml, globalFlags.ShowKernelModeTime, result, recorder.Entries())
 	}
 
 	if globalFlags.Xml {

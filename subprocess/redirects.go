@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/juju/errors"
 )
@@ -19,6 +21,35 @@ const MAX_MEM_OUTPUT = 1024 * 1024
 
 type PipeResultRecorder interface {
 	Record(direction int, numBytes int64, err error)
+}
+
+type PipeRecordEntry struct {
+	Direction int
+	Timestamp time.Time
+	Bytes     int64
+	Error     error
+}
+
+type OrderedRecorder struct {
+	mu      sync.RWMutex
+	entries []PipeRecordEntry
+}
+
+func (s *OrderedRecorder) Record(direction int, numBytes int64, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.entries = append(s.entries, PipeRecordEntry{
+		Direction: direction,
+		Timestamp: time.Now(),
+		Bytes:     numBytes,
+		Error:     err,
+	})
+}
+
+func (s *OrderedRecorder) GetEntries() []PipeRecordEntry {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.entries
 }
 
 func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {

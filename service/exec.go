@@ -1,6 +1,8 @@
 package service
 
 import (
+	"sync"
+
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/subprocess"
 )
@@ -95,9 +97,7 @@ func findSandbox(s []SandboxPair, request *contester_proto.LocalExecutionParamet
 }
 
 func fillResult(result *subprocess.SubprocessResult, response *contester_proto.LocalExecutionResult) {
-	if result.TotalProcesses > 0 {
-		response.TotalProcesses = result.TotalProcesses
-	}
+	response.TotalProcesses = result.TotalProcesses
 	response.ReturnCode = result.ExitCode
 	response.Flags = parseSuccessCode(result.SuccessCode)
 	response.Time = parseTime(result)
@@ -192,19 +192,6 @@ func (s *Contester) LocalExecute(request *contester_proto.LocalExecutionParamete
 	return nil
 }
 
-type runResult struct {
-	second bool
-	r      *subprocess.SubprocessResult
-	e      error
-}
-
-func execAndSend(sub *subprocess.Subprocess, c chan runResult, second bool) {
-	var r runResult
-	r.second = second
-	r.r, r.e = sub.Execute()
-	c <- r
-}
-
 func (s *Contester) LocalExecuteConnected(request *contester_proto.LocalExecuteConnected, response *contester_proto.LocalExecuteConnectedResult) error {
 	firstSandbox, err := findSandbox(s.Sandboxes, request.First)
 	if err != nil {
@@ -247,32 +234,31 @@ func (s *Contester) LocalExecuteConnected(request *contester_proto.LocalExecuteC
 		return err
 	}
 
-	cs := make(chan runResult, 1)
-	outstanding := 2
+	var wg sync.WaitGroup
+	var e1, e2 error
 
-	go execAndSend(first, cs, false)
-	go execAndSend(second, cs, true)
-
-	for outstanding > 0 {
-		r := <-cs
-		outstanding--
-
-		if r.second {
-			if r.e != nil {
-				err = r.e
-			} else {
-				response.Second = &contester_proto.LocalExecutionResult{}
-				fillResult(r.r, response.Second)
-			}
-		} else {
-			if r.e != nil {
-				err = r.e
-			} else {
-				response.First = &contester_proto.LocalExecutionResult{}
-				fillResult(r.r, response.First)
-			}
+	runaway := func(sp *subprocess.Subprocess, ep *error, cp **contester_proto.LocalExecutionResult) {
+		defer wg.Done()
+		r, e := sp.Execute()
+		if e != nil {
+			*ep = e
+			return
 		}
+		*cp = &contester_proto.LocalExecutionResult{}
+		fillResult(r, *cp)
 	}
 
-	return err
+	wg.Add(2)
+	go runaway(first, &e1, &response.First)
+	go runaway(second, &e2, &response.Second)
+
+	wg.Wait()
+
+	if e1 != nil {
+		return e1
+	}
+	if e2 != nil {
+		return e2
+	}
+	return nil
 }

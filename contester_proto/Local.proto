@@ -68,6 +68,7 @@ message LocalExecutionResult {
     uint64 total_processes = 7;
     int32 kill_signal = 8;
     int32 stop_signal = 9;
+    string error = 10;
 };
 
 message LocalExecuteConnectedResult {

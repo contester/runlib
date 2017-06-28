@@ -96,10 +96,9 @@ type SubprocessData struct {
 }
 
 func SubprocessCreate() *Subprocess {
-	result := &Subprocess{}
-	result.TimeQuantum = time.Second / 4
-
-	return result
+	return &Subprocess{
+		TimeQuantum: time.Second / 4,
+	}
 }
 
 func (d *SubprocessData) SetupRedirectionBuffers() error {

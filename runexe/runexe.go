@@ -286,7 +286,7 @@ func main() {
 			}
 		}
 
-		err = subprocess.Interconnect(program, interactor, recordI, recordO)
+		err = subprocess.Interconnect(program, interactor, recordI, recordO, nil)
 		if err != nil {
 			Fail(globalFlags.Xml, err, "Interconnect")
 		}

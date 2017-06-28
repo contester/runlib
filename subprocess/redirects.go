@@ -17,6 +17,10 @@ type Redirect struct {
 
 const MAX_MEM_OUTPUT = 1024 * 1024
 
+type PipeResultRecorder interface {
+	Record(direction int, numBytes int64, err error)
+}
+
 func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
@@ -96,19 +100,27 @@ func (d *SubprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	return ReaderDefault()
 }
 
-func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer) {
-	m := io.MultiWriter(w, t)
-	io.Copy(m, r)
-	w.Close()
-	r.Close()
+func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer, recorder func(int64, error)) {
+	defer r.Close()
+	defer w.Close()
+
+	var wc io.Writer = w
+
+	if t != nil {
+		wc = io.MultiWriter(w, t)
+	}
+	n, err := io.Copy(wc, r)
+	if recorder != nil {
+		recorder(n, err)
+	}
 }
 
 // In functions below, we are forced to use *os.File instead of, say, io.Writer
 // for the reasons mentioned in http://golang.org/doc/go_faq.html#nil_error
 // I could work around it by using reflection, but why...
 
-func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
-	if d == nil {
+func RecordingPipe(d *os.File, recorder func(int64, error)) (*os.File, *os.File, error) {
+	if d == nil && recorder == nil {
 		return os.Pipe()
 	}
 
@@ -122,18 +134,32 @@ func RecordingPipe(d *os.File) (*os.File, *os.File, error) {
 		return nil, nil, errors.Trace(e)
 	}
 
-	go recordingTee(w1, r2, d)
+	var t io.Writer
+	if d != nil {
+		t = d
+	}
+
+	go recordingTee(w1, r2, t, recorder)
 
 	return r1, w2, nil
 }
 
-func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File) error {
-	read1, write1, err := RecordingPipe(d1)
+func recordDirection(recorder PipeResultRecorder, direction int) func(int64, error) {
+	if recorder == nil {
+		return nil
+	}
+	return func(n int64, err error) {
+		recorder.Record(direction, n, err)
+	}
+}
+
+func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File, recorder PipeResultRecorder) error {
+	read1, write1, err := RecordingPipe(d1, recordDirection(recorder, 0))
 	if err != nil {
 		return err
 	}
 
-	read2, write2, err := RecordingPipe(d2)
+	read2, write2, err := RecordingPipe(d2, recordDirection(recorder, 1))
 	if err != nil {
 		read1.Close()
 		write1.Close()

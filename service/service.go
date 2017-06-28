@@ -12,7 +12,6 @@ import (
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/storage"
 	"github.com/contester/runlib/subprocess"
-	"github.com/golang/protobuf/proto"
 	"gopkg.in/gcfg.v1"
 )
 
@@ -42,12 +41,12 @@ func getHostname() string {
 
 func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {
 	list := os.Environ()
-	result := make([]*contester_proto.LocalEnvironment_Variable, len(list))
-	for i, v := range list {
+	result := make([]*contester_proto.LocalEnvironment_Variable, 0, len(list))
+	for _, v := range list {
 		s := strings.SplitN(v, "=", 2)
-		result[i] = &contester_proto.LocalEnvironment_Variable{
-			Name:  proto.String(s[0]),
-			Value: proto.String(s[1])}
+		result = append(result, &contester_proto.LocalEnvironment_Variable{
+			Name:  s[0],
+			Value: s[1]})
 	}
 	return result
 }
@@ -152,17 +151,17 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	s.Storage = backend
 	s.mu.Unlock()
 
-	response.InvokerId = &s.InvokerId
+	response.InvokerId = s.InvokerId
 	response.Environment = &contester_proto.LocalEnvironment{
 		Variable: s.Env[:]}
-	response.Sandboxes = make([]*contester_proto.SandboxLocations, len(s.Sandboxes))
-	for i, p := range s.Sandboxes {
-		response.Sandboxes[i] = &contester_proto.SandboxLocations{
-			Compile: proto.String(p.Compile.Path),
-			Run:     proto.String(p.Run.Path)}
+	response.Sandboxes = make([]*contester_proto.SandboxLocations, 0, len(s.Sandboxes))
+	for _, p := range s.Sandboxes {
+		response.Sandboxes = append(response.Sandboxes, &contester_proto.SandboxLocations{
+			Compile: p.Compile.Path,
+			Run:     p.Run.Path})
 	}
-	response.Platform = &s.Platform
-	response.PathSeparator = &s.PathSeparator
+	response.Platform = s.Platform
+	response.PathSeparator = s.PathSeparator
 	response.Disks = s.Disks
 	response.ProgramFiles = s.ProgramFiles
 

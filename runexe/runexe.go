@@ -126,7 +126,7 @@ func fillRedirect(x string) *subprocess.Redirect {
 		return nil
 	}
 	return &subprocess.Redirect{
-		Filename: &x,
+		Filename: x,
 		Mode:     subprocess.REDIRECT_FILE,
 	}
 }
@@ -137,11 +137,11 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	sub.Cmd = &subprocess.CommandLine{}
 
 	if s.ApplicationName != "" {
-		sub.Cmd.ApplicationName = &s.ApplicationName
+		sub.Cmd.ApplicationName = s.ApplicationName
 	}
 
 	if s.CommandLine != "" {
-		sub.Cmd.CommandLine = &s.CommandLine
+		sub.Cmd.CommandLine = s.CommandLine
 	}
 
 	if s.Parameters != nil {
@@ -149,10 +149,10 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	}
 
 	if s.CurrentDirectory != "" {
-		sub.CurrentDirectory = &s.CurrentDirectory
+		sub.CurrentDirectory = s.CurrentDirectory
 	} else {
 		if wd, err := os.Getwd(); err == nil && wd != "" {
-			sub.CurrentDirectory = &wd
+			sub.CurrentDirectory = wd
 		}
 	}
 
@@ -167,7 +167,8 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	sub.NoJob = s.NoJob
 
 	if len(s.Environment) > 0 {
-		sub.Environment = (*[]string)(&s.Environment)
+		sub.Environment = s.Environment
+		sub.NoInheritEnvironment = true
 	}
 
 	sub.StdIn = fillRedirect(s.StdIn)

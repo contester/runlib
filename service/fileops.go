@@ -9,8 +9,8 @@ import (
 )
 
 func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.FileStats) error {
-	if request.SandboxId != nil {
-		sandbox, err := getSandboxById(s.Sandboxes, *request.SandboxId)
+	if request.GetSandboxId() != "" {
+		sandbox, err := getSandboxById(s.Sandboxes, request.GetSandboxId())
 		if err != nil {
 			return err
 		}

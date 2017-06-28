@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.FileStat) error {
-	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, true)
+	resolved, sandbox, err := resolvePath(s.Sandboxes, request.GetName(), true)
 	if err != nil {
 		return err
 	}
@@ -32,8 +32,9 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 			break
 		}
 	}
-	data, err := request.Data.Bytes()
+	data, err := request.GetData().Bytes()
 	if err != nil {
+		destination.Close()
 		return err
 	}
 	_, err = destination.Write(data)
@@ -55,7 +56,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 }
 
 func (s *Contester) Get(request *contester_proto.GetRequest, response *contester_proto.FileBlob) error {
-	resolved, sandbox, err := resolvePath(s.Sandboxes, *request.Name, false)
+	resolved, sandbox, err := resolvePath(s.Sandboxes, request.GetName(), false)
 	if err != nil {
 		return err
 	}
@@ -71,7 +72,7 @@ func (s *Contester) Get(request *contester_proto.GetRequest, response *contester
 	}
 	defer source.Close()
 
-	response.Name = &resolved
+	response.Name = resolved
 	response.Data, err = contester_proto.BlobFromStream(source)
 	return err
 }

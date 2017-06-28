@@ -56,7 +56,7 @@ func (d *SubprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) 
 }
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
-	if sub.Cmd.ApplicationName == nil {
+	if sub.Cmd.ApplicationName == "" {
 		return nil, errors.NotValidf("Application name must be present")
 	}
 	d := &SubprocessData{}
@@ -71,7 +71,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		uid = sub.Login.Uid
 	}
 	d.platformData.params, err = linux.CreateCloneParams(
-		*sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
+		sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
 		return nil, errors.Annotate(err, "CreateCloneParams")
 	}

@@ -52,16 +52,17 @@ type SubprocessResult struct {
 }
 
 type CommandLine struct {
-	ApplicationName, CommandLine *string
+	ApplicationName, CommandLine string
 	Parameters                   []string
 }
 
 // This structure defines all flags and options for starting a subprocess. It is not supposed to be modified by any
 // of the execution machinery - there's SubprocessData for that.
 type Subprocess struct {
-	CurrentDirectory *string
-	Environment      *[]string
+	CurrentDirectory string
+	Environment      []string
 
+	NoInheritEnvironment     bool
 	NoJob                    bool
 	RestrictUi               bool
 	ProcessLimit             uint32

@@ -9,8 +9,8 @@ import (
 func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response *contester_proto.FileStats) error {
 	var sandbox *Sandbox
 	var err error
-	if request.SandboxId != nil {
-		sandbox, err = getSandboxById(s.Sandboxes, *request.SandboxId)
+	if request.GetSandboxId() != "" {
+		sandbox, err = getSandboxById(s.Sandboxes, request.GetSandboxId())
 		if err != nil {
 			return err
 		}
@@ -25,9 +25,9 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 		return errors.BadRequestf("can't gridfs.Copy if storage isn't set")
 	}
 
-	response.Entries = make([]*contester_proto.FileStat, 0, len(request.Entries))
-	for _, item := range request.Entries {
-		if item.LocalFileName == nil || item.RemoteLocation == nil {
+	response.Entries = make([]*contester_proto.FileStat, 0, len(request.GetEntries()))
+	for _, item := range request.GetEntries() {
+		if item.GetLocalFileName() == "" || item.GetRemoteLocation() == "" {
 			continue
 		}
 

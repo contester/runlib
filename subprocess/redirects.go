@@ -12,7 +12,7 @@ import (
 
 type Redirect struct {
 	Mode     int
-	Filename *string
+	Filename string
 	Pipe     *os.File
 	Data     []byte
 }
@@ -92,7 +92,7 @@ func (d *SubprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 	case REDIRECT_MEMORY:
 		return d.SetupOutputMemory(b)
 	case REDIRECT_FILE:
-		return d.SetupFile(*w.Filename, false)
+		return d.SetupFile(w.Filename, false)
 	case REDIRECT_PIPE:
 		return d.SetupPipe(w.Pipe)
 	}
@@ -126,7 +126,7 @@ func (d *SubprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	case REDIRECT_PIPE:
 		return d.SetupPipe(w.Pipe)
 	case REDIRECT_FILE:
-		return d.SetupFile(*w.Filename, true)
+		return d.SetupFile(w.Filename, true)
 	}
 	return ReaderDefault()
 }

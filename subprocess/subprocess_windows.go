@@ -148,12 +148,15 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		return nil, e
 	}
 
-	pi := &syscall.ProcessInformation{}
+	var pi syscall.ProcessInformation
 
-	applicationName := win32.StringPtrToUTF16Ptr(sub.Cmd.ApplicationName)
-	commandLine := win32.StringPtrToUTF16Ptr(sub.Cmd.CommandLine)
-	environment := win32.ListToEnvironmentBlock(sub.Environment)
-	currentDirectory := win32.StringPtrToUTF16Ptr(sub.CurrentDirectory)
+	applicationName := win32.StringNEToUTF16Ptr(sub.Cmd.ApplicationName)
+	commandLine := win32.StringNEToUTF16Ptr(sub.Cmd.CommandLine)
+	var environment *uint16
+	if sub.NoInheritEnvironment {
+		environment = win32.ListToEnvironmentBlock(sub.Environment)
+	}
+	currentDirectory := win32.StringNEToUTF16Ptr(sub.CurrentDirectory)
 
 	syscall.ForkLock.Lock()
 	wSetInherit(si)
@@ -171,7 +174,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				environment,
 				currentDirectory,
 				si,
-				pi)
+				&pi)
 		} else {
 			e = win32.CreateProcessAsUser(
 				sub.Login.HUser,
@@ -185,7 +188,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				environment,
 				currentDirectory,
 				si,
-				pi)
+				&pi)
 		}
 	} else {
 		e = os.NewSyscallError("CreateProcess", syscall.CreateProcess(
@@ -199,7 +202,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 			environment,
 			currentDirectory,
 			si,
-			pi))
+			&pi))
 	}
 
 	closeDescriptors(d.closeAfterStart)

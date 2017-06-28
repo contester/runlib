@@ -2,9 +2,9 @@ package win32
 
 import (
 	"os"
+	"runtime"
 	"syscall"
 	"unsafe"
-	"runtime"
 )
 
 var (
@@ -159,13 +159,16 @@ func StringPtrToUTF16Ptr(src *string) *uint16 {
 	return nil
 }
 
-func ListToEnvironmentBlock(list *[]string) *uint16 {
-	if list == nil {
+func StringNEToUTF16Ptr(src string) *uint16 {
+	if src == "" {
 		return nil
 	}
+	return syscall.StringToUTF16Ptr(src)
+}
 
+func ListToEnvironmentBlock(list []string) *uint16 {
 	size := 1
-	for _, v := range *list {
+	for _, v := range list {
 		size += len(syscall.StringToUTF16(v))
 	}
 
@@ -173,13 +176,11 @@ func ListToEnvironmentBlock(list *[]string) *uint16 {
 
 	tail := 0
 
-	for _, v := range *list {
+	for _, v := range list {
 		uline := syscall.StringToUTF16(v)
 		copy(result[tail:], uline)
 		tail += len(uline)
 	}
-
-	result[tail] = 0
 
 	return &result[0]
 }

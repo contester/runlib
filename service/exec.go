@@ -3,52 +3,51 @@ package service
 import (
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/subprocess"
-	"github.com/golang/protobuf/proto"
 )
 
-func fillEnv(src *contester_proto.LocalEnvironment) *[]string {
+func fillEnv(src *contester_proto.LocalEnvironment) ([]string, bool) {
 	if src == nil {
-		return nil
+		return nil, false
 	}
 
-	result := make([]string, len(src.Variable))
-	for i, v := range src.Variable {
-		result[i] = v.GetName() + "=" + v.GetValue()
+	result := make([]string, 0, len(src.Variable))
+	for _, v := range src.Variable {
+		result = append(result, v.GetName()+"="+v.GetValue())
 	}
-	return &result
+	return result, true
 }
 
 func parseSuccessCode(succ uint32) *contester_proto.ExecutionResultFlags {
 	if succ == 0 {
 		return nil
 	}
-	result := &contester_proto.ExecutionResultFlags{}
+	var result contester_proto.ExecutionResultFlags
 	if succ&subprocess.EF_KILLED != 0 {
-		result.Killed = proto.Bool(true)
+		result.Killed = true
 	}
 	if succ&subprocess.EF_TIME_LIMIT_HIT != 0 {
-		result.TimeLimitHit = proto.Bool(true)
+		result.TimeLimitHit = true
 	}
 	if succ&subprocess.EF_MEMORY_LIMIT_HIT != 0 {
-		result.MemoryLimitHit = proto.Bool(true)
+		result.MemoryLimitHit = true
 	}
 	if succ&subprocess.EF_INACTIVE != 0 {
-		result.Inactive = proto.Bool(true)
+		result.Inactive = true
 	}
 	if succ&subprocess.EF_TIME_LIMIT_HARD != 0 {
-		result.TimeLimitHard = proto.Bool(true)
+		result.TimeLimitHard = true
 	}
 	if succ&subprocess.EF_TIME_LIMIT_HIT_POST != 0 {
-		result.TimeLimitHitPost = proto.Bool(true)
+		result.TimeLimitHitPost = true
 	}
 	if succ&subprocess.EF_MEMORY_LIMIT_HIT_POST != 0 {
-		result.MemoryLimitHitPost = proto.Bool(true)
+		result.MemoryLimitHitPost = true
 	}
 	if succ&subprocess.EF_PROCESS_LIMIT_HIT != 0 {
-		result.ProcessLimitHit = proto.Bool(true)
+		result.ProcessLimitHit = true
 	}
 
-	return result
+	return &result
 }
 
 func parseTime(r *subprocess.SubprocessResult) *contester_proto.ExecutionResultTime {
@@ -56,18 +55,18 @@ func parseTime(r *subprocess.SubprocessResult) *contester_proto.ExecutionResultT
 		return nil
 	}
 
-	result := &contester_proto.ExecutionResultTime{}
+	var result contester_proto.ExecutionResultTime
 
 	if r.UserTime != 0 {
-		result.UserTimeMicros = proto.Uint64(subprocess.GetMicros(r.UserTime))
+		result.UserTimeMicros = subprocess.GetMicros(r.UserTime)
 	}
 	if r.KernelTime != 0 {
-		result.KernelTimeMicros = proto.Uint64(subprocess.GetMicros(r.KernelTime))
+		result.KernelTimeMicros = subprocess.GetMicros(r.KernelTime)
 	}
 	if r.WallTime != 0 {
-		result.WallTimeMicros = proto.Uint64(subprocess.GetMicros(r.WallTime))
+		result.WallTimeMicros = subprocess.GetMicros(r.WallTime)
 	}
-	return result
+	return &result
 }
 
 func fillRedirect(r *contester_proto.RedirectParameters) *subprocess.Redirect {
@@ -75,21 +74,21 @@ func fillRedirect(r *contester_proto.RedirectParameters) *subprocess.Redirect {
 		return nil
 	}
 
-	result := &subprocess.Redirect{}
-	if r.Filename != nil {
-		result.Filename = r.Filename
+	var result subprocess.Redirect
+	if r.GetFilename() != "" {
+		result.Filename = r.GetFilename()
 		result.Mode = subprocess.REDIRECT_FILE
-	} else if r.Memory != nil && *r.Memory {
+	} else if r.GetMemory() {
 		result.Mode = subprocess.REDIRECT_MEMORY
 		if r.Buffer != nil {
 			result.Data, _ = r.Buffer.Bytes()
 		}
 	}
-	return result
+	return &result
 }
 
 func findSandbox(s []SandboxPair, request *contester_proto.LocalExecutionParameters) (*Sandbox, error) {
-	if request.SandboxId != nil {
+	if request.GetSandboxId() != "" {
 		return getSandboxById(s, request.GetSandboxId())
 	}
 	return getSandboxByPath(s, request.GetCurrentDirectory())
@@ -97,12 +96,12 @@ func findSandbox(s []SandboxPair, request *contester_proto.LocalExecutionParamet
 
 func fillResult(result *subprocess.SubprocessResult, response *contester_proto.LocalExecutionResult) {
 	if result.TotalProcesses > 0 {
-		response.TotalProcesses = proto.Uint64(result.TotalProcesses)
+		response.TotalProcesses = result.TotalProcesses
 	}
-	response.ReturnCode = proto.Uint32(result.ExitCode)
+	response.ReturnCode = result.ExitCode
 	response.Flags = parseSuccessCode(result.SuccessCode)
 	response.Time = parseTime(result)
-	response.Memory = proto.Uint64(result.PeakMemory)
+	response.Memory = result.PeakMemory
 	response.StdOut, _ = contester_proto.NewBlob(result.Output)
 	response.StdErr, _ = contester_proto.NewBlob(result.Error)
 }
@@ -125,7 +124,7 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 	sub.RestrictUi = request.GetRestrictUi()
 	sub.NoJob = request.GetNoJob()
 
-	sub.Environment = fillEnv(request.Environment)
+	sub.Environment, sub.NoInheritEnvironment = fillEnv(request.Environment)
 
 	if doRedirects {
 		sub.StdIn = fillRedirect(request.StdIn)
@@ -156,8 +155,8 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 }
 
 func chmodRequestIfNeeded(sandbox *Sandbox, request *contester_proto.LocalExecutionParameters) error {
-	if request.ApplicationName != nil {
-		return chmodIfNeeded(*request.ApplicationName, sandbox)
+	if request.GetApplicationName() != "" {
+		return chmodIfNeeded(request.GetApplicationName(), sandbox)
 	}
 	return nil
 }

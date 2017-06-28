@@ -4,13 +4,12 @@ import (
 	"os"
 
 	"github.com/contester/runlib/contester_proto"
-	"github.com/golang/protobuf/proto"
 	"github.com/juju/errors"
 )
 
 func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 	result := contester_proto.FileStat{
-		Name: &name,
+		Name: name,
 	}
 	info, err := os.Stat(name)
 	if err != nil {
@@ -22,15 +21,15 @@ func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 		return nil, errors.Annotatef(err, "os.Stat(%q)", name)
 	}
 	if info.IsDir() {
-		result.IsDirectory = proto.Bool(true)
+		result.IsDirectory = true
 	} else {
-		result.Size_ = proto.Uint64(uint64(info.Size()))
+		result.Size_ = uint64(info.Size())
 		if hash_it {
 			checksum, err := HashFileString(name)
 			if err != nil {
 				return nil, err
 			}
-			result.Checksum = &checksum
+			result.Checksum = checksum
 		}
 	}
 	return &result, nil

@@ -6,13 +6,12 @@ import (
 	"crypto/sha1"
 	"io"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/juju/errors"
 )
 
 func (blob *Blob) Reader() (io.Reader, error) {
-	if blob.Compression != nil && blob.Compression.GetMethod() == Blob_CompressionInfo_METHOD_ZLIB {
-		buf := bytes.NewBuffer(blob.Data)
+	if blob.Compression != nil && blob.GetCompression().GetMethod() == Blob_CompressionInfo_METHOD_ZLIB {
+		buf := bytes.NewReader(blob.Data)
 		r, err := zlib.NewReader(buf)
 		if err != nil {
 			return nil, errors.Annotate(err, "zlib.NewReader")
@@ -67,20 +66,19 @@ func NewBlob(data []byte) (*Blob, error) {
 		return nil, err
 	}
 
-	result := &Blob{
+	result := Blob{
 		Sha1: sha1sum,
 	}
 	if len(compressed) < len(data)-8 {
-		method := Blob_CompressionInfo_METHOD_ZLIB
 		result.Compression = &Blob_CompressionInfo{
-			Method:       &method,
-			OriginalSize: proto.Uint32(uint32(len(data))),
+			Method:       Blob_CompressionInfo_METHOD_ZLIB,
+			OriginalSize: uint32(len(data)),
 		}
 		result.Data = compressed
 	} else {
 		result.Data = data
 	}
-	return result, nil
+	return &result, nil
 }
 
 func BlobFromStream(r io.Reader) (*Blob, error) {
@@ -94,14 +92,12 @@ func BlobFromStream(r io.Reader) (*Blob, error) {
 		return nil, errors.Annotate(err, "io.Copy")
 	}
 	compressor.Close()
-	method := Blob_CompressionInfo_METHOD_ZLIB
-	result := &Blob{
+	return &Blob{
 		Sha1: shaCalculator.Sum(nil),
 		Data: compressed.Bytes(),
 		Compression: &Blob_CompressionInfo{
-			Method:       &method,
-			OriginalSize: proto.Uint32(uint32(size)),
+			Method:       Blob_CompressionInfo_METHOD_ZLIB,
+			OriginalSize: uint32(size),
 		},
-	}
-	return result, nil
+	}, nil
 }

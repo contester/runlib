@@ -72,6 +72,11 @@ func xmlTime(t time.Duration) string {
 	return strconv.FormatUint(uint64(t.Nanoseconds()/1000000), 10)
 }
 
+type irXml struct {
+	ExitCode              int   `xml:"exitCode"`
+	ProcessorUserModeTime int64 `xml:"processorUserModeTime"`
+}
+
 func PrintResultXml(result *RunResult) {
 	fmt.Printf("<invocationResult id=\"%s\">\n", strings.ToLower(result.T.String()))
 

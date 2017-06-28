@@ -1,35 +1,45 @@
-syntax = "proto2";
+syntax = "proto3";
 
-import "Blobs.proto";
+import "github.com/contester/runlib/contester_proto/Blobs.proto";
 
 package contester.proto;
 
 option java_package = "org.stingray.contester.proto";
 
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.equal_all) = true;
+option (gogoproto.goproto_stringer_all) = false;
+option (gogoproto.stringer_all) =  true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.gogoproto_import) = false;
+
 message RedirectParameters {
-    optional string filename = 1;
-    optional bool memory = 2;
-    optional Blob buffer = 3;
+    string filename = 1;
+    bool memory = 2;
+    Blob buffer = 3;
 }
 
 message ExecutionResultFlags {
-    optional bool killed = 1;
-    optional bool time_limit_hit = 2;
-    optional bool memory_limit_hit = 3;
-    optional bool inactive = 4;
-    optional bool time_limit_hard = 5;
-    optional bool stdout_overflow = 6;
-    optional bool stderr_overflow = 7;
-    optional bool stdpipe_timeout = 8;
-    optional bool time_limit_hit_post = 9;
-    optional bool memory_limit_hit_post = 10;
-    optional bool process_limit_hit = 11;
-    optional bool stopped_by_signal = 12; // linux: SIGSTOP/PTRACE
-    optional bool killed_by_signal = 13; // linux: WTERMSIG
+    bool killed = 1;
+    bool time_limit_hit = 2;
+    bool memory_limit_hit = 3;
+    bool inactive = 4;
+    bool time_limit_hard = 5;
+    bool stdout_overflow = 6;
+    bool stderr_overflow = 7;
+    bool stdpipe_timeout = 8;
+    bool time_limit_hit_post = 9;
+    bool memory_limit_hit_post = 10;
+    bool process_limit_hit = 11;
+    bool stopped_by_signal = 12; // linux: SIGSTOP/PTRACE
+    bool killed_by_signal = 13; // linux: WTERMSIG
 };
 
 message ExecutionResultTime {
-    optional uint64 user_time_micros = 1;
-    optional uint64 kernel_time_micros = 2;
-    optional uint64 wall_time_micros = 3;
+    uint64 user_time_micros = 1;
+    uint64 kernel_time_micros = 2;
+    uint64 wall_time_micros = 3;
 };

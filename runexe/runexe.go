@@ -324,7 +324,7 @@ func main() {
 			continue
 		}
 
-		PrintResult(globalFlags.Xml, globalFlags.ShowKernelModeTime, result, recorder.Entries())
+		PrintResult(globalFlags.Xml, globalFlags.ShowKernelModeTime, result, recorder.GetEntries())
 	}
 
 	if globalFlags.Xml {

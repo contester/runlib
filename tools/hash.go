@@ -3,10 +3,10 @@ package tools
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"github.com/juju/errors"
 	"io"
 	"os"
 	"strings"
-	"github.com/juju/errors"
 )
 
 func HashFileString(name string) (string, error) {
@@ -22,16 +22,11 @@ func HashFile(name string) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Annotatef(err, "os.Open(%q)", name)
 	}
-	defer source.Close()
 
 	destination := sha1.New()
 
-	_, err = io.Copy(destination, source)
-	if err != nil {
+	if _, err = io.Copy(destination, source); err != nil {
 		return nil, errors.Annotate(err, "io.Copy")
-	}
-	if err = source.Close(); err != nil {
-		return nil, errors.Annotate(err, "source.Close")
 	}
 
 	return destination.Sum(nil), nil

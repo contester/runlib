@@ -159,19 +159,17 @@ func StringNEToUTF16Ptr(src string) *uint16 {
 }
 
 func ListToEnvironmentBlock(list []string) *uint16 {
+	converted := make([][]uint16, 0, len(list))
 	size := 1
 	for _, v := range list {
-		size += len(syscall.StringToUTF16(v))
+		c := syscall.StringToUTF16(v)
+		size += len(c)
+		converted = append(converted, c)
 	}
 
-	result := make([]uint16, size)
-
-	tail := 0
-
-	for _, v := range list {
-		uline := syscall.StringToUTF16(v)
-		copy(result[tail:], uline)
-		tail += len(uline)
+	result := make([]uint16, 0, size)
+	for _, v := range converted {
+		result = append(result, v...)
 	}
 
 	return &result[0]

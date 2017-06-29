@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/rpc"
 	"os"
-	"runtime"
 	"time"
 
 	log "github.com/Sirupsen/logrus"

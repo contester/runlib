@@ -137,14 +137,7 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 	}
 
 	d.Unfreeze()
-	sig := make(chan *SubprocessResult, 1)
-	go sub.BottomHalf(d, sig)
-
-	//if err = d.Unfreeze(); err != nil {
-	//	return nil, err
-	//}
-
-	return <-sig, nil
+	return sub.BottomHalf(d), nil
 }
 
 type runningState struct {

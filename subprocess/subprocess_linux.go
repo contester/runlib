@@ -148,8 +148,8 @@ func UpdateRunningUsage(p *PlatformData, o *PlatformOptions, result *SubprocessR
 	result.PeakMemory = o.Cg.GetMemory(strconv.Itoa(p.Pid))
 }
 
-func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan *SubprocessResult) {
-	result := &SubprocessResult{}
+func (sub *Subprocess) BottomHalf(d *SubprocessData) *SubprocessResult {
+	var result SubprocessResult
 
 	childChan := make(chan *ChildWaitData, 1)
 	go ChildWaitingFunc(d.platformData.Pid, childChan)
@@ -163,8 +163,8 @@ W:
 		case finished = <-childChan:
 			break W
 		case _ = <-ticker.C:
-			UpdateRunningUsage(&d.platformData, sub.Options, result)
-			runState.Update(sub, result)
+			UpdateRunningUsage(&d.platformData, sub.Options, &result)
+			runState.Update(sub, &result)
 		}
 	}
 	ticker.Stop()
@@ -174,12 +174,12 @@ W:
 		// Can block if process is unkillable.
 		finished = <-childChan
 	}
-	UpdateRunningUsage(&d.platformData, sub.Options, result)
+	UpdateRunningUsage(&d.platformData, sub.Options, &result)
 	sub.Options.Cg.Remove(strconv.Itoa(d.platformData.Pid))
 	result.ExitCode = finished.ExitCode
 	result.KernelTime = finished.RusageCpuKernel
 	result.SuccessCode |= finished.SuccessCode
-	sub.SetPostLimits(result)
+	sub.SetPostLimits(&result)
 
 	for _ = range d.startAfterStart {
 		err := <-d.bufferChan
@@ -194,8 +194,7 @@ W:
 	if d.stdErr.Len() > 0 {
 		result.Error = d.stdErr.Bytes()
 	}
-	sig <- result
-	close(sig)
+	return &result
 }
 
 func maybeLockOSThread() {

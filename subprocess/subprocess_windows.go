@@ -458,10 +458,10 @@ func UpdateProcessMemory(pdata *PlatformData, result *SubprocessResult) {
 	}
 }
 
-func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan<- *SubprocessResult) {
+func (sub *Subprocess) BottomHalf(d *SubprocessData) *SubprocessResult {
 	hProcess := d.platformData.hProcess
 	hJob := d.platformData.hJob
-	result := &SubprocessResult{}
+	var result SubprocessResult
 	var waitResult uint32
 	waitResult = syscall.WAIT_TIMEOUT
 
@@ -477,12 +477,14 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan<- *SubprocessResul
 			log.Errorf("Error waiting for process %d: %s", hProcess, err)
 		}
 
-		_ = UpdateProcessTimes(&d.platformData, result, false)
+		if err = UpdateProcessTimes(&d.platformData, &result, false); err != nil {
+			log.Errorf("Error getting process times: %s", err)
+		}
 		if sub.MemoryLimit > 0 {
-			UpdateProcessMemory(&d.platformData, result)
+			UpdateProcessMemory(&d.platformData, &result)
 		}
 
-		runState.Update(sub, result)
+		runState.Update(sub, &result)
 	}
 
 	switch waitResult {
@@ -493,12 +495,10 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan<- *SubprocessResul
 
 	case syscall.WAIT_TIMEOUT:
 		for waitResult == syscall.WAIT_TIMEOUT {
-			err = syscall.TerminateProcess(hProcess, 0)
-			if err != nil {
+			if err = syscall.TerminateProcess(hProcess, 0); err != nil {
 				log.Errorf("Error terminating process %d: %s", hProcess, err)
 			}
-			waitResult, err = syscall.WaitForSingleObject(hProcess, 100)
-			if err != nil {
+			if waitResult, err = syscall.WaitForSingleObject(hProcess, 1000); err != nil {
 				log.Errorf("Error waiting for kill %d: %s", hProcess, err)
 			}
 		}
@@ -506,15 +506,15 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan<- *SubprocessResul
 		log.Errorf("Unexpected waitResult %d: %d", hProcess, waitResult)
 	}
 
-	_ = UpdateProcessTimes(&d.platformData, result, true)
-	UpdateProcessMemory(&d.platformData, result)
+	UpdateProcessTimes(&d.platformData, &result, true)
+	UpdateProcessMemory(&d.platformData, &result)
 
 	syscall.CloseHandle(hProcess)
 	if hJob != syscall.InvalidHandle {
 		syscall.CloseHandle(hJob)
 	}
 
-	sub.SetPostLimits(result)
+	sub.SetPostLimits(&result)
 	for _ = range d.startAfterStart {
 		err := <-d.bufferChan
 		if err != nil {
@@ -529,7 +529,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData, sig chan<- *SubprocessResul
 		result.Error = d.stdErr.Bytes()
 	}
 
-	sig <- result
+	return &result
 }
 
 func maybeLockOSThread() {

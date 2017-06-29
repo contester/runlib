@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"golang.org/x/sys/windows"
 	"os"
 	"runtime"
 	"strconv"
@@ -32,7 +33,7 @@ func CreateContesterDesktopStruct() (*ContesterDesktop, error) {
 }
 
 func threadIdName(prefix string) string {
-	return prefix + strconv.FormatUint(uint64(win32.GetCurrentThreadId()), 10)
+	return prefix + strconv.FormatUint(uint64(windows.GetCurrentThreadId()), 10)
 }
 
 func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name string, err error) {

@@ -22,7 +22,6 @@ var (
 	procLoadUserProfileW          = userenv.NewProc("LoadUserProfileW")
 	procUnloadUserProfile         = userenv.NewProc("UnloadUserProfile")
 	procGetProcessWindowStation   = user32.NewProc("GetProcessWindowStation")
-	procGetCurrentThreadId        = kernel32.NewProc("GetCurrentThreadId")
 	procGetThreadDesktop          = user32.NewProc("GetThreadDesktop")
 	procCreateWindowStationW      = user32.NewProc("CreateWindowStationW")
 	procSetProcessWindowStation   = user32.NewProc("SetProcessWindowStation")
@@ -331,11 +330,6 @@ func GetProcessWindowStation() (Hwinsta, error) {
 		return Hwinsta(r1), os.NewSyscallError("GetProcessWindowStation", e1)
 	}
 	return Hwinsta(r1), nil
-}
-
-func GetCurrentThreadId() uint32 {
-	r1, _, _ := procGetCurrentThreadId.Call()
-	return uint32(r1)
 }
 
 func GetThreadDesktop(threadId uint32) (Hdesk, error) {

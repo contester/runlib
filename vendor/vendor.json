@@ -3,10 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "NRonvQTe073YVead6//CQ5oVgK4=",
+			"checksumSHA1": "VYvyVPooYXiO6gqwCGkPPK5vCzk=",
 			"path": "github.com/Sirupsen/logrus",
-			"revision": "1deb2db2a6fff8a35532079061b903c3a25eed52",
-			"revisionTime": "2017-03-08T20:36:35Z"
+			"revision": "3d4380f53a34dcdc95f0c1db702615992b38d9a4",
+			"revisionTime": "2017-06-20T14:45:10Z"
 		},
 		{
 			"checksumSHA1": "dwLCXz4EsbO1p7eC5FbcYzdxHgo=",
@@ -21,16 +21,46 @@
 			"revisionTime": "2016-08-17T17:03:17Z"
 		},
 		{
-			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
-			"path": "github.com/golang/protobuf/proto",
-			"revision": "2bba0603135d7d7f5cb73b2125beeda19c09f4ef",
-			"revisionTime": "2017-03-31T03:19:02Z"
+			"checksumSHA1": "2XtrajUc7LktpQETiH+H2hbd200=",
+			"path": "github.com/gogo/protobuf/gogoproto",
+			"revision": "baaac160ed234ed06b347cf51202683a0068efe4",
+			"revisionTime": "2017-06-27T13:23:52Z"
 		},
 		{
-			"checksumSHA1": "KIX/3RadQkfl4ZxCmOQ01vAGLEI=",
+			"checksumSHA1": "6ZxSmrIx3Jd15aou16oG0HPylP4=",
+			"path": "github.com/gogo/protobuf/proto",
+			"revision": "baaac160ed234ed06b347cf51202683a0068efe4",
+			"revisionTime": "2017-06-27T13:23:52Z"
+		},
+		{
+			"checksumSHA1": "U6RUw5eBwarsz1tgGdTK4WphhbI=",
+			"path": "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
+			"revision": "baaac160ed234ed06b347cf51202683a0068efe4",
+			"revisionTime": "2017-06-27T13:23:52Z"
+		},
+		{
+			"checksumSHA1": "qlPUeFabwF4RKAOF1H+yBFU1Veg=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "6a1fa9404c0aebf36c879bc50152edcc953910d2",
+			"revisionTime": "2017-06-22T20:25:51Z"
+		},
+		{
+			"checksumSHA1": "HpnVP25yXZys8uwdVe25MKMIwn8=",
 			"path": "github.com/juju/errors",
-			"revision": "6f54ff6318409d31ff16261533ce2c8381a4fd5d",
-			"revisionTime": "2016-08-09T03:08:48Z"
+			"revision": "6bffea730f4aba190658f565cb02e95679f7ce31",
+			"revisionTime": "2017-06-26T23:28:43Z"
+		},
+		{
+			"checksumSHA1": "tS9B7JRfbkBNQHl0i0AGj+r1ruk=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "90796e5a05ce440b41c768bd9af257005e470461",
+			"revisionTime": "2017-06-27T07:55:33Z"
+		},
+		{
+			"checksumSHA1": "GUzvy5+6gTwjQ2PaXxjHfbqjOVw=",
+			"path": "golang.org/x/sys/windows",
+			"revision": "90796e5a05ce440b41c768bd9af257005e470461",
+			"revisionTime": "2017-06-27T07:55:33Z"
 		},
 		{
 			"checksumSHA1": "7E+wlsgFE3g4oZj0e3y7YPCjfbs=",

@@ -31,8 +31,6 @@ func main() {
 		return
 	}
 
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	c, err := service.NewContester("server.ini", globalData)
 	if err != nil {
 		log.Fatal(err)

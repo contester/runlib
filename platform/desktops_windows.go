@@ -46,7 +46,7 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 	defer runtime.UnlockOSThread()
 
 	var origDesktop win32.Hdesk
-	if origDesktop, err = win32.GetThreadDesktop(win32.GetCurrentThreadId()); err != nil {
+	if origDesktop, err = win32.GetThreadDesktop(windows.GetCurrentThreadId()); err != nil {
 		return
 	}
 

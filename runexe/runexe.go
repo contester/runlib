@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/platform"
@@ -194,10 +195,14 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	return sub, nil
 }
 
-func ExecAndSend(sub *subprocess.Subprocess, c chan RunResult, ptype ProcessType) {
-	var r RunResult
-	r.T = ptype
-	r.S = sub
+func ExecAndSend(sub *subprocess.Subprocess, pr **RunResult, ptype ProcessType, wg *sync.WaitGroup) {
+	if wg != nil {
+		defer wg.Done()
+	}
+	r := RunResult{
+		T: ptype,
+		S: sub,
+	}
 	r.R, r.E = sub.Execute()
 	if r.E != nil {
 		if subprocess.IsUserError(r.E) {
@@ -208,7 +213,7 @@ func ExecAndSend(sub *subprocess.Subprocess, c chan RunResult, ptype ProcessType
 	} else {
 		r.V = GetVerdict(r.R)
 	}
-	c <- r
+	*pr = &r
 }
 
 func ParseFlags(globals bool, args []string) (pc *ProcessConfig, gc *RunexeConfig, err error) {
@@ -295,25 +300,19 @@ func main() {
 		}
 	}
 
-	cs := make(chan RunResult, 1)
-	outstanding := 1
-	if interactor != nil {
-		outstanding++
-		go ExecAndSend(interactor, cs, INTERACTOR)
-	}
-	go ExecAndSend(program, cs, PROGRAM)
-
+	var wg sync.WaitGroup
+	wg.Add(1)
 	var results [2]*RunResult
+	if interactor != nil {
+		wg.Add(1)
+		go ExecAndSend(interactor, &results[1], INTERACTOR, &wg)
+	}
+	go ExecAndSend(program, &results[0], PROGRAM, &wg)
+	wg.Wait()
 
 	var programReturnCode int
-
-	for outstanding > 0 {
-		r := <-cs
-		outstanding--
-		results[int(r.T)] = &r
-		if r.T == PROGRAM && r.R != nil {
-			programReturnCode = int(r.R.ExitCode)
-		}
+	if results[0] != nil && results[0].R != nil {
+		programReturnCode = int(results[0].R.ExitCode)
 	}
 
 	if globalFlags.Xml {

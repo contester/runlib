@@ -22,6 +22,7 @@ func HashFile(name string) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Annotatef(err, "os.Open(%q)", name)
 	}
+	defer source.Close()
 
 	destination := sha1.New()
 

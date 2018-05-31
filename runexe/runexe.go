@@ -7,9 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var version string

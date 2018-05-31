@@ -7,12 +7,13 @@ import (
 	"strings"
 	"sync"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/storage"
 	"github.com/contester/runlib/subprocess"
 	"gopkg.in/gcfg.v1"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Contester struct {

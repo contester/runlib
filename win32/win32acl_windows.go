@@ -2,11 +2,11 @@ package win32
 
 import (
 	"os"
+	"runtime"
 	"syscall"
 	"unsafe"
 
 	"github.com/contester/runlib/tools"
-	"runtime"
 )
 
 var (

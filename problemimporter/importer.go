@@ -4,14 +4,13 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
-
-	"io/ioutil"
 
 	"github.com/contester/runlib/storage"
 )

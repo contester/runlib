@@ -9,9 +9,10 @@ import (
 	"strings"
 	"syscall"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/tools"
 	"github.com/juju/errors"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Cgroups struct {

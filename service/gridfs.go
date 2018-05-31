@@ -1,9 +1,10 @@
 package service
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/juju/errors"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response *contester_proto.FileStats) error {

@@ -9,7 +9,7 @@ import (
 	"github.com/contester/runlib/win32"
 	"github.com/juju/errors"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Loads user profile, using handle and username.

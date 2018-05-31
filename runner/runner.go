@@ -11,7 +11,7 @@ import (
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/service"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {

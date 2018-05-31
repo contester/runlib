@@ -1,14 +1,15 @@
 package platform
 
 import (
-	"golang.org/x/sys/windows"
 	"os"
 	"runtime"
 	"strconv"
 	"syscall"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/win32"
+	"golang.org/x/sys/windows"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ContesterDesktop struct {

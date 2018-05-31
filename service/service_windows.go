@@ -3,7 +3,7 @@ package service
 import (
 	"syscall"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func OnOsCreateError(err error) (bool, error) {

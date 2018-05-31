@@ -7,9 +7,10 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/linux"
 	"github.com/juju/errors"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type LoginInfo struct {

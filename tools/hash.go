@@ -3,10 +3,11 @@ package tools
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"github.com/juju/errors"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/juju/errors"
 )
 
 func HashFileString(name string) (string, error) {

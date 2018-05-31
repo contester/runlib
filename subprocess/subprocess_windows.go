@@ -8,9 +8,10 @@ import (
 	"time"
 	"unsafe"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/runlib/win32"
 	"github.com/juju/errors"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type PlatformData struct {

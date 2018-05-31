@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/rpc"
 	"os"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/contester/rpc4/rpc4go"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/service"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 func main() {
@@ -37,10 +39,21 @@ func main() {
 	}
 
 	rpc.Register(c)
+
+	d := net.Dialer{
+		Timeout:   time.Minute,
+		DualStack: true,
+		KeepAlive: time.Second * 10,
+	}
+
 	for {
-		if err = rpc4go.ConnectServer(c.ServerAddress, rpc.DefaultServer); err != nil {
+		conn, err := d.Dial("tcp", c.ServerAddress)
+		if err != nil {
 			log.Error(err)
 			time.Sleep(time.Second * 5)
+			continue
 		}
+		rpc.DefaultServer.ServeCodec(rpc4go.NewServerCodec(conn))
+		conn.Close()
 	}
 }

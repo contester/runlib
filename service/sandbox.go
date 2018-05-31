@@ -18,7 +18,7 @@ type Sandbox struct {
 }
 
 type SandboxPair struct {
-	Compile, Run Sandbox
+	Compile, Run *Sandbox
 }
 
 func getSandboxById(s []SandboxPair, id string) (*Sandbox, error) {
@@ -41,9 +41,9 @@ func getSandboxById(s []SandboxPair, id string) (*Sandbox, error) {
 
 	switch strings.ToUpper(parts[1]) {
 	case "C":
-		return &s[index].Compile, nil
+		return s[index].Compile, nil
 	case "R":
-		return &s[index].Run, nil
+		return s[index].Run, nil
 	}
 	return nil, errors.BadRequestf("Sandbox variant %s is unknown", parts[1])
 }
@@ -53,9 +53,9 @@ func getSandboxByPath(s []SandboxPair, id string) (*Sandbox, error) {
 	for _, v := range s {
 		switch {
 		case strings.HasPrefix(cleanid, v.Compile.Path):
-			return &v.Compile, nil
+			return v.Compile, nil
 		case strings.HasPrefix(cleanid, v.Run.Path):
-			return &v.Run, nil
+			return v.Run, nil
 		}
 	}
 	return nil, errors.BadRequestf("No sandbox corresponds to path %s", cleanid)

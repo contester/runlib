@@ -51,14 +51,24 @@ func getLocalEnvironment() []*contester_proto.LocalEnvironment_Variable {
 	return result
 }
 
+func newSandboxPair(base string) SandboxPair {
+	return SandboxPair{
+		Compile: &Sandbox{
+			Path: filepath.Join(base, "C"),
+		},
+		Run: &Sandbox{
+			Path: filepath.Join(base, "R"),
+		},
+	}
+}
+
 func configureSandboxes(config *contesterConfig) ([]SandboxPair, error) {
 	basePath := config.Default.Path
 	passwords := getPasswords(config)
 	result := make([]SandboxPair, len(passwords))
 	for index, password := range passwords {
 		localBase := filepath.Join(basePath, strconv.Itoa(index))
-		result[index].Compile.Path = filepath.Join(localBase, "C")
-		result[index].Run.Path = filepath.Join(localBase, "R")
+		result[index] = newSandboxPair(localBase)
 
 		e := checkSandbox(result[index].Compile.Path)
 		if e != nil {

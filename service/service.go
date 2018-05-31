@@ -118,16 +118,16 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 
 	log.Infof("Loaded contester config %+v", &config)
 
-	var result Contester
-
-	result.InvokerId = getHostname()
-	result.Env = getLocalEnvironment()
-	result.ServerAddress = config.Default.Server
-	result.Platform = PLATFORM_ID
-	result.Disks = PLATFORM_DISKS
-	result.ProgramFiles = PLATFORM_PFILES
-	result.PathSeparator = string(os.PathSeparator)
-	result.GData = gData
+	result := Contester{
+		InvokerId:     getHostname(),
+		Env:           getLocalEnvironment(),
+		ServerAddress: config.Default.Server,
+		Platform:      PLATFORM_ID,
+		Disks:         PLATFORM_DISKS,
+		ProgramFiles:  PLATFORM_PFILES,
+		PathSeparator: string(os.PathSeparator),
+		GData:         gData,
+	}
 
 	var err error
 	result.Sandboxes, err = configureSandboxes(&config)

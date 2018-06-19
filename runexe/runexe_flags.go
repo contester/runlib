@@ -143,7 +143,8 @@ Process properties:
                   process exceeds <value> bytes. Use suffixes K, M, G to
                   specify kilo, mega, gigabytes.
   -D k=v        - environment. If any is specified, existing environment is
-                  cleared.
+				  cleared.
+  -envfile <filename> - if specified, the file is loaded as new process environment.
   -d <value>    - current directory for the process.
   -l <value>    - login name. Create process under <value> user.
   -p <value>    - password for user specified in -l. On linux, ignored (but

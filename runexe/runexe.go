@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -26,6 +27,7 @@ type ProcessConfig struct {
 	HardTimeLimit   TimeLimitFlag
 	MemoryLimit     MemoryLimitFlag
 	Environment     EnvFlag
+	EnvironmentFile string
 	ProcessAffinity ProcessAffinityFlag
 
 	LoginName string
@@ -87,6 +89,7 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	fs.StringVar(&result.StdIn, "i", "", "")
 	fs.StringVar(&result.StdOut, "o", "", "")
 	fs.StringVar(&result.StdErr, "e", "", "")
+	fs.StringVar(&result.EnvironmentFile, "envfile", "", "")
 	fs.BoolVar(&result.JoinStdOutErr, "u", false, "")
 	fs.BoolVar(&result.TrustedMode, "z", false, "")
 	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "")
@@ -133,6 +136,23 @@ func fillRedirect(x string) *subprocess.Redirect {
 	}
 }
 
+func readEnvironmentFile(name string) ([]string, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	var result []string
+	for scanner.Scan() {
+		result = append(result, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadLibraryW uintptr) (*subprocess.Subprocess, error) {
 	sub := subprocess.SubprocessCreate()
 
@@ -168,7 +188,13 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	sub.ProcessAffinityMask = uint64(s.ProcessAffinity)
 	sub.NoJob = s.NoJob
 
-	if len(s.Environment) > 0 {
+	if s.EnvironmentFile != "" {
+		var err error
+		if sub.Environment, err = readEnvironmentFile(s.EnvironmentFile); err != nil {
+			return nil, err
+		}
+		sub.NoInheritEnvironment = true
+	} else if len(s.Environment) > 0 {
 		sub.Environment = s.Environment
 		sub.NoInheritEnvironment = true
 	}

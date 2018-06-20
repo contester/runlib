@@ -279,7 +279,7 @@ func main() {
 	}
 
 	if globalFlags.XML {
-		fmt.Println(XML_HEADER)
+		fmt.Println(xmlHeaderText)
 		failLog = FailXml
 	}
 

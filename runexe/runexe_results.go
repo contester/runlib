@@ -82,15 +82,7 @@ type invocationResults struct {
 	Result  []interface{}
 }
 
-const XML_HEADER = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>"
-
-func printTag(tag, content string) {
-	fmt.Printf("<%s>%s</%s>\n", tag, content, tag)
-}
-
-func xmlTime(t time.Duration) string {
-	return strconv.FormatUint(uint64(t.Nanoseconds()/1000000), 10)
-}
+const xmlHeaderText = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>"
 
 func PrintResultsXml(results []*RunResult) {
 	r := invocationResults{}

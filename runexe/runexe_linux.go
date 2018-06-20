@@ -8,11 +8,11 @@ import (
 	"github.com/contester/runlib/subprocess"
 )
 
-func CreateDesktopIfNeeded(program, interactor *ProcessConfig) (*platform.ContesterDesktop, error) {
+func createDesktopIfNeeded(program, interactor *ProcessConfig) (*platform.ContesterDesktop, error) {
 	return nil, nil
 }
 
-func GetLoadLibraryIfNeeded(program, interactor *ProcessConfig) (uintptr, error) {
+func getLoadLibraryIfNeeded(program, interactor *ProcessConfig) (uintptr, error) {
 	return 0, nil
 }
 
@@ -31,7 +31,7 @@ func newPlatformOptions() *subprocess.PlatformOptions {
 	return &opts
 }
 
-func ArgsToPc(pc *ProcessConfig, args []string) {
+func argsToPc(pc *ProcessConfig, args []string) {
 	pc.ApplicationName = args[0]
 	pc.CommandLine = strings.Join(args, " ")
 	pc.Parameters = args

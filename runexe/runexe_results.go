@@ -11,52 +11,52 @@ import (
 	"github.com/contester/runlib/subprocess"
 )
 
-type Verdict int
+type verdict int
 
 const (
-	SUCCESS               = Verdict(0)
-	FAIL                  = Verdict(1)
-	CRASH                 = Verdict(2)
-	TIME_LIMIT_EXCEEDED   = Verdict(3)
-	MEMORY_LIMIT_EXCEEDED = Verdict(4)
-	IDLE                  = Verdict(5)
-	SECURITY_VIOLATION    = Verdict(6)
+	verdictSuccess             = verdict(0)
+	verdictFail                = verdict(1)
+	verdictCrash               = verdict(2)
+	verdictTimeLimitExceeded   = verdict(3)
+	verdictMemoryLimitExceeded = verdict(4)
+	verdictIdle                = verdict(5)
+	verdictSecurityViolation   = verdict(6)
 )
 
-func (v Verdict) String() string {
+func (v verdict) String() string {
 	switch v {
-	case SUCCESS:
+	case verdictSuccess:
 		return "SUCCEEDED"
-	case FAIL:
+	case verdictFail:
 		return "FAILED"
-	case CRASH:
+	case verdictCrash:
 		return "CRASHED"
-	case TIME_LIMIT_EXCEEDED:
+	case verdictTimeLimitExceeded:
 		return "TIME_LIMIT_EXCEEDED"
-	case MEMORY_LIMIT_EXCEEDED:
+	case verdictMemoryLimitExceeded:
 		return "MEMORY_LIMIT_EXCEEDED"
-	case IDLE:
+	case verdictIdle:
 		return "IDLENESS_LIMIT_EXCEEDED"
-	case SECURITY_VIOLATION:
+	case verdictSecurityViolation:
 		return "SECURITY_VIOLATION"
 	}
 	return "FAILED"
 }
 
-func GetVerdict(r *subprocess.SubprocessResult) Verdict {
+func getVerdict(r *subprocess.SubprocessResult) verdict {
 	switch {
 	case r.SuccessCode == 0:
-		return SUCCESS
+		return verdictSuccess
 	case r.SuccessCode&(subprocess.EF_PROCESS_LIMIT_HIT|subprocess.EF_PROCESS_LIMIT_HIT_POST) != 0:
-		return SECURITY_VIOLATION
+		return verdictSecurityViolation
 	case r.SuccessCode&(subprocess.EF_INACTIVE|subprocess.EF_TIME_LIMIT_HARD) != 0:
-		return IDLE
+		return verdictIdle
 	case r.SuccessCode&(subprocess.EF_TIME_LIMIT_HIT|subprocess.EF_TIME_LIMIT_HIT_POST) != 0:
-		return TIME_LIMIT_EXCEEDED
+		return verdictTimeLimitExceeded
 	case r.SuccessCode&(subprocess.EF_MEMORY_LIMIT_HIT|subprocess.EF_MEMORY_LIMIT_HIT_POST) != 0:
-		return MEMORY_LIMIT_EXCEEDED
+		return verdictMemoryLimitExceeded
 	default:
-		return CRASH
+		return verdictCrash
 	}
 }
 
@@ -139,28 +139,28 @@ func strMemory(t uint64) string {
 func PrintResultText(kernelTime bool, result *RunResult, pipeRecords []subprocess.PipeRecordEntry) {
 	usuffix := "sec"
 	switch result.V {
-	case SUCCESS:
+	case verdictSuccess:
 		fmt.Println(result.T.String(), "successfully terminated")
 		fmt.Println("  exit code:    " + strconv.Itoa(int(result.R.ExitCode)))
-	case TIME_LIMIT_EXCEEDED:
+	case verdictTimeLimitExceeded:
 		fmt.Println("Time limit exceeded")
 		fmt.Println(result.T.String(), "failed to terminate within", strTime(result.S.TimeLimit), "sec")
 		usuffix = "of " + strTime(result.S.TimeLimit) + " sec"
-	case MEMORY_LIMIT_EXCEEDED:
+	case verdictMemoryLimitExceeded:
 		fmt.Println("Memory limit exceeded")
 		fmt.Println(result.T.String(), "tried to allocate more than", strMemory(result.S.MemoryLimit), "bytes")
-	case IDLE:
+	case verdictIdle:
 		fmt.Println("Idleness limit exceeded")
 		fmt.Println("Detected", result.T.String(), "idle")
-	case SECURITY_VIOLATION:
+	case verdictSecurityViolation:
 		fmt.Println("Security violation")
 		fmt.Println(result.T.String(), " tried to do some forbidden action")
-	case CRASH:
+	case verdictCrash:
 		fmt.Println("Invocation crashed:", result.T.String())
 		fmt.Println("Comment:", result.E)
 		fmt.Println()
 		return
-	case FAIL:
+	case verdictFail:
 		fmt.Println("Invocation failed:", result.T.String())
 		fmt.Println("Comment:", result.E)
 		fmt.Println()
@@ -185,11 +185,11 @@ func PrintResultText(kernelTime bool, result *RunResult, pipeRecords []subproces
 }
 
 type RunResult struct {
-	V Verdict
+	V verdict
 	E error
 	S *subprocess.Subprocess
 	R *subprocess.SubprocessResult
-	T ProcessType
+	T processType
 }
 
 var failLog = FailText

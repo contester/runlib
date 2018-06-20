@@ -17,7 +17,7 @@ import (
 var version string
 var buildid string
 
-type ProcessConfig struct {
+type processConfig struct {
 	ApplicationName  string
 	CommandLine      string
 	CurrentDirectory string
@@ -44,8 +44,8 @@ type ProcessConfig struct {
 	NoJob       bool
 }
 
-type RunexeConfig struct {
-	Xml                 bool
+type runexeConfig struct {
+	XML                 bool
 	Interactor          string
 	ShowKernelModeTime  bool
 	ReturnExitCode      bool
@@ -54,26 +54,26 @@ type RunexeConfig struct {
 	RecordProgramOutput string
 }
 
-type ProcessType int
+type processType int
 
 const (
-	PROGRAM    = ProcessType(0)
-	INTERACTOR = ProcessType(1)
+	processProgram    = processType(0)
+	processInteractor = processType(1)
 )
 
-func (i ProcessType) String() string {
+func (i processType) String() string {
 	switch i {
-	case PROGRAM:
+	case processProgram:
 		return "Program"
-	case INTERACTOR:
+	case processInteractor:
 		return "Interactor"
 	default:
 		return "UNKNOWN"
 	}
 }
 
-func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
-	var result ProcessConfig
+func CreateFlagSet() (*flag.FlagSet, *processConfig) {
+	var result processConfig
 	fs := flag.NewFlagSet("subprocess", flag.ExitOnError)
 	fs.Usage = printUsage
 
@@ -98,9 +98,9 @@ func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	return fs, &result
 }
 
-func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
-	var result RunexeConfig
-	fs.BoolVar(&result.Xml, "xml", false, "")
+func AddGlobalFlags(fs *flag.FlagSet) *runexeConfig {
+	var result runexeConfig
+	fs.BoolVar(&result.XML, "xml", false, "")
 	fs.StringVar(&result.Interactor, "interactor", "", "")
 	fs.StringVar(&result.Logfile, "logfile", "", "")
 	fs.StringVar(&result.RecordProgramInput, "ri", "", "")
@@ -110,7 +110,7 @@ func AddGlobalFlags(fs *flag.FlagSet) *RunexeConfig {
 	return &result
 }
 
-func ParseFlagSet(fs *flag.FlagSet, pc *ProcessConfig, args []string) error {
+func ParseFlagSet(fs *flag.FlagSet, pc *processConfig, args []string) error {
 	fs.Parse(args)
 
 	if len(fs.Args()) < 1 {
@@ -118,11 +118,11 @@ func ParseFlagSet(fs *flag.FlagSet, pc *ProcessConfig, args []string) error {
 		os.Exit(2)
 	}
 
-	ArgsToPc(pc, fs.Args())
+	argsToPc(pc, fs.Args())
 	return nil
 }
 
-func (pc *ProcessConfig) NeedLogin() bool {
+func (pc *processConfig) NeedLogin() bool {
 	return pc.LoginName != "" && pc.Password != ""
 }
 
@@ -153,7 +153,7 @@ func readEnvironmentFile(name string) ([]string, error) {
 	return result, nil
 }
 
-func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadLibraryW uintptr) (*subprocess.Subprocess, error) {
+func SetupSubprocess(s *processConfig, desktop *platform.ContesterDesktop, loadLibraryW uintptr) (*subprocess.Subprocess, error) {
 	sub := subprocess.SubprocessCreate()
 
 	sub.Cmd = &subprocess.CommandLine{}
@@ -222,7 +222,7 @@ func SetupSubprocess(s *ProcessConfig, desktop *platform.ContesterDesktop, loadL
 	return sub, nil
 }
 
-func ExecAndSend(sub *subprocess.Subprocess, pr **RunResult, ptype ProcessType, wg *sync.WaitGroup) {
+func ExecAndSend(sub *subprocess.Subprocess, pr **RunResult, ptype processType, wg *sync.WaitGroup) {
 	if wg != nil {
 		defer wg.Done()
 	}
@@ -233,17 +233,17 @@ func ExecAndSend(sub *subprocess.Subprocess, pr **RunResult, ptype ProcessType, 
 	r.R, r.E = sub.Execute()
 	if r.E != nil {
 		if subprocess.IsUserError(r.E) {
-			r.V = CRASH
+			r.V = verdictCrash
 		} else {
-			r.V = FAIL
+			r.V = verdictFail
 		}
 	} else {
-		r.V = GetVerdict(r.R)
+		r.V = getVerdict(r.R)
 	}
 	*pr = &r
 }
 
-func ParseFlags(globals bool, args []string) (pc *ProcessConfig, gc *RunexeConfig, err error) {
+func ParseFlags(globals bool, args []string) (pc *processConfig, gc *runexeConfig, err error) {
 	var fs *flag.FlagSet
 
 	fs, pc = CreateFlagSet()
@@ -269,7 +269,7 @@ func main() {
 		log.SetOutput(logfile)
 	}
 
-	var interactorFlags *ProcessConfig
+	var interactorFlags *processConfig
 
 	if globalFlags.Interactor != "" {
 		interactorFlags, _, err = ParseFlags(false, strings.Split(globalFlags.Interactor, " "))
@@ -278,17 +278,17 @@ func main() {
 		}
 	}
 
-	if globalFlags.Xml {
+	if globalFlags.XML {
 		fmt.Println(XML_HEADER)
 		failLog = FailXml
 	}
 
-	desktop, err := CreateDesktopIfNeeded(programFlags, interactorFlags)
+	desktop, err := createDesktopIfNeeded(programFlags, interactorFlags)
 	if err != nil {
 		Fail(err, "Create desktop if needed")
 	}
 
-	loadLibrary, err := GetLoadLibraryIfNeeded(programFlags, interactorFlags)
+	loadLibrary, err := getLoadLibraryIfNeeded(programFlags, interactorFlags)
 	if err != nil {
 		Fail(err, "Load library if needed")
 	}
@@ -333,9 +333,9 @@ func main() {
 	var results [2]*RunResult
 	if interactor != nil {
 		wg.Add(1)
-		go ExecAndSend(interactor, &results[1], INTERACTOR, &wg)
+		go ExecAndSend(interactor, &results[1], processInteractor, &wg)
 	}
-	go ExecAndSend(program, &results[0], PROGRAM, &wg)
+	go ExecAndSend(program, &results[0], processProgram, &wg)
 	wg.Wait()
 
 	var programReturnCode int
@@ -343,7 +343,7 @@ func main() {
 		programReturnCode = int(results[0].R.ExitCode)
 	}
 
-	if globalFlags.Xml {
+	if globalFlags.XML {
 		PrintResultsXml(results[:])
 	} else {
 		for _, result := range results {

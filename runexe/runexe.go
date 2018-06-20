@@ -23,12 +23,12 @@ type ProcessConfig struct {
 	CurrentDirectory string
 	Parameters       []string
 
-	TimeLimit       TimeLimitFlag
-	HardTimeLimit   TimeLimitFlag
-	MemoryLimit     MemoryLimitFlag
-	Environment     EnvFlag
+	TimeLimit       timeLimitFlag
+	HardTimeLimit   timeLimitFlag
+	MemoryLimit     memoryLimitFlag
+	Environment     envFlag
 	EnvironmentFile string
-	ProcessAffinity ProcessAffinityFlag
+	ProcessAffinity processAffinityFlag
 
 	LoginName string
 	Password  string
@@ -75,7 +75,7 @@ func (i ProcessType) String() string {
 func CreateFlagSet() (*flag.FlagSet, *ProcessConfig) {
 	var result ProcessConfig
 	fs := flag.NewFlagSet("subprocess", flag.ExitOnError)
-	fs.Usage = PrintUsage
+	fs.Usage = printUsage
 
 	fs.Var(&result.TimeLimit, "t", "")
 	fs.Var(&result.MemoryLimit, "m", "")
@@ -114,7 +114,7 @@ func ParseFlagSet(fs *flag.FlagSet, pc *ProcessConfig, args []string) error {
 	fs.Parse(args)
 
 	if len(fs.Args()) < 1 {
-		PrintUsage()
+		printUsage()
 		os.Exit(2)
 	}
 

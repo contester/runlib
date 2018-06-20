@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-type ProcessAffinityFlag uint64
+type processAffinityFlag uint64
 
-func (t *ProcessAffinityFlag) String() string {
+func (t *processAffinityFlag) String() string {
 	return "0" + strconv.FormatUint(uint64(*t), 2)
 }
 
-func (t *ProcessAffinityFlag) Set(v string) error {
+func (t *processAffinityFlag) Set(v string) error {
 	if len(v) == 0 {
 		return nil
 	}
@@ -27,17 +27,17 @@ func (t *ProcessAffinityFlag) Set(v string) error {
 	if err != nil {
 		return err
 	}
-	*t = ProcessAffinityFlag(r)
+	*t = processAffinityFlag(r)
 	return nil
 }
 
-type TimeLimitFlag uint64
+type timeLimitFlag uint64
 
-func (t *TimeLimitFlag) String() string {
+func (t *timeLimitFlag) String() string {
 	return strconv.Itoa(int(*t/1000)) + "ms"
 }
 
-func (t *TimeLimitFlag) Set(v string) error {
+func (t *timeLimitFlag) Set(v string) error {
 	v = strings.ToLower(v)
 	if strings.HasSuffix(v, "ms") {
 		r, err := strconv.Atoi(v[:len(v)-2])
@@ -47,7 +47,7 @@ func (t *TimeLimitFlag) Set(v string) error {
 		if r < 0 {
 			return fmt.Errorf("Invalid time limit %s", v)
 		}
-		*t = TimeLimitFlag(r * 1000)
+		*t = timeLimitFlag(r * 1000)
 		return nil
 	}
 	if strings.HasSuffix(v, "s") {
@@ -60,17 +60,17 @@ func (t *TimeLimitFlag) Set(v string) error {
 	if r < 0 {
 		return fmt.Errorf("Invalid time limit %s", v)
 	}
-	*t = TimeLimitFlag(r * 1000000)
+	*t = timeLimitFlag(r * 1000000)
 	return nil
 }
 
-type MemoryLimitFlag uint64
+type memoryLimitFlag uint64
 
-func (t *MemoryLimitFlag) String() string {
-	return strconv.Itoa(int(*t))
+func (t *memoryLimitFlag) String() string {
+	return strconv.FormatUint(uint64(*t), 10)
 }
 
-func (t *MemoryLimitFlag) Set(v string) error {
+func (t *memoryLimitFlag) Set(v string) error {
 	v = strings.ToUpper(v)
 	m := 1
 	switch v[len(v)-1] {
@@ -91,27 +91,27 @@ func (t *MemoryLimitFlag) Set(v string) error {
 	if r < 0 {
 		return fmt.Errorf("Invalid memory limit %s", v)
 	}
-	*t = MemoryLimitFlag(r * m)
+	*t = memoryLimitFlag(r * m)
 	return nil
 }
 
-type EnvFlag []string
+type envFlag []string
 
-func (t *EnvFlag) String() string {
+func (t *envFlag) String() string {
 	return strings.Join(*t, "|")
 }
 
-func (t *EnvFlag) Set(v string) error {
+func (t *envFlag) Set(v string) error {
 	*t = append(*t, v)
 	return nil
 }
 
-func PrintUsage() {
+func printUsage() {
 	fmt.Printf("runexe 2.0 version %s build %s\n", version, buildid)
-	fmt.Println(USAGE)
+	fmt.Println(usageText)
 }
 
-const USAGE = `
+const usageText = `
 This program runs other program(s) for given period of time with specified
 restrictions.
 

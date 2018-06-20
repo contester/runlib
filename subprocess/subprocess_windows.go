@@ -218,8 +218,6 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		return nil, e
 	}
 
-	log.Infof("processInfo: %+v", &pi)
-
 	d.platformData.hProcess = pi.Process
 	d.platformData.hThread = pi.Thread
 	d.platformData.hJob = syscall.InvalidHandle

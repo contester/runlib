@@ -93,7 +93,6 @@ func xmlTime(t time.Duration) string {
 }
 
 func PrintResultsXml(results []*RunResult) {
-	fmt.Println(XML_HEADER)
 	r := invocationResults{}
 	for _, v := range results {
 		if v != nil {
@@ -110,6 +109,7 @@ func PrintResultsXml(results []*RunResult) {
 func convertXml(result *RunResult) interface{} {
 	if result.R != nil {
 		return invocationSuccess{
+			ID:         strings.ToLower(result.T.String()),
 			Verdict:    result.V.String(),
 			ExitCode:   int(result.R.ExitCode),
 			UserTime:   int(result.R.UserTime.Nanoseconds() / 1000000),
@@ -219,5 +219,5 @@ func FailXml(err error, state string) {
 	if err != nil {
 		return
 	}
-	fmt.Println(d)
+	fmt.Println(string(d))
 }

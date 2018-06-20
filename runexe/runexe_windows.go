@@ -8,8 +8,10 @@ import (
 )
 
 func CreateDesktopIfNeeded(program, interactor *ProcessConfig) (*platform.ContesterDesktop, error) {
-	if !program.NeedLogin() && (interactor != nil && !interactor.NeedLogin()) {
-		return nil, nil
+	if !program.NeedLogin() {
+		if interactor == nil || !interactor.NeedLogin() {
+			return nil, nil
+		}
 	}
 
 	return platform.CreateContesterDesktopStruct()

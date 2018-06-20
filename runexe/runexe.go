@@ -258,7 +258,7 @@ func main() {
 	programFlags, globalFlags, err := ParseFlags(true, os.Args[1:])
 
 	if err != nil {
-		Fail(globalFlags.Xml, err, "Parse main flags")
+		Fail(err, "Parse main flags")
 	}
 
 	if globalFlags.Logfile != "" {
@@ -274,28 +274,29 @@ func main() {
 	if globalFlags.Interactor != "" {
 		interactorFlags, _, err = ParseFlags(false, strings.Split(globalFlags.Interactor, " "))
 		if err != nil {
-			Fail(globalFlags.Xml, err, "Parse interator flags")
+			Fail(err, "Parse interator flags")
 		}
 	}
 
 	if globalFlags.Xml {
 		fmt.Println(XML_HEADER)
+		failLog = FailXml
 	}
 
 	desktop, err := CreateDesktopIfNeeded(programFlags, interactorFlags)
 	if err != nil {
-		Fail(globalFlags.Xml, err, "Create desktop if needed")
+		Fail(err, "Create desktop if needed")
 	}
 
 	loadLibrary, err := GetLoadLibraryIfNeeded(programFlags, interactorFlags)
 	if err != nil {
-		Fail(globalFlags.Xml, err, "Load library if needed")
+		Fail(err, "Load library if needed")
 	}
 
 	var program, interactor *subprocess.Subprocess
 	program, err = SetupSubprocess(programFlags, desktop, loadLibrary)
 	if err != nil {
-		Fail(globalFlags.Xml, err, "Setup main subprocess")
+		Fail(err, "Setup main subprocess")
 	}
 
 	var recorder subprocess.OrderedRecorder
@@ -303,7 +304,7 @@ func main() {
 	if interactorFlags != nil {
 		interactor, err = SetupSubprocess(interactorFlags, desktop, loadLibrary)
 		if err != nil {
-			Fail(globalFlags.Xml, err, "Setup interactor subprocess")
+			Fail(err, "Setup interactor subprocess")
 		}
 
 		var recordI, recordO *os.File
@@ -311,19 +312,19 @@ func main() {
 		if globalFlags.RecordProgramInput != "" {
 			recordI, err = os.Create(globalFlags.RecordProgramInput)
 			if err != nil {
-				Fail(globalFlags.Xml, err, "Create input recorded")
+				Fail(err, "Create input recorded")
 			}
 		}
 		if globalFlags.RecordProgramOutput != "" {
 			recordO, err = os.Create(globalFlags.RecordProgramOutput)
 			if err != nil {
-				Fail(globalFlags.Xml, err, "Create output recorder")
+				Fail(err, "Create output recorder")
 			}
 		}
 
 		err = subprocess.Interconnect(program, interactor, recordI, recordO, &recorder)
 		if err != nil {
-			Fail(globalFlags.Xml, err, "Interconnect")
+			Fail(err, "Interconnect")
 		}
 	}
 
@@ -343,19 +344,14 @@ func main() {
 	}
 
 	if globalFlags.Xml {
-		fmt.Println(XML_RESULTS_START)
-	}
-
-	for _, result := range results {
-		if result == nil {
-			continue
+		PrintResultsXml(results[:])
+	} else {
+		for _, result := range results {
+			if result == nil {
+				continue
+			}
+			PrintResultText(globalFlags.ShowKernelModeTime, result, recorder.GetEntries())
 		}
-
-		PrintResult(globalFlags.Xml, globalFlags.ShowKernelModeTime, result, recorder.GetEntries())
-	}
-
-	if globalFlags.Xml {
-		fmt.Println(XML_RESULTS_END)
 	}
 
 	if globalFlags.ReturnExitCode {

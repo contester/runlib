@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"os"
 	"strconv"
@@ -60,9 +61,29 @@ func GetVerdict(r *subprocess.SubprocessResult) Verdict {
 	return CRASH
 }
 
+type invocationSuccess struct {
+	XMLName    xml.Name `xml:invocationResult`
+	ID         string   `xml:id,attr`
+	Verdict    string   `xml:invocationVerdict`
+	ExitCode   int      `xml:exitCode`
+	UserTime   int      `xml:processorUserModeTime`
+	KernelTime int      `xml:processorKernelModeTime`
+	WallTime   int      `xml:passedTime`
+	Memory     int      `xml:consumedMemory`
+}
+
+type invocationError struct {
+	XMLName xml.Name `xml:invocationResult`
+	ID      string   `xml:id,attr`
+	Error   string   `xml:comment,omitempty`
+}
+
+type invocationResults struct {
+	XMLName xml.Name `xml:invocationResults`
+	Result  []interface{}
+}
+
 const XML_HEADER = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>"
-const XML_RESULTS_START = "<invocationResults>"
-const XML_RESULTS_END = "</invocationResults>"
 
 func printTag(tag, content string) {
 	fmt.Printf("<%s>%s</%s>\n", tag, content, tag)
@@ -72,27 +93,40 @@ func xmlTime(t time.Duration) string {
 	return strconv.FormatUint(uint64(t.Nanoseconds()/1000000), 10)
 }
 
-type irXml struct {
-	ExitCode              int   `xml:"exitCode"`
-	ProcessorUserModeTime int64 `xml:"processorUserModeTime"`
+func PrintResultsXml(results []*RunResult) {
+	fmt.Println(XML_HEADER)
+	r := invocationResults{}
+	for _, v := range results {
+		if v != nil {
+			r.Result = append(r.Result, convertXml(v))
+		}
+	}
+	d, err := xml.MarshalIndent(&r, "", "  ")
+	if err != nil {
+		return
+	}
+	fmt.Println(string(d))
 }
 
-func PrintResultXml(result *RunResult) {
-	fmt.Printf("<invocationResult id=\"%s\">\n", strings.ToLower(result.T.String()))
-
-	printTag("invocationVerdict", result.V.String())
+func convertXml(result *RunResult) interface{} {
 	if result.R != nil {
-		printTag("exitCode", strconv.Itoa(int(result.R.ExitCode)))
-		printTag("processorUserModeTime", xmlTime(result.R.UserTime))
-		printTag("processorKernelModeTime", xmlTime(result.R.KernelTime))
-		printTag("passedTime", xmlTime(result.R.WallTime))
-		printTag("consumedMemory", strconv.Itoa(int(result.R.PeakMemory)))
+		return invocationSuccess{
+			Verdict:    result.V.String(),
+			ExitCode:   int(result.R.ExitCode),
+			UserTime:   int(result.R.UserTime.Nanoseconds() / 1000000),
+			KernelTime: int(result.R.KernelTime.Nanoseconds() / 1000000),
+			WallTime:   int(result.R.WallTime.Nanoseconds() / 1000000),
+			Memory:     int(result.R.PeakMemory),
+		}
 	}
 
 	if result.E != nil {
-		printTag("comment", result.E.Error())
+		return invocationError{
+			ID:    strings.ToLower(result.T.String()),
+			Error: result.E.Error(),
+		}
 	}
-	fmt.Println("</invocationResult>")
+	return nil
 }
 
 func strTime(t time.Duration) string {
@@ -151,14 +185,6 @@ func PrintResultText(kernelTime bool, result *RunResult, pipeRecords []subproces
 	}
 }
 
-func PrintResult(xml, kernelTime bool, result *RunResult, pipeRecords []subprocess.PipeRecordEntry) {
-	if xml {
-		PrintResultXml(result)
-	} else {
-		PrintResultText(kernelTime, result, pipeRecords)
-	}
-}
-
 type RunResult struct {
 	V Verdict
 	E error
@@ -167,12 +193,10 @@ type RunResult struct {
 	T ProcessType
 }
 
-func Fail(xml bool, err error, state string) {
-	if xml {
-		FailXml(err, state)
-	} else {
-		FailText(err, state)
-	}
+var failLog = FailText
+
+func Fail(err error, state string) {
+	failLog(err, state)
 	os.Exit(3)
 }
 
@@ -184,10 +208,17 @@ func FailText(err error, state string) {
 }
 
 func FailXml(err error, state string) {
-	fmt.Println("<invocationResults>")
-	fmt.Println("<invocationResult id=\"program\">")
-	fmt.Println("<invocationVerdict>FAIL</invocationVerdict>")
-	fmt.Println("<comment>(", state, ") ", err, "</comment>")
-	fmt.Println("</invocationResult>")
-	fmt.Println("</invocationResults>")
+	r := invocationResults{
+		Result: []interface{}{
+			invocationError{
+				ID:    "program",
+				Error: "(" + state + ") " + err.Error(),
+			},
+		},
+	}
+	d, err := xml.MarshalIndent(&r, "", "  ")
+	if err != nil {
+		return
+	}
+	fmt.Println(d)
 }

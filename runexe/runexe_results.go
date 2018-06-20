@@ -58,28 +58,27 @@ func GetVerdict(r *subprocess.SubprocessResult) Verdict {
 	default:
 		return CRASH
 	}
-	return CRASH
 }
 
 type invocationSuccess struct {
-	XMLName    xml.Name `xml:invocationResult`
-	ID         string   `xml:id,attr`
-	Verdict    string   `xml:invocationVerdict`
-	ExitCode   int      `xml:exitCode`
-	UserTime   int      `xml:processorUserModeTime`
-	KernelTime int      `xml:processorKernelModeTime`
-	WallTime   int      `xml:passedTime`
-	Memory     int      `xml:consumedMemory`
+	XMLName    xml.Name `xml:"invocationResult"`
+	ID         string   `xml:"id,attr"`
+	Verdict    string   `xml:"invocationVerdict"`
+	ExitCode   int      `xml:"exitCode"`
+	UserTime   int      `xml:"processorUserModeTime"`
+	KernelTime int      `xml:"processorKernelModeTime"`
+	WallTime   int      `xml:"passedTime"`
+	Memory     int      `xml:"consumedMemory"`
 }
 
 type invocationError struct {
-	XMLName xml.Name `xml:invocationResult`
-	ID      string   `xml:id,attr`
-	Error   string   `xml:comment,omitempty`
+	XMLName xml.Name `xml:"invocationResult"`
+	ID      string   `xml:"id,attr"`
+	Error   string   `xml:"comment,omitempty"`
 }
 
 type invocationResults struct {
-	XMLName xml.Name `xml:invocationResults`
+	XMLName xml.Name `xml:"invocationResults"`
 	Result  []interface{}
 }
 

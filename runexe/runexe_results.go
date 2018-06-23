@@ -195,7 +195,7 @@ func Fail(err error, state string) {
 
 func FailText(err error, state string) {
 	fmt.Println("Invocation failed")
-	fmt.Println("Comment: (", state, ") ", err)
+	fmt.Println("Comment: (" + state + ") " + err)
 	fmt.Println()
 	fmt.Println("Use \"runexe -h\" to get help information")
 }
@@ -204,8 +204,9 @@ func FailXml(err error, state string) {
 	r := invocationResults{
 		Result: []interface{}{
 			invocationError{
-				ID:    "program",
-				Error: "(" + state + ") " + err.Error(),
+				ID:      "program",
+				Verdict: "FAIL",
+				Error:   "(" + state + ") " + err.Error(),
 			},
 		},
 	}

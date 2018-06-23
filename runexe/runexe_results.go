@@ -205,7 +205,7 @@ func FailXml(err error, state string) {
 		Result: []interface{}{
 			invocationError{
 				ID:      "program",
-				Verdict: "FAIL",
+				Verdict: verdictFail.String(),
 				Error:   "(" + state + ") " + err.Error(),
 			},
 		},

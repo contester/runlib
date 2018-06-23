@@ -74,6 +74,7 @@ type invocationSuccess struct {
 type invocationError struct {
 	XMLName xml.Name `xml:"invocationResult"`
 	ID      string   `xml:"id,attr"`
+	Verdict string   `xml:"invocationVerdict"`
 	Error   string   `xml:"comment,omitempty"`
 }
 
@@ -113,8 +114,9 @@ func convertXml(result *RunResult) interface{} {
 
 	if result.E != nil {
 		return invocationError{
-			ID:    strings.ToLower(result.T.String()),
-			Error: result.E.Error(),
+			ID:      strings.ToLower(result.T.String()),
+			Verdict: result.V.String(),
+			Error:   result.E.Error(),
 		}
 	}
 	return nil

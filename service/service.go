@@ -164,7 +164,7 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 
 	response.InvokerId = s.InvokerId
 	response.Environment = &contester_proto.LocalEnvironment{
-		Variable: s.Env[:]}
+		Variable: s.Env}
 	response.Sandboxes = make([]*contester_proto.SandboxLocations, 0, len(s.Sandboxes))
 	for _, p := range s.Sandboxes {
 		response.Sandboxes = append(response.Sandboxes, &contester_proto.SandboxLocations{

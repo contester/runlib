@@ -49,9 +49,9 @@ func getVerdict(r *subprocess.SubprocessResult) verdict {
 		return verdictSuccess
 	case r.SuccessCode&(subprocess.EF_PROCESS_LIMIT_HIT|subprocess.EF_PROCESS_LIMIT_HIT_POST) != 0:
 		return verdictSecurityViolation
-	case r.SuccessCode&(subprocess.EF_INACTIVE|subprocess.EF_TIME_LIMIT_HARD) != 0:
+	case r.SuccessCode&(subprocess.EF_INACTIVE) != 0:
 		return verdictIdle
-	case r.SuccessCode&(subprocess.EF_TIME_LIMIT_HIT|subprocess.EF_TIME_LIMIT_HIT_POST) != 0:
+	case r.SuccessCode&(subprocess.EF_TIME_LIMIT_HIT|subprocess.EF_TIME_LIMIT_HIT_POST|subprocess.EF_TIME_LIMIT_HARD) != 0:
 		return verdictTimeLimitExceeded
 	case r.SuccessCode&(subprocess.EF_MEMORY_LIMIT_HIT|subprocess.EF_MEMORY_LIMIT_HIT_POST) != 0:
 		return verdictMemoryLimitExceeded

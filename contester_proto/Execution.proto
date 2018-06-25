@@ -27,7 +27,6 @@ message ExecutionResultFlags {
     bool time_limit_hit = 2;
     bool memory_limit_hit = 3;
     bool inactive = 4;
-    bool time_limit_hard = 5;
     bool stdout_overflow = 6;
     bool stderr_overflow = 7;
     bool stdpipe_timeout = 8;
@@ -38,7 +37,7 @@ message ExecutionResultFlags {
     bool killed_by_signal = 13; // linux: WTERMSIG
     bool kernel_time_limit_hit = 14;
     bool kernel_time_limit_hit_post = 15;
-    bool wall_limit_hit = 16;
+    bool wall_time_limit_hit = 16;
 };
 
 message ExecutionResultTime {

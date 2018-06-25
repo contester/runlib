@@ -39,61 +39,61 @@
 			"revisionTime": "2018-06-22T17:40:09Z"
 		},
 		{
-			"checksumSHA1": "XXlwAxGFM9Mbn9R84DyGybMsHjY=",
+			"checksumSHA1": "HpnVP25yXZys8uwdVe25MKMIwn8=",
 			"path": "github.com/juju/errors",
 			"revision": "c7d06af17c68cd34c835053720b21f6549d9b0ee",
 			"revisionTime": "2017-07-03T01:00:42Z"
 		},
 		{
-			"checksumSHA1": "6Ia3YgsRytBcSHe5HR/orFGBJfs=",
+			"checksumSHA1": "azHZH/vf0GQkNLvo9ap5tXq95Bw=",
 			"path": "github.com/sirupsen/logrus",
-			"revision": "ea8897e79973357ba785ac2533559a6297e83c44",
-			"revisionTime": "2018-05-23T07:42:43Z"
+			"revision": "e3292c4c4d7fc915224d48222565b02f6af1900e",
+			"revisionTime": "2018-06-25T05:25:43Z"
 		},
 		{
 			"checksumSHA1": "BGm8lKZmvJbf/YOJLeL1rw2WVjA=",
 			"path": "golang.org/x/crypto/ssh/terminal",
-			"revision": "ab813273cd59e1333f7ae7bff5d027d4aadf528c",
-			"revisionTime": "2018-05-26T08:55:52Z"
+			"revision": "a49355c7e3f8fe157a85be2f77e6e269a0f89602",
+			"revisionTime": "2018-06-20T09:14:27Z"
 		},
 		{
-			"checksumSHA1": "tS9B7JRfbkBNQHl0i0AGj+r1ruk=",
+			"checksumSHA1": "USMsFbKZrNd1b9oRFbjevPr6PmI=",
 			"path": "golang.org/x/sys/unix",
-			"revision": "90796e5a05ce440b41c768bd9af257005e470461",
-			"revisionTime": "2017-06-27T07:55:33Z"
+			"revision": "a200a19cb90b19de298170992778b1fda7217bd6",
+			"revisionTime": "2018-06-25T06:32:13Z"
 		},
 		{
-			"checksumSHA1": "GUzvy5+6gTwjQ2PaXxjHfbqjOVw=",
+			"checksumSHA1": "zc2NI38L40/N4+pjd9P2ESz68/0=",
 			"path": "golang.org/x/sys/windows",
-			"revision": "90796e5a05ce440b41c768bd9af257005e470461",
-			"revisionTime": "2017-06-27T07:55:33Z"
+			"revision": "a200a19cb90b19de298170992778b1fda7217bd6",
+			"revisionTime": "2018-06-25T06:32:13Z"
 		},
 		{
-			"checksumSHA1": "wrFqbH57iXMgCYE/r2SypvWjF/4=",
+			"checksumSHA1": "N/AMbVzEuShvKz2WXrdwwMWylik=",
 			"path": "gopkg.in/gcfg.v1",
 			"revision": "61b2c08bc8f6068f7c5ca684372f9a6cb1c45ebe",
 			"revisionTime": "2018-05-17T20:24:47Z"
 		},
 		{
-			"checksumSHA1": "bWlyBa2p0FSX+9KqDJ8WkQzZROY=",
+			"checksumSHA1": "CYxB+G1UgkqEOFCEb90ObVPczMA=",
 			"path": "gopkg.in/gcfg.v1/scanner",
 			"revision": "61b2c08bc8f6068f7c5ca684372f9a6cb1c45ebe",
 			"revisionTime": "2018-05-17T20:24:47Z"
 		},
 		{
-			"checksumSHA1": "2nRzEqOGXcbq9VLlWTdXK0Nk7qQ=",
+			"checksumSHA1": "9agO8MliOVQGjMcOIV7g7LPHeFY=",
 			"path": "gopkg.in/gcfg.v1/token",
 			"revision": "61b2c08bc8f6068f7c5ca684372f9a6cb1c45ebe",
 			"revisionTime": "2018-05-17T20:24:47Z"
 		},
 		{
-			"checksumSHA1": "Cm1dkmWR92No9iL1tzJtnH4gkW0=",
+			"checksumSHA1": "A2FpDz2muvMPC91Ec63wmUPfxFE=",
 			"path": "gopkg.in/gcfg.v1/types",
 			"revision": "61b2c08bc8f6068f7c5ca684372f9a6cb1c45ebe",
 			"revisionTime": "2018-05-17T20:24:47Z"
 		},
 		{
-			"checksumSHA1": "D2O1bpthk4OrzTSfYmH+iq8cnEs=",
+			"checksumSHA1": "I4c3qsEX8KAUTeB9+2pwVX/2ojU=",
 			"path": "gopkg.in/warnings.v0",
 			"revision": "ec4a0fea49c7b46c2aeb0b51aac55779c607e52b",
 			"revisionTime": "2017-11-15T19:30:34Z"

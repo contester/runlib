@@ -36,6 +36,9 @@ message ExecutionResultFlags {
     bool process_limit_hit = 11;
     bool stopped_by_signal = 12; // linux: SIGSTOP/PTRACE
     bool killed_by_signal = 13; // linux: WTERMSIG
+    bool kernel_time_limit_hit = 14;
+    bool kernel_time_limit_hit_post = 15;
+    bool wall_limit_hit = 16;
 };
 
 message ExecutionResultTime {

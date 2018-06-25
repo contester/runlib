@@ -30,18 +30,24 @@ func parseSuccessCode(succ uint32) *contester_proto.ExecutionResultFlags {
 	if succ&subprocess.EF_TIME_LIMIT_HIT != 0 {
 		result.TimeLimitHit = true
 	}
+	//if succ&subprocess.EF_KERNEL_TIME_LIMIT_HIT != 0 {
+	//	result.KernelTimeLimitHit = true
+	//}
+	//if succ&subprocess.EF_WALL_TIME_LIMIT_HIT != 0 {
+	//	result.WallTimeLimitHit = true
+	//}
 	if succ&subprocess.EF_MEMORY_LIMIT_HIT != 0 {
 		result.MemoryLimitHit = true
 	}
 	if succ&subprocess.EF_INACTIVE != 0 {
 		result.Inactive = true
 	}
-	if succ&subprocess.EF_TIME_LIMIT_HARD != 0 {
-		result.TimeLimitHard = true
-	}
 	if succ&subprocess.EF_TIME_LIMIT_HIT_POST != 0 {
 		result.TimeLimitHitPost = true
 	}
+	//if succ&subprocess.EF_KERNEL_TIME_LIMIT_HIT_POST != 0 {
+	//	result.KernelTimeLimitHitPost = true
+	//}
 	if succ&subprocess.EF_MEMORY_LIMIT_HIT_POST != 0 {
 		result.MemoryLimitHitPost = true
 	}
@@ -118,7 +124,8 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 	sub.CurrentDirectory = request.CurrentDirectory
 
 	sub.TimeLimit = subprocess.DuFromMicros(request.GetTimeLimitMicros())
-	sub.HardTimeLimit = subprocess.DuFromMicros(request.GetTimeLimitHardMicros())
+	//sub.KernelTimeLimit = subprocess.DuFromMicros(request.GetKernelTimeLimitMicros())
+	//sub.WallTimeLimit = subprocess.DuFromMicros(request.GetWallTimeLimitMicros())
 	sub.MemoryLimit = request.GetMemoryLimit()
 	sub.CheckIdleness = request.GetCheckIdleness()
 	sub.RestrictUi = request.GetRestrictUi()

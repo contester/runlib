@@ -24,7 +24,8 @@ type processConfig struct {
 	Parameters       []string
 
 	TimeLimit       timeLimitFlag
-	HardTimeLimit   timeLimitFlag
+	WallTimeLimit   timeLimitFlag
+	KernelTimeLimit timeLimitFlag
 	MemoryLimit     memoryLimitFlag
 	Environment     envFlag
 	EnvironmentFile string
@@ -81,7 +82,7 @@ func CreateFlagSet() (*flag.FlagSet, *processConfig) {
 	fs.Var(&result.MemoryLimit, "m", "")
 	fs.Var(&result.Environment, "D", "")
 	fs.Var(&result.ProcessAffinity, "a", "")
-	fs.Var(&result.HardTimeLimit, "h", "")
+	fs.Var(&result.WallTimeLimit, "h", "")
 	fs.StringVar(&result.CurrentDirectory, "d", "", "")
 	fs.StringVar(&result.LoginName, "l", "", "")
 	fs.StringVar(&result.Password, "p", "", "")
@@ -179,8 +180,8 @@ func SetupSubprocess(s *processConfig, desktop *platform.ContesterDesktop, loadL
 	}
 
 	sub.TimeLimit = subprocess.DuFromMicros(uint64(s.TimeLimit))
-	if s.HardTimeLimit > 0 {
-		sub.HardTimeLimit = subprocess.DuFromMicros(uint64(s.HardTimeLimit))
+	if s.WallTimeLimit > 0 {
+		sub.WallTimeLimit = subprocess.DuFromMicros(uint64(s.WallTimeLimit))
 	}
 	sub.MemoryLimit = uint64(s.MemoryLimit)
 	sub.CheckIdleness = !s.NoIdleCheck

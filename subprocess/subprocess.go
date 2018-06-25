@@ -7,20 +7,23 @@ import (
 )
 
 const (
-	EF_INACTIVE               = (1 << 0)
-	EF_TIME_LIMIT_HIT         = (1 << 1)
-	EF_TIME_LIMIT_HARD        = (1 << 2)
-	EF_MEMORY_LIMIT_HIT       = (1 << 3)
-	EF_KILLED                 = (1 << 4)
-	EF_STDOUT_OVERFLOW        = (1 << 5)
-	EF_STDERR_OVERFLOW        = (1 << 6)
-	EF_STDPIPE_TIMEOUT        = (1 << 7)
-	EF_TIME_LIMIT_HIT_POST    = (1 << 8)
-	EF_MEMORY_LIMIT_HIT_POST  = (1 << 9)
-	EF_PROCESS_LIMIT_HIT      = (1 << 10)
-	EF_PROCESS_LIMIT_HIT_POST = (1 << 11)
-	EF_STOPPED                = (1 << 12)
-	EF_KILLED_BY_OTHER        = (1 << 13)
+	EF_INACTIVE                   = (1 << 0)
+	EF_TIME_LIMIT_HIT             = (1 << 1)
+	EF_MEMORY_LIMIT_HIT           = (1 << 3)
+	EF_KILLED                     = (1 << 4)
+	EF_STDOUT_OVERFLOW            = (1 << 5)
+	EF_STDERR_OVERFLOW            = (1 << 6)
+	EF_STDPIPE_TIMEOUT            = (1 << 7)
+	EF_TIME_LIMIT_HIT_POST        = (1 << 8)
+	EF_MEMORY_LIMIT_HIT_POST      = (1 << 9)
+	EF_PROCESS_LIMIT_HIT          = (1 << 10)
+	EF_PROCESS_LIMIT_HIT_POST     = (1 << 11)
+	EF_STOPPED                    = (1 << 12)
+	EF_KILLED_BY_OTHER            = (1 << 13)
+	EF_KERNEL_TIME_LIMIT_HIT      = (1 << 15)
+	EF_KERNEL_TIME_LIMIT_HIT_POST = (1 << 16)
+	EF_WALL_TIME_LIMIT_HIT        = (1 << 2)
+	EF_WALL_TIME_LIMIT_HIT_POST   = (1 << 14)
 
 	REDIRECT_NONE   = 0
 	REDIRECT_MEMORY = 1
@@ -69,7 +72,8 @@ type Subprocess struct {
 	FailOnJobCreationFailure bool
 
 	TimeLimit           time.Duration
-	HardTimeLimit       time.Duration
+	KernelTimeLimit     time.Duration
+	WallTimeLimit       time.Duration
 	CheckIdleness       bool
 	MemoryLimit         uint64
 	HardMemoryLimit     uint64
@@ -162,8 +166,12 @@ func (r *runningState) Update(sub *Subprocess, result *SubprocessResult) {
 		result.SuccessCode |= EF_TIME_LIMIT_HIT
 	}
 
-	if (sub.HardTimeLimit > 0) && (result.WallTime > sub.HardTimeLimit) {
-		result.SuccessCode |= EF_TIME_LIMIT_HARD
+	if (sub.KernelTimeLimit > 0) && (result.KernelTime > sub.KernelTimeLimit) {
+		result.SuccessCode |= EF_KERNEL_TIME_LIMIT_HIT
+	}
+
+	if (sub.WallTimeLimit > 0) && (result.WallTime > sub.WallTimeLimit) {
+		result.SuccessCode |= EF_WALL_TIME_LIMIT_HIT
 	}
 
 	r.lastTimeUsed = ttLastNew
@@ -180,5 +188,9 @@ func (sub *Subprocess) SetPostLimits(result *SubprocessResult) {
 
 	if (sub.MemoryLimit > 0) && (result.PeakMemory > sub.MemoryLimit) {
 		result.SuccessCode |= EF_MEMORY_LIMIT_HIT_POST
+	}
+
+	if (sub.KernelTimeLimit > 0) && (result.KernelTime > sub.KernelTimeLimit) {
+		result.SuccessCode |= EF_KERNEL_TIME_LIMIT_HIT_POST
 	}
 }

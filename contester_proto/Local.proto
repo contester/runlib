@@ -40,7 +40,6 @@ message LocalExecutionParameters {
     bool restrict_ui = 8;
     bool no_job = 9;
     uint32 process_limit = 10;
-    uint64 time_limit_hard_micros = 15;
     uint64 kernel_time_limit_micros = 19;
     uint64 wall_time_limit_micros = 20;
 

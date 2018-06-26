@@ -23,39 +23,18 @@ func parseSuccessCode(succ uint32) *contester_proto.ExecutionResultFlags {
 	if succ == 0 {
 		return nil
 	}
-	var result contester_proto.ExecutionResultFlags
-	if succ&subprocess.EF_KILLED != 0 {
-		result.Killed = true
+	return &contester_proto.ExecutionResultFlags{
+		Killed:                 succ&subprocess.EF_KILLED != 0,
+		TimeLimitHit:           succ&subprocess.EF_TIME_LIMIT_HIT != 0,
+		KernelTimeLimitHit:     succ&subprocess.EF_KERNEL_TIME_LIMIT_HIT != 0,
+		WallTimeLimitHit:       succ&subprocess.EF_WALL_TIME_LIMIT_HIT != 0,
+		MemoryLimitHit:         succ&subprocess.EF_MEMORY_LIMIT_HIT != 0,
+		Inactive:               succ&subprocess.EF_INACTIVE != 0,
+		TimeLimitHitPost:       succ&subprocess.EF_TIME_LIMIT_HIT_POST != 0,
+		KernelTimeLimitHitPost: succ&subprocess.EF_KERNEL_TIME_LIMIT_HIT_POST != 0,
+		MemoryLimitHitPost:     succ&subprocess.EF_MEMORY_LIMIT_HIT_POST != 0,
+		ProcessLimitHit:        succ&subprocess.EF_PROCESS_LIMIT_HIT != 0,
 	}
-	if succ&subprocess.EF_TIME_LIMIT_HIT != 0 {
-		result.TimeLimitHit = true
-	}
-	if succ&subprocess.EF_KERNEL_TIME_LIMIT_HIT != 0 {
-		result.KernelTimeLimitHit = true
-	}
-	if succ&subprocess.EF_WALL_TIME_LIMIT_HIT != 0 {
-		result.WallTimeLimitHit = true
-	}
-	if succ&subprocess.EF_MEMORY_LIMIT_HIT != 0 {
-		result.MemoryLimitHit = true
-	}
-	if succ&subprocess.EF_INACTIVE != 0 {
-		result.Inactive = true
-	}
-	if succ&subprocess.EF_TIME_LIMIT_HIT_POST != 0 {
-		result.TimeLimitHitPost = true
-	}
-	if succ&subprocess.EF_KERNEL_TIME_LIMIT_HIT_POST != 0 {
-		result.KernelTimeLimitHitPost = true
-	}
-	if succ&subprocess.EF_MEMORY_LIMIT_HIT_POST != 0 {
-		result.MemoryLimitHitPost = true
-	}
-	if succ&subprocess.EF_PROCESS_LIMIT_HIT != 0 {
-		result.ProcessLimitHit = true
-	}
-
-	return &result
 }
 
 func parseTime(r *subprocess.SubprocessResult) *contester_proto.ExecutionResultTime {

@@ -107,8 +107,6 @@ message ClearSandboxRequest {
 
 message IdentifyRequest {
     string contester_id = 1;
-    string mongo_host = 2;
-    string mongo_db = 3;
 };
 
 message SandboxLocations {

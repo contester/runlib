@@ -159,6 +159,7 @@ func GetUserObjectSecurity_Ex(obj syscall.Handle, sid uint32, desc []byte) (uint
 		nptr,
 		uintptr(len(desc)),
 		uintptr(unsafe.Pointer(&nLength)))
+	runtime.KeepAlive(&desc)
 	runtime.KeepAlive(&sid)
 	runtime.KeepAlive(&nLength)
 	if int(r1) == 0 {
@@ -215,7 +216,7 @@ func GetSecurityDescriptorDacl(sid []byte) (present bool, acl *Acl, defaulted bo
 	if int(r1) == 0 {
 		err = os.NewSyscallError("GetSecurityDescriptorDacl", e1)
 	}
-	return
+	return present, acl, defaulted, err
 }
 
 func IsValidAcl(acl *Acl) bool {
@@ -256,7 +257,7 @@ func InitializeSecurityDescriptor(sd []byte) error {
 	r1, _, e1 := procInitializeSecurityDescriptor.Call(
 		uintptr(unsafe.Pointer(&sd[0])),
 		SECURITY_DESCRIPTOR_REVISION)
-	runtime.KeepAlive(sd)
+	runtime.KeepAlive(&sd)
 	if int(r1) == 0 {
 		return os.NewSyscallError("InitializeSecurityDescriptor", e1)
 	}
@@ -337,7 +338,7 @@ func SetSecurityDescriptorDacl(sd []byte, present bool, acl *Acl, defaulted bool
 		uintptr(boolToUint32(present)),
 		uintptr(unsafe.Pointer(acl)),
 		uintptr(boolToUint32(defaulted)))
-	runtime.KeepAlive(sd)
+	runtime.KeepAlive(&sd)
 	runtime.KeepAlive(acl)
 	if int(r1) == 0 {
 		return os.NewSyscallError("SetSecurityDescriptorDacl", e1)

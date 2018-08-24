@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"runtime"
 	"syscall"
 	"time"
 	"unsafe"
@@ -356,6 +357,7 @@ func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
 	if _, err = win32.WriteProcessMemory(d.platformData.hProcess, remoteName, unsafe.Pointer(&name[0]), nameLen); err != nil {
 		return errors.Trace(err)
 	}
+	runtime.KeepAlive(name)
 	thread, _, err := win32.CreateRemoteThread(d.platformData.hProcess, win32.MakeInheritSa(), 0, loadLibraryW, remoteName, 0)
 	if err != nil {
 		return errors.Trace(err)

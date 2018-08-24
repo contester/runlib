@@ -2,6 +2,7 @@ package win32
 
 import (
 	"os"
+	"runtime"
 	"unsafe"
 )
 
@@ -23,6 +24,7 @@ func VerifyWindowsInfoW(vi OSVersionInfoEx, typeMask uint32, conditionMask uint6
 	vi.OSVersionInfoSize = uint32(unsafe.Sizeof(vi))
 
 	r1, _, e1 := procVerifyVersionInfoW.Call(uintptr(unsafe.Pointer(&vi)), uintptr(typeMask), uintptr(conditionMask))
+	runtime.KeepAlive(&vi)
 	if r1 != 0 {
 		return true, nil
 	}

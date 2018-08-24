@@ -292,7 +292,7 @@ func LogonUser(username *uint16, domain *uint16, password *uint16, logonType uin
 	if int(r1) == 0 {
 		return syscall.InvalidHandle, os.NewSyscallError("LogonUser", e1)
 	}
-	return
+	return token, nil
 }
 
 func LoadUserProfile(token syscall.Handle, pinfo *ProfileInfo) error {
@@ -393,7 +393,6 @@ func GetUserObjectInformation(obj syscall.Handle, index int, info unsafe.Pointer
 		uintptr(info),
 		uintptr(length),
 		uintptr(unsafe.Pointer(&nLength)))
-	runtime.KeepAlive(&nLength)
 	if int(r1) == 0 {
 		return nLength, os.NewSyscallError("GetUserObjectInformation", e1)
 	}
@@ -438,7 +437,6 @@ func QueryInformationJobObject(job syscall.Handle, infoclass uint32, info unsafe
 		uintptr(info),
 		uintptr(length),
 		uintptr(unsafe.Pointer(&nLength)))
-	runtime.KeepAlive(&nLength)
 	if int(r1) == 0 {
 		return nLength, os.NewSyscallError("QueryInformationJobObject", e1)
 	}
@@ -535,11 +533,15 @@ func GetJobObjectExtendedLimitInformation(job syscall.Handle) (*JobObjectExtende
 }
 
 func SetJobObjectBasicUiRestrictions(job syscall.Handle, info *JobObjectBasicUiRestrictions) error {
-	return SetInformationJobObject(job, 4, unsafe.Pointer(info), uint32(unsafe.Sizeof(*info)))
+	err := SetInformationJobObject(job, 4, unsafe.Pointer(info), uint32(unsafe.Sizeof(*info)))
+	runtime.KeepAlive(info)
+	return err
 }
 
 func SetJobObjectExtendedLimitInformation(job syscall.Handle, info *JobObjectExtendedLimitInformation) error {
-	return SetInformationJobObject(job, 9, unsafe.Pointer(info), uint32(unsafe.Sizeof(*info)))
+	err := SetInformationJobObject(job, 9, unsafe.Pointer(info), uint32(unsafe.Sizeof(*info)))
+	runtime.KeepAlive(info)
+	return err
 }
 
 func AssignProcessToJobObject(job syscall.Handle, process syscall.Handle) error {
@@ -588,6 +590,7 @@ func WriteProcessMemory(process syscall.Handle, addr uintptr, buf unsafe.Pointer
 
 func GetModuleHandle(name *uint16) (syscall.Handle, error) {
 	r1, _, e1 := procGetModuleHandleW.Call(uintptr(unsafe.Pointer(name)))
+	runtime.KeepAlive(name)
 	if int(r1) == 0 {
 		return syscall.InvalidHandle, os.NewSyscallError("GetModuleHandle", e1)
 	}
@@ -605,7 +608,7 @@ func CreateRemoteThread(process syscall.Handle, sa *syscall.SecurityAttributes, 
 		parameter,
 		uintptr(creationFlags),
 		uintptr(unsafe.Pointer(&threadId)))
-
+	runtime.KeepAlive(sa)
 	if int(r1) == 0 {
 		return syscall.InvalidHandle, 0, os.NewSyscallError("CreateRemoteThread", e1)
 	}
@@ -656,7 +659,7 @@ func GetProcessAffinityMask(process syscall.Handle) (processMask, systemMask uin
 		uintptr(unsafe.Pointer(&systemMask)))
 
 	if int(r1) == 0 {
-		err = os.NewSyscallError("GetProcessAffinityMask", e1)
+		return 0, 0, os.NewSyscallError("GetProcessAffinityMask", e1)
 	}
-	return
+	return processMask, systemMask, nil
 }

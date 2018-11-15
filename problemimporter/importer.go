@@ -259,10 +259,35 @@ func exportProblems(backend storage.ProblemStore, dest string) error {
 	return nil
 }
 
+func fixMemoryLimit(backend storage.ProblemStore, newLimit int64) error {
+	manifests, err := backend.GetAllManifests()
+	if err != nil {
+		return err
+	}
+	for _, m := range manifests {
+		if !strings.HasPrefix(m.Id, "direct://school.sgu.ru/moodle/") {
+			continue
+		}
+		if m.MemoryLimit >= newLimit {
+			continue
+		}
+		m.MemoryLimit = newLimit
+		fmt.Printf("%+v\n", &m)
+		if *dryRun {
+			continue
+		}
+		if err = backend.SetManifest(&m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 var (
 	storageUrl = flag.String("url", "", "")
 	mode       = flag.String("mode", "", "")
 	authToken  = flag.String("auth_token", "", "")
+	dryRun     = flag.Bool("dry_run", false, "")
 )
 
 func main() {
@@ -287,6 +312,11 @@ func main() {
 		backend.Cleanup(1)
 	case "export":
 		err = exportProblems(backend, flag.Arg(0))
+	case "fixMemoryLimit":
+		var newMl int64
+		if newMl, err = strconv.ParseInt(flag.Arg(0), 10, 64); newMl > 0 {
+			err = fixMemoryLimit(backend, newMl)
+		}
 	}
 	if err != nil {
 		log.Fatal(err)

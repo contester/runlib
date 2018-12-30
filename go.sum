@@ -1,0 +1,15 @@
+github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237/go.mod h1:hFR+9+xvFqA9vMwfEaVINNfHQalKjuLoCdK/kaSCVmE=
+github.com/gogo/protobuf v0.0.0-20180509162441-30cf7ac33676 h1:sWRRbFwmt+HjaUAHN7jP0WDj7nm7No49h7IY030oQ10=
+github.com/gogo/protobuf v0.0.0-20180509162441-30cf7ac33676/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
+github.com/golang/protobuf v0.0.0-20180622174009-9eb2c01ac278 h1:K8gwDJfG+B1LjkmxrSw1L6P6dQ089va1xLQSz7JTNps=
+github.com/golang/protobuf v0.0.0-20180622174009-9eb2c01ac278/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/juju/errors v0.0.0-20170703010042-c7d06af17c68 h1:d2hBkTvi7B89+OXY8+bBBshPlc+7JYacGrG/dFak8SQ=
+github.com/juju/errors v0.0.0-20170703010042-c7d06af17c68/go.mod h1:W54LbzXuIE0boCoNJfwqpmkKJ1O4TCTZMetAt6jGk7Q=
+github.com/sirupsen/logrus v0.0.0-20180625052543-e3292c4c4d7f h1:nuK8wlXUQkW7AwFzXQv6Gk/sbRzBGSRrkGsbFLYAU74=
+github.com/sirupsen/logrus v0.0.0-20180625052543-e3292c4c4d7f/go.mod h1:pMByvHTf9Beacp5x1UXfOR9xyW/9antXMhjMPG0dEzc=
+golang.org/x/crypto v0.0.0-20180621125126-a49355c7e3f8 h1:h7zdf0RiEvWbYBKIx4b+q41xoUVnMmvsGZnIVE5syG8=
+golang.org/x/crypto v0.0.0-20180621125126-a49355c7e3f8/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
+golang.org/x/sys v0.0.0-20180625162522-a200a19cb90b h1:dzHBFAvEiygv4M/npuIZutMRcJ4d6fgWhuw7Er8rYUo=
+golang.org/x/sys v0.0.0-20180625162522-a200a19cb90b/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+gopkg.in/gcfg.v1 v1.2.3/go.mod h1:yesOnuUOFQAhST5vPY4nbZsb/huCgGGXlipJsBn0b3o=
+gopkg.in/warnings.v0 v0.1.2/go.mod h1:jksf8JmL6Qr/oQM2OXTHunEvvTAsrWBLb6OOjuVWRNI=

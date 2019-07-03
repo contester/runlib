@@ -1,3 +1,4 @@
+github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237 h1:+fVstP61d4GuJOEBJSv+vQtC7mKYnwEqtgSBzrbwSq0=
 github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237/go.mod h1:hFR+9+xvFqA9vMwfEaVINNfHQalKjuLoCdK/kaSCVmE=
 github.com/gogo/protobuf v0.0.0-20180509162441-30cf7ac33676 h1:sWRRbFwmt+HjaUAHN7jP0WDj7nm7No49h7IY030oQ10=
 github.com/gogo/protobuf v0.0.0-20180509162441-30cf7ac33676/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
@@ -11,5 +12,7 @@ golang.org/x/crypto v0.0.0-20180621125126-a49355c7e3f8 h1:h7zdf0RiEvWbYBKIx4b+q4
 golang.org/x/crypto v0.0.0-20180621125126-a49355c7e3f8/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/sys v0.0.0-20180625162522-a200a19cb90b h1:dzHBFAvEiygv4M/npuIZutMRcJ4d6fgWhuw7Er8rYUo=
 golang.org/x/sys v0.0.0-20180625162522-a200a19cb90b/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+gopkg.in/gcfg.v1 v1.2.3 h1:m8OOJ4ccYHnx2f4gQwpno8nAX5OGOh7RLaaz0pj3Ogs=
 gopkg.in/gcfg.v1 v1.2.3/go.mod h1:yesOnuUOFQAhST5vPY4nbZsb/huCgGGXlipJsBn0b3o=
+gopkg.in/warnings.v0 v0.1.2 h1:wFXVbFY8DY5/xOe1ECiWdKCzZlxgshcYVNkBHstARME=
 gopkg.in/warnings.v0 v0.1.2/go.mod h1:jksf8JmL6Qr/oQM2OXTHunEvvTAsrWBLb6OOjuVWRNI=

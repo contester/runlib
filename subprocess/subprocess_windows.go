@@ -163,9 +163,6 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	syscall.ForkLock.Lock()
 	wSetInherit(si)
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	if sub.Login != nil {
 		if useCreateProcessWithLogonW {
 			e = win32.CreateProcessWithLogonW(

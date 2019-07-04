@@ -1,9 +1,11 @@
 package main
 
 import (
+	"archive/zip"
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -178,23 +180,50 @@ func mkdirAndCopy(backend storage.ProblemStore, dir, name, gridname string) erro
 	return nil
 }
 
-func exportProblem(backend storage.ProblemStore, manifest storage.ProblemManifest, dest string) error {
-	if err := os.MkdirAll(dest, os.ModePerm); err != nil {
+func writeRemoteAs(w *zip.Writer, backend storage.ProblemStore, name, as string) error {
+	fi, err := backend.ReadRemote(name, *authToken)
+	if err != nil {
 		return err
 	}
+	defer fi.Close()
+	fh := zip.FileHeader{
+		Name:               as,
+		UncompressedSize64: uint64(fi.Stat.Size_),
+		Method:             zip.Deflate,
+	}
+	wr, err := w.CreateHeader(&fh)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(wr, fi.Body)
+	return err
+}
+
+func writeBytesAs(w *zip.Writer, as string, data []byte) error {
+	fh := zip.FileHeader{
+		Name:               as,
+		UncompressedSize64: uint64(len(data)),
+		Method:             zip.Deflate,
+	}
+	wr, err := w.CreateHeader(&fh)
+	if err != nil {
+		return err
+	}
+	_, err = wr.Write(data)
+	return err
+}
+
+func exportProblem(w *zip.Writer, backend storage.ProblemStore, manifest storage.ProblemManifest, dest string) error {
 	gridprefix := manifest.GetGridPrefix()
 	if manifest.TesterName != "" {
-		if err := os.MkdirAll(filepath.Join(dest, "Tester"), os.ModePerm); err != nil {
-			return err
-		}
-		if _, err := backend.Copy(filepath.Join(dest, "Tester", manifest.TesterName), gridprefix+"checker", false, "", "", *authToken); err != nil {
+		if err := writeRemoteAs(w, backend, gridprefix+"checker", filepath.Join(dest, "Tester", manifest.TesterName)); err != nil {
 			return err
 		}
 	}
-	if err := ioutil.WriteFile(filepath.Join(dest, "memlimit"), []byte(fmt.Sprintf("%d", manifest.MemoryLimit)), os.ModePerm); err != nil {
+	if err := writeBytesAs(w, filepath.Join(dest, "memlimit"), []byte(fmt.Sprintf("%d", manifest.MemoryLimit))); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(dest, "timex"), []byte(fmt.Sprintf("%f", float64(manifest.TimeLimitMicros)/1000000)), os.ModePerm); err != nil {
+	if err := writeBytesAs(w, filepath.Join(dest, "timex"), []byte(fmt.Sprintf("%f", float64(manifest.TimeLimitMicros)/1000000))); err != nil {
 		return err
 	}
 
@@ -210,8 +239,7 @@ func exportProblem(backend storage.ProblemStore, manifest storage.ProblemManifes
 		fmt.Printf("%d", i)
 		os.Stdout.Sync()
 		test := filepath.Join(dest, fmt.Sprintf("Test.%d", i))
-		if err := mkdirAndCopy(backend, filepath.Join(test, "Input"),
-			"input.txt", gridprefix+fmt.Sprintf("tests/%d/input.txt", i)); err != nil {
+		if err := writeRemoteAs(w, backend, gridprefix+fmt.Sprintf("tests/%d/input.txt", i), filepath.Join(test, "Input", "input.txt")); err != nil {
 			return err
 		}
 		if _, ok := answers[i]; !ok {

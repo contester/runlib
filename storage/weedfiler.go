@@ -111,6 +111,31 @@ func filerDownload(localName, remoteName, authToken string) (stat *contester_pro
 	return tools.StatFile(localName, true)
 }
 
+func filerReadRemote(name, authToken string) (*RemoteFile, error) {
+	req, err := http.NewRequest(http.MethodGet, name, nil)
+	if err != nil {
+		return nil, err
+	}
+	if authToken != "" {
+		req.Header.Add("Authorization", "bearer "+authToken)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	result := RemoteFile{
+		Body: resp.Body,
+	}
+
+	if sz := resp.Header.Get("Content-Length"); sz != "" {
+		if isz, err := strconv.ParseUint(sz, 10, 64); err == nil {
+			result.Stat.Size_ = isz
+		}
+	}
+
+	return &result, nil
+}
+
 func filerCopy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
 	if toRemote {
 		return filerUpload(localName, remoteName, checksum, moduleType, authToken)

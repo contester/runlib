@@ -162,6 +162,10 @@ func (s *weedfilerStorage) Cleanup(latest int) error {
 	return nil
 }
 
+func (s *weedfilerStorage) ReadRemote(name, authToken string) (*RemoteFile, error) {
+	return filerReadRemote(name, authToken)
+}
+
 func (s *weedfilerStorage) Close() {
 }
 

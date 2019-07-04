@@ -2,7 +2,7 @@ module github.com/contester/runlib
 
 require (
 	github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237
-	github.com/gogo/protobuf v0.0.0-20180509162441-30cf7ac33676
+	github.com/gogo/protobuf v1.2.1
 	github.com/golang/protobuf v0.0.0-20180622174009-9eb2c01ac278
 	github.com/juju/errors v0.0.0-20170703010042-c7d06af17c68
 	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 // indirect

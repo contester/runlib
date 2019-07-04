@@ -29,6 +29,7 @@ const (
 	REDIRECT_MEMORY = 1
 	REDIRECT_FILE   = 2
 	REDIRECT_PIPE   = 3
+	REDIRECT_REMOTE = 4
 )
 
 func GetMicros(d time.Duration) uint64 {

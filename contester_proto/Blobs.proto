@@ -4,17 +4,6 @@ package contester.proto;
 
 option java_package = "org.stingray.contester.proto";
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-
-option (gogoproto.equal_all) = true;
-option (gogoproto.goproto_stringer_all) = false;
-option (gogoproto.stringer_all) =  true;
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.sizer_all) = true;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.gogoproto_import) = false;
-
-
 message Blob {
     message CompressionInfo {
         enum CompressionType {

@@ -1,5 +1,7 @@
 package contester_proto
 
+//go:generate protoc --gofast_out=. Blobs.proto Contester.proto Execution.proto Local.proto
+
 import (
 	"bytes"
 	"compress/zlib"

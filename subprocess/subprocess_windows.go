@@ -135,7 +135,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d := &SubprocessData{}
 
 	si := syscall.StartupInfo{
-		Flags: win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW,
+		Flags:      win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW,
 		ShowWindow: syscall.SW_SHOWMINNOACTIVE,
 	}
 	si.Cb = uint32(unsafe.Sizeof(si))
@@ -279,15 +279,16 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	}
 
 	if s.RestrictUi {
-		var info win32.JobObjectBasicUiRestrictions
-		info.UIRestrictionClass = (win32.JOB_OBJECT_UILIMIT_DESKTOP |
-			win32.JOB_OBJECT_UILIMIT_DISPLAYSETTINGS |
-			win32.JOB_OBJECT_UILIMIT_EXITWINDOWS |
-			win32.JOB_OBJECT_UILIMIT_GLOBALATOMS |
-			win32.JOB_OBJECT_UILIMIT_HANDLES |
-			win32.JOB_OBJECT_UILIMIT_READCLIPBOARD |
-			win32.JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS |
-			win32.JOB_OBJECT_UILIMIT_WRITECLIPBOARD)
+		info := win32.JobObjectBasicUiRestrictions{
+			UIRestrictionClass: (win32.JOB_OBJECT_UILIMIT_DESKTOP |
+				win32.JOB_OBJECT_UILIMIT_DISPLAYSETTINGS |
+				win32.JOB_OBJECT_UILIMIT_EXITWINDOWS |
+				win32.JOB_OBJECT_UILIMIT_GLOBALATOMS |
+				win32.JOB_OBJECT_UILIMIT_HANDLES |
+				win32.JOB_OBJECT_UILIMIT_READCLIPBOARD |
+				win32.JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS |
+				win32.JOB_OBJECT_UILIMIT_WRITECLIPBOARD),
+		}
 
 		if e = win32.SetJobObjectBasicUiRestrictions(d.platformData.hJob, &info); e != nil {
 			return errors.Trace(e)

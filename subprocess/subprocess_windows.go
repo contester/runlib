@@ -134,18 +134,18 @@ func (d *PlatformData) terminateAndClose() (err error) {
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d := &SubprocessData{}
 
-	si := &syscall.StartupInfo{}
-	si.Cb = uint32(unsafe.Sizeof(*si))
-	si.Flags = win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW
-	si.ShowWindow = syscall.SW_SHOWMINNOACTIVE
-
+	si := syscall.StartupInfo{
+		Flags: win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW,
+		ShowWindow: syscall.SW_SHOWMINNOACTIVE,
+	}
+	si.Cb = uint32(unsafe.Sizeof(si))
 	useCreateProcessWithLogonW := sub.NoJob || win32.IsWindows8OrGreater()
 
 	if !useCreateProcessWithLogonW && sub.Options != nil && sub.Options.Desktop != "" {
 		si.Desktop = syscall.StringToUTF16Ptr(sub.Options.Desktop)
 	}
 
-	e := d.wAllRedirects(sub, si)
+	e := d.wAllRedirects(sub, &si)
 	if e != nil {
 		return nil, e
 	}
@@ -161,7 +161,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	currentDirectory := win32.StringNEToUTF16Ptr(sub.CurrentDirectory)
 
 	syscall.ForkLock.Lock()
-	wSetInherit(si)
+	wSetInherit(&si)
 
 	if sub.Login != nil {
 		if useCreateProcessWithLogonW {
@@ -175,7 +175,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT,
 				environment,
 				currentDirectory,
-				si,
+				&si,
 				&pi)
 		} else {
 			e = win32.CreateProcessAsUser(
@@ -189,7 +189,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 					syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
 				environment,
 				currentDirectory,
-				si,
+				&si,
 				&pi)
 		}
 	} else {
@@ -203,7 +203,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
 			environment,
 			currentDirectory,
-			si,
+			&si,
 			&pi))
 	}
 

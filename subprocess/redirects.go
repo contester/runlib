@@ -115,7 +115,7 @@ func (d *SubprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 	return reader, nil
 }
 
-func (d *SubprocessData) SetupInputRemote(r *storage.RemoteFile) (*os.File, error) {
+func (d *SubprocessData) SetupInputRemote(r io.ReadCloser) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
 		return nil, errors.Annotate(e, "os.Pipe")
@@ -123,8 +123,8 @@ func (d *SubprocessData) SetupInputRemote(r *storage.RemoteFile) (*os.File, erro
 	// TODO: rewrite resource management to not leak on startup failure.
 	d.closeAfterStart = append(d.closeAfterStart, reader)
 	d.startAfterStart = append(d.startAfterStart, func() error {
-		defer r.Body.Close()
-		_, err := io.Copy(writer, r.Body)
+		defer r.Close()
+		_, err := io.Copy(writer, r)
 		if err1 := writer.Close(); err == nil {
 			err = err1
 		}
@@ -132,7 +132,6 @@ func (d *SubprocessData) SetupInputRemote(r *storage.RemoteFile) (*os.File, erro
 	})
 	return reader, nil
 }
-
 
 func (d *SubprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	if w == nil {

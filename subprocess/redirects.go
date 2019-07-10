@@ -65,6 +65,10 @@ func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 		reader.Close()
 		return err
 	})
+
+	d.cleanupIfFailed = append(d.cleanupIfFailed, func() {
+		reader.Close()
+	})
 	return writer, nil
 }
 
@@ -120,6 +124,7 @@ func (d *SubprocessData) SetupInputRemote(r io.ReadCloser) (*os.File, error) {
 	if e != nil {
 		return nil, errors.Annotate(e, "os.Pipe")
 	}
+
 	// TODO: rewrite resource management to not leak on startup failure.
 	d.closeAfterStart = append(d.closeAfterStart, reader)
 	d.startAfterStart = append(d.startAfterStart, func() error {
@@ -129,6 +134,10 @@ func (d *SubprocessData) SetupInputRemote(r io.ReadCloser) (*os.File, error) {
 			err = err1
 		}
 		return err
+	})
+	d.cleanupIfFailed = append(d.cleanupIfFailed, func() {
+		r.Close()
+		writer.Close()
 	})
 	return reader, nil
 }

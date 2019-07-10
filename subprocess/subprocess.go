@@ -94,6 +94,7 @@ type SubprocessData struct {
 	bufferChan      chan error     // receives buffer errors
 	startAfterStart []func() error // buffer functions, launch after createFrozen
 	closeAfterStart []io.Closer    // close after createFrozen
+	cleanupIfFailed []func()
 
 	stdOut bytes.Buffer
 	stdErr bytes.Buffer
@@ -107,8 +108,7 @@ func SubprocessCreate() *Subprocess {
 	}
 }
 
-func (d *SubprocessData) SetupRedirectionBuffers() error {
-	// portable
+func (d *SubprocessData) SetupRedirectionBuffers() {
 	d.bufferChan = make(chan error, len(d.startAfterStart))
 
 	for _, fn := range d.startAfterStart {
@@ -116,8 +116,6 @@ func (d *SubprocessData) SetupRedirectionBuffers() error {
 			d.bufferChan <- fn()
 		}(fn)
 	}
-
-	return nil
 }
 
 func closeDescriptors(closers []io.Closer) {
@@ -134,13 +132,13 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 
 	d, err := sub.CreateFrozen()
 	if err != nil {
+		for _, v := range d.cleanupIfFailed {
+			v()
+		}
 		return nil, err
 	}
 
-	if err = d.SetupRedirectionBuffers(); err != nil {
-		return nil, err // we must die here
-	}
-
+	d.SetupRedirectionBuffers()
 	d.Unfreeze()
 	return sub.BottomHalf(d), nil
 }

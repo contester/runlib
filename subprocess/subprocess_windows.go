@@ -132,7 +132,7 @@ func (d *PlatformData) terminateAndClose() (err error) {
 }
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
-	d := &SubprocessData{}
+	var d SubprocessData
 
 	si := syscall.StartupInfo{
 		Flags:      win32.STARTF_FORCEOFFFEEDBACK | syscall.STARTF_USESHOWWINDOW,
@@ -224,7 +224,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d.platformData.hJob = syscall.InvalidHandle
 
 	for _, dll := range sub.Options.InjectDLL {
-		if e = InjectDll(d, sub.Options.LoadLibraryW, dll); e != nil {
+		if e = InjectDll(&d, sub.Options.LoadLibraryW, dll); e != nil {
 			break
 		}
 	}
@@ -244,7 +244,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	}
 
 	if !sub.NoJob {
-		e = CreateJob(sub, d)
+		e = CreateJob(sub, &d)
 		if e != nil {
 			if sub.FailOnJobCreationFailure {
 				d.platformData.terminateAndClose()
@@ -268,7 +268,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		}
 	}
 
-	return d, nil
+	return &d, nil
 }
 
 func CreateJob(s *Subprocess, d *SubprocessData) error {

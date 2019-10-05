@@ -185,7 +185,7 @@ func writeRemoteAs(w *zip.Writer, backend storage.ProblemStore, name, as string)
 	if err != nil {
 		return err
 	}
-	defer fi.Close()
+	defer fi.Body.Close()
 	fh := zip.FileHeader{
 		Name:               as,
 		UncompressedSize64: uint64(fi.Stat.Size_),

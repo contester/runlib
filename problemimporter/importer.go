@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -169,17 +168,6 @@ func importProblems(root string, backend storage.ProblemStore) error {
 	return nil
 }
 
-func mkdirAndCopy(backend storage.ProblemStore, dir, name, gridname string) error {
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return err
-	}
-	if _, err := backend.Copy(filepath.Join(dir, name),
-		gridname, false, "", "", *authToken); err != nil {
-		return err
-	}
-	return nil
-}
-
 func writeRemoteAs(w *zip.Writer, backend storage.ProblemStore, name, as string) error {
 	fi, err := backend.ReadRemote(name, *authToken)
 	if err != nil {
@@ -245,15 +233,14 @@ func exportProblem(w *zip.Writer, backend storage.ProblemStore, manifest storage
 		if _, ok := answers[i]; !ok {
 			continue
 		}
-		if err := mkdirAndCopy(backend, filepath.Join(test, "Add-ons"),
-			"answer.txt", gridprefix+fmt.Sprintf("tests/%d/answer.txt", i)); err != nil {
+		if err := writeRemoteAs(w, backend, gridprefix+fmt.Sprintf("tests/%d/answer.txt", i), filepath.Join(test, "add-ons", "answer.txt")); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func exportProblems(backend storage.ProblemStore, dest string) error {
+func exportProblems(backend storage.ProblemStore, destfile string) error {
 	m, err := backend.GetAllManifests()
 	if err != nil {
 		return err
@@ -275,10 +262,19 @@ func exportProblems(backend storage.ProblemStore, dest string) error {
 		}
 	}
 
+	outf, err := os.Create(destfile)
+	if err != nil {
+		return err
+	}
+	defer outf.Close()
+
+	zw := zip.NewWriter(outf)
+	defer zw.Close()
+
 	for pidint, v := range probs {
 		fmt.Printf("Exporting problem %d ... [", pidint)
 		os.Stdout.Sync()
-		if err = exportProblem(backend, v, filepath.Join(dest, fmt.Sprintf("Task.%d", pidint))); err != nil {
+		if err = exportProblem(zw, backend, v, fmt.Sprintf("task.%d", pidint)); err != nil {
 			return err
 		}
 		fmt.Printf("]\n")

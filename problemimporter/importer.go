@@ -45,7 +45,7 @@ func storeIfExists(ctx context.Context, backend storage.Backend, filename, gridn
 	return nil
 }
 
-func importProblem(ctx context.Context, id, root string, backend storage.ProblemStore) error {
+func importProblem(ctx context.Context, id, root string, backend storage.ProblemStore, urlPrefix string) error {
 	var manifest storage.ProblemManifest
 	var err error
 
@@ -53,7 +53,7 @@ func importProblem(ctx context.Context, id, root string, backend storage.Problem
 	manifest.Revision, err = backend.GetNextRevision(ctx, id)
 	manifest.Key = manifest.Id + "/" + strconv.FormatInt(int64(manifest.Revision), 10)
 
-	gridprefix := manifest.GetGridPrefix()
+	gridprefix := urlPrefix + manifest.GetGridPrefix()
 
 	rootDir, err := os.Open(root)
 	if err != nil {
@@ -136,7 +136,7 @@ func importProblem(ctx context.Context, id, root string, backend storage.Problem
 	return backend.SetManifest(ctx, &manifest)
 }
 
-func importProblems(ctx context.Context, root string, backend storage.ProblemStore) error {
+func importProblems(ctx context.Context, root string, backend storage.ProblemStore, urlPrefix string) error {
 	rootDir, err := os.Open(root)
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func importProblems(ctx context.Context, root string, backend storage.ProblemSto
 
 		realProblemId := "direct://school.sgu.ru/moodle/" + strconv.FormatUint(problemId, 10)
 
-		err = importProblem(ctx, realProblemId, filepath.Join(root, problemShort), backend)
+		err = importProblem(ctx, realProblemId, filepath.Join(root, problemShort), backend, urlPrefix)
 		if err != nil {
 			return err
 		}
@@ -417,7 +417,7 @@ func main() {
 
 	switch *mode {
 	case "import":
-		err = importProblems(context.Background(), flag.Arg(0), backend)
+		err = importProblems(context.Background(), flag.Arg(0), backend, *storageUrl+"fs/")
 	case "export":
 		err = exportProblems(context.Background(), backend, *storageUrl+"fs/", flag.Arg(0))
 	case "fixMemoryLimit":

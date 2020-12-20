@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -10,10 +11,8 @@ import (
 
 type Backend interface {
 	String() string
-	Copy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error)
-	Close()
-
-	ReadRemote(name, authToken string) (*RemoteFile, error)
+	Copy(ctx context.Context, localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error)
+	ReadRemote(ctx context.Context, name, authToken string) (*RemoteFile, error)
 }
 
 type RemoteFile struct {
@@ -29,15 +28,13 @@ func (s statelessBackend) String() string {
 	return "Stateless"
 }
 
-func (s statelessBackend) Close() {}
-
-func (s statelessBackend) ReadRemote(name, authToken string) (*RemoteFile, error) {
-	return filerReadRemote(name, authToken)
+func (s statelessBackend) ReadRemote(ctx context.Context, name, authToken string) (*RemoteFile, error) {
+	return FilerReadRemote(ctx, name, authToken)
 }
 
-func (s statelessBackend) Copy(localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
+func (s statelessBackend) Copy(ctx context.Context, localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
 	if fr := isFilerRemote(remoteName); fr != "" {
-		return filerCopy(localName, fr, toRemote, checksum, moduleType, authToken)
+		return FilerCopy(ctx, localName, fr, toRemote, checksum, moduleType, authToken)
 	}
 	return nil, fmt.Errorf("can't use stateless backend")
 }

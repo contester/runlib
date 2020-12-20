@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"net/url"
 	"strconv"
 )
@@ -8,10 +9,9 @@ import (
 type ProblemStore interface {
 	Backend
 
-	GetNextRevision(id string) (int, error)
-	SetManifest(manifest *ProblemManifest) error
-	GetAllManifests() ([]ProblemManifest, error)
-	Cleanup(latest int) error
+	GetNextRevision(ctx context.Context, id string) (int, error)
+	SetManifest(ctx context.Context, manifest *ProblemManifest) error
+	GetAllManifests(ctx context.Context) ([]ProblemManifest, error)
 }
 
 type ProblemManifest struct {
@@ -31,10 +31,10 @@ type ProblemManifest struct {
 }
 
 func (s *ProblemManifest) GetGridPrefix() string {
-	return idToGridPrefix(s.Id) + "/" + strconv.FormatInt(int64(s.Revision), 10) + "/"
+	return IdToGridPrefix(s.Id) + "/" + strconv.FormatInt(int64(s.Revision), 10) + "/"
 }
 
-func idToGridPrefix(id string) string {
+func IdToGridPrefix(id string) string {
 	u, err := url.Parse(id)
 	if err != nil {
 		return ""

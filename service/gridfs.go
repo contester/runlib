@@ -1,13 +1,18 @@
 package service
 
 import (
+	"context"
+	"time"
+
 	"github.com/contester/runlib/contester_proto"
-	"github.com/juju/errors"
+	"github.com/contester/runlib/storage"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response *contester_proto.FileStats) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
 	var sandbox *Sandbox
 	var err error
 	if request.GetSandboxId() != "" {
@@ -17,13 +22,6 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 		}
 		sandbox.Mutex.RLock()
 		defer sandbox.Mutex.RUnlock()
-	}
-
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	if s.Storage == nil {
-		return errors.BadRequestf("can't gridfs.Copy if storage isn't set")
 	}
 
 	response.Entries = make([]*contester_proto.FileStat, 0, len(request.GetEntries()))
@@ -37,7 +35,7 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 			continue // TODO
 		}
 
-		stat, err := s.Storage.Copy(resolved, item.GetRemoteLocation(), item.GetUpload(),
+		stat, err := storage.FilerCopy(ctx, resolved, item.GetRemoteLocation(), item.GetUpload(),
 			item.GetChecksum(), item.GetModuleType(), item.GetAuthorizationToken())
 
 		if err != nil {

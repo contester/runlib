@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/contester/runlib/storage"
 )
@@ -31,24 +33,24 @@ func readFirstLine(filename string) (string, error) {
 	return "", nil
 }
 
-func storeIfExists(backend storage.Backend, filename, gridname string) error {
+func storeIfExists(ctx context.Context, backend storage.Backend, filename, gridname string) error {
 	if _, err := os.Stat(filename); err != nil {
 		return err
 	}
 
-	_, err := backend.Copy(filename, gridname, true, "", "", *authToken)
+	_, err := backend.Copy(ctx, filename, gridname, true, "", "", *authToken)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func importProblem(id, root string, backend storage.ProblemStore) error {
+func importProblem(ctx context.Context, id, root string, backend storage.ProblemStore) error {
 	var manifest storage.ProblemManifest
 	var err error
 
 	manifest.Id = id
-	manifest.Revision, err = backend.GetNextRevision(id)
+	manifest.Revision, err = backend.GetNextRevision(ctx, id)
 	manifest.Key = manifest.Id + "/" + strconv.FormatInt(int64(manifest.Revision), 10)
 
 	gridprefix := manifest.GetGridPrefix()
@@ -79,12 +81,12 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 			continue
 		}
 
-		if err = storeIfExists(backend, filepath.Join(testRoot, "Input", "input.txt"),
+		if err = storeIfExists(ctx, backend, filepath.Join(testRoot, "Input", "input.txt"),
 			gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/input.txt"); err != nil {
 			continue
 		}
 
-		if err = storeIfExists(backend, filepath.Join(testRoot, "Add-ons", "answer.txt"),
+		if err = storeIfExists(ctx, backend, filepath.Join(testRoot, "Add-ons", "answer.txt"),
 			gridprefix+"tests/"+strconv.FormatInt(testId, 10)+"/answer.txt"); err == nil {
 			manifest.Answers = append(manifest.Answers, int(testId))
 		}
@@ -94,7 +96,7 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 		}
 	}
 
-	if err = storeIfExists(backend, filepath.Join(root, "Tester", "tester.exe"), gridprefix+"checker"); err != nil {
+	if err = storeIfExists(ctx, backend, filepath.Join(root, "Tester", "tester.exe"), gridprefix+"checker"); err != nil {
 		return err
 	}
 
@@ -131,10 +133,10 @@ func importProblem(id, root string, backend storage.ProblemStore) error {
 
 	fmt.Println(manifest)
 
-	return backend.SetManifest(&manifest)
+	return backend.SetManifest(ctx, &manifest)
 }
 
-func importProblems(root string, backend storage.ProblemStore) error {
+func importProblems(ctx context.Context, root string, backend storage.ProblemStore) error {
 	rootDir, err := os.Open(root)
 	if err != nil {
 		return err
@@ -160,7 +162,7 @@ func importProblems(root string, backend storage.ProblemStore) error {
 
 		realProblemId := "direct://school.sgu.ru/moodle/" + strconv.FormatUint(problemId, 10)
 
-		err = importProblem(realProblemId, filepath.Join(root, problemShort), backend)
+		err = importProblem(ctx, realProblemId, filepath.Join(root, problemShort), backend)
 		if err != nil {
 			return err
 		}
@@ -168,50 +170,119 @@ func importProblems(root string, backend storage.ProblemStore) error {
 	return nil
 }
 
-func writeRemoteAs(w *zip.Writer, backend storage.ProblemStore, name, as string) error {
-	fi, err := backend.ReadRemote(name, *authToken)
+type localWriter interface {
+	Close() error
+	OpenProblem(id int) (localProblemWriter, error)
+}
+
+type localProblemWriter interface {
+	Close() error
+	WriteChecker(name string, rf *storage.RemoteFile) error
+	WriteLimits(m storage.ProblemManifest) error
+	WriteInput(testID int, rf *storage.RemoteFile) error
+	WriteAnswer(testID int, rf *storage.RemoteFile) error
+}
+
+type problemAssetType int
+
+type localZipWriter struct {
+	w *zip.Writer
+}
+
+func (s *localZipWriter) OpenProblem(id int) (localProblemWriter, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("id must be > 0")
+	}
+	return &localZipPw{
+		w:      s.w,
+		prefix: "Task." + strconv.Itoa(id),
+	}, nil
+}
+
+type localZipPw struct {
+	w      *zip.Writer
+	prefix string
+}
+
+func (s *localZipPw) Close() error {
+	return nil
+}
+
+func (s *localZipPw) WriteInput(testID int, rf *storage.RemoteFile) error {
+	return s.writeLocal(filepath.Join("Test."+strconv.Itoa(testID), "input.txt"), rf)
+}
+
+func (s *localZipPw) WriteAnswer(testID int, rf *storage.RemoteFile) error {
+	return s.writeLocal(filepath.Join("Test."+strconv.Itoa(testID), "answer.txt"), rf)
+}
+
+func (s *localZipPw) WriteChecker(name string, rf *storage.RemoteFile) error {
+	return s.writeLocal(filepath.Join("Tester", name), rf)
+}
+
+func (s *localZipPw) WriteLimits(m storage.ProblemManifest) error {
+	if err := s.writeBytes("memlimit", []byte(strconv.FormatInt(m.MemoryLimit, 10))); err != nil {
+		return err
+	}
+	return s.writeBytes("timex", []byte(strconv.FormatFloat(float64(m.TimeLimitMicros)/1000000, 'f', -1, 64)))
+}
+
+func (s *localZipPw) writeBytes(as string, b []byte) error {
+	as = filepath.Join(s.prefix, as)
+	fh := zip.FileHeader{
+		Name:               as,
+		UncompressedSize64: uint64(len(b)),
+		Method:             zip.Deflate,
+	}
+	wr, err := s.w.CreateHeader(&fh)
+	if err != nil {
+		return err
+	}
+	_, err = wr.Write(b)
+	return err
+}
+func (s *localZipPw) writeFile(as string, size uint64, body io.Reader) error {
+	as = filepath.Join(s.prefix, as)
+	fh := zip.FileHeader{
+		Name:               as,
+		UncompressedSize64: size,
+		Method:             zip.Deflate,
+	}
+	wr, err := s.w.CreateHeader(&fh)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(wr, body)
+	return err
+}
+
+func (s *localZipPw) writeLocal(as string, rf *storage.RemoteFile) error {
+	return s.writeFile(as, uint64(rf.Stat.GetSize_()), rf.Body)
+}
+
+func withRemoteFile(ctx context.Context, remote string, f func(rf *storage.RemoteFile) error) error {
+	nctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	fi, err := storage.FilerReadRemote(nctx, remote, *authToken)
 	if err != nil {
 		return err
 	}
 	defer fi.Body.Close()
-	fh := zip.FileHeader{
-		Name:               as,
-		UncompressedSize64: uint64(fi.Stat.Size_),
-		Method:             zip.Deflate,
-	}
-	wr, err := w.CreateHeader(&fh)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(wr, fi.Body)
-	return err
+	return f(fi)
 }
 
-func writeBytesAs(w *zip.Writer, as string, data []byte) error {
-	fh := zip.FileHeader{
-		Name:               as,
-		UncompressedSize64: uint64(len(data)),
-		Method:             zip.Deflate,
-	}
-	wr, err := w.CreateHeader(&fh)
-	if err != nil {
-		return err
-	}
-	_, err = wr.Write(data)
-	return err
-}
-
-func exportProblem(w *zip.Writer, backend storage.ProblemStore, manifest storage.ProblemManifest, dest string) error {
+func exportProblem(ctx context.Context, w localProblemWriter, manifest storage.ProblemManifest, baseURL string) error {
 	gridprefix := manifest.GetGridPrefix()
+	probprefix := baseURL + gridprefix
 	if manifest.TesterName != "" {
-		if err := writeRemoteAs(w, backend, gridprefix+"checker", filepath.Join(dest, "Tester", manifest.TesterName)); err != nil {
+		if err := withRemoteFile(ctx, probprefix+"checker", func(rf *storage.RemoteFile) error {
+			return w.WriteChecker(manifest.TesterName, rf)
+		}); err != nil {
 			return err
 		}
 	}
-	if err := writeBytesAs(w, filepath.Join(dest, "memlimit"), []byte(fmt.Sprintf("%d", manifest.MemoryLimit))); err != nil {
-		return err
-	}
-	if err := writeBytesAs(w, filepath.Join(dest, "timex"), []byte(fmt.Sprintf("%f", float64(manifest.TimeLimitMicros)/1000000))); err != nil {
+
+	if err := w.WriteLimits(manifest); err != nil {
 		return err
 	}
 
@@ -226,27 +297,34 @@ func exportProblem(w *zip.Writer, backend storage.ProblemStore, manifest storage
 		}
 		fmt.Printf("%d", i)
 		os.Stdout.Sync()
-		test := filepath.Join(dest, fmt.Sprintf("Test.%d", i))
-		if err := writeRemoteAs(w, backend, gridprefix+fmt.Sprintf("tests/%d/input.txt", i), filepath.Join(test, "Input", "input.txt")); err != nil {
+
+		testprefix := probprefix + "tests/" + strconv.Itoa(i) + "/"
+
+		if err := withRemoteFile(ctx, testprefix+"input.txt", func(rf *storage.RemoteFile) error {
+			return w.WriteInput(i, rf)
+		}); err != nil {
 			return err
 		}
+
 		if _, ok := answers[i]; !ok {
 			continue
 		}
-		if err := writeRemoteAs(w, backend, gridprefix+fmt.Sprintf("tests/%d/answer.txt", i), filepath.Join(test, "add-ons", "answer.txt")); err != nil {
+		if err := withRemoteFile(ctx, testprefix+"answer.txt", func(rf *storage.RemoteFile) error {
+			return w.WriteAnswer(i, rf)
+		}); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func exportProblems(backend storage.ProblemStore, destfile string) error {
-	m, err := backend.GetAllManifests()
+func exportProblems(ctx context.Context, backend storage.ProblemStore, baseURL, destfile string) error {
+	m, err := backend.GetAllManifests(ctx)
 	if err != nil {
 		return err
 	}
 
-	probs := make(map[int64]storage.ProblemManifest)
+	probs := make(map[int]storage.ProblemManifest)
 
 	for _, v := range m {
 		if !strings.HasPrefix(v.Id, "direct://school.sgu.ru/moodle/") {
@@ -257,8 +335,8 @@ func exportProblems(backend storage.ProblemStore, destfile string) error {
 		if err != nil {
 			continue
 		}
-		if prev, ok := probs[pidint]; !ok || prev.Revision < v.Revision {
-			probs[pidint] = v
+		if prev, ok := probs[int(pidint)]; !ok || prev.Revision < v.Revision {
+			probs[int(pidint)] = v
 		}
 	}
 
@@ -270,21 +348,29 @@ func exportProblems(backend storage.ProblemStore, destfile string) error {
 
 	zw := zip.NewWriter(outf)
 	defer zw.Close()
+	lzw := &localZipWriter{w: zw}
 
 	for pidint, v := range probs {
 		fmt.Printf("Exporting problem %d ... [", pidint)
 		os.Stdout.Sync()
-		if err = exportProblem(zw, backend, v, fmt.Sprintf("task.%d", pidint)); err != nil {
+
+		pw, err := lzw.OpenProblem(pidint)
+		if err != nil {
 			return err
 		}
+
+		if err = exportProblem(ctx, pw, v, baseURL); err != nil {
+			return err
+		}
+		pw.Close()
 		fmt.Printf("]\n")
 	}
 
 	return nil
 }
 
-func fixMemoryLimit(backend storage.ProblemStore, newLimit int64) error {
-	manifests, err := backend.GetAllManifests()
+func fixMemoryLimit(ctx context.Context, backend storage.ProblemStore, newLimit int64) error {
+	manifests, err := backend.GetAllManifests(ctx)
 	if err != nil {
 		return err
 	}
@@ -300,7 +386,7 @@ func fixMemoryLimit(backend storage.ProblemStore, newLimit int64) error {
 		if *dryRun {
 			continue
 		}
-		if err = backend.SetManifest(&m); err != nil {
+		if err = backend.SetManifest(ctx, &m); err != nil {
 			return err
 		}
 	}
@@ -331,15 +417,13 @@ func main() {
 
 	switch *mode {
 	case "import":
-		err = importProblems(flag.Arg(0), backend)
-	case "cleanup":
-		backend.Cleanup(1)
+		err = importProblems(context.Background(), flag.Arg(0), backend)
 	case "export":
-		err = exportProblems(backend, flag.Arg(0))
+		err = exportProblems(context.Background(), backend, *storageUrl+"fs/", flag.Arg(0))
 	case "fixMemoryLimit":
 		var newMl int64
 		if newMl, err = strconv.ParseInt(flag.Arg(0), 10, 64); newMl > 0 {
-			err = fixMemoryLimit(backend, newMl)
+			err = fixMemoryLimit(context.Background(), backend, newMl)
 		}
 	}
 	if err != nil {

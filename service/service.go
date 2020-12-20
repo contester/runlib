@@ -5,11 +5,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
-	"github.com/contester/runlib/storage"
 	"github.com/contester/runlib/subprocess"
 	"gopkg.in/gcfg.v1"
 
@@ -28,9 +26,6 @@ type Contester struct {
 	ProgramFiles  []string
 
 	GData *platform.GlobalData
-
-	mu      sync.RWMutex
-	Storage storage.Backend
 }
 
 func getHostname() string {
@@ -150,18 +145,6 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 }
 
 func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response *contester_proto.IdentifyResponse) error {
-	backend, err := storage.NewBackend("")
-	if err != nil {
-		return err
-	}
-
-	s.mu.Lock()
-	if s.Storage != nil {
-		s.Storage.Close()
-	}
-	s.Storage = backend
-	s.mu.Unlock()
-
 	response.InvokerId = s.InvokerId
 	response.Environment = &contester_proto.LocalEnvironment{
 		Variable: s.Env}

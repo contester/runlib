@@ -70,6 +70,7 @@ func filerUpload(ctx context.Context, localName, remoteName, checksum, moduleTyp
 			req.Header.Add("Digest", "SHA="+base64sha1)
 		}
 	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, errors.Annotate(err, "http.Do")

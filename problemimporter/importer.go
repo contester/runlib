@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -16,6 +15,8 @@ import (
 	"time"
 
 	"github.com/contester/runlib/storage"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func readFirstLine(filename string) (string, error) {
@@ -53,7 +54,7 @@ func importProblem(ctx context.Context, id, root string, backend storage.Problem
 	manifest.Revision, err = backend.GetNextRevision(ctx, id)
 	manifest.Key = manifest.Id + "/" + strconv.FormatInt(int64(manifest.Revision), 10)
 
-	gridprefix := urlPrefix + manifest.GetGridPrefix()
+	gridprefix := manifest.GetGridPrefix()
 
 	rootDir, err := os.Open(root)
 	if err != nil {
@@ -209,11 +210,11 @@ func (s *localZipPw) Close() error {
 }
 
 func (s *localZipPw) WriteInput(testID int, rf *storage.RemoteFile) error {
-	return s.writeLocal(filepath.Join("Test."+strconv.Itoa(testID), "input.txt"), rf)
+	return s.writeLocal(filepath.Join("Test."+strconv.Itoa(testID), "Input", "input.txt"), rf)
 }
 
 func (s *localZipPw) WriteAnswer(testID int, rf *storage.RemoteFile) error {
-	return s.writeLocal(filepath.Join("Test."+strconv.Itoa(testID), "answer.txt"), rf)
+	return s.writeLocal(filepath.Join("Test."+strconv.Itoa(testID), "Add-ons", "answer.txt"), rf)
 }
 
 func (s *localZipPw) WriteChecker(name string, rf *storage.RemoteFile) error {
@@ -232,7 +233,9 @@ func (s *localZipPw) writeBytes(as string, b []byte) error {
 	fh := zip.FileHeader{
 		Name:               as,
 		UncompressedSize64: uint64(len(b)),
-		Method:             zip.Deflate,
+	}
+	if fh.UncompressedSize64 > 48 {
+		fh.Method = zip.Deflate
 	}
 	wr, err := s.w.CreateHeader(&fh)
 	if err != nil {
@@ -246,7 +249,9 @@ func (s *localZipPw) writeFile(as string, size uint64, body io.Reader) error {
 	fh := zip.FileHeader{
 		Name:               as,
 		UncompressedSize64: size,
-		Method:             zip.Deflate,
+	}
+	if fh.UncompressedSize64 > 48 {
+		fh.Method = zip.Deflate
 	}
 	wr, err := s.w.CreateHeader(&fh)
 	if err != nil {
@@ -326,6 +331,8 @@ func exportProblems(ctx context.Context, backend storage.ProblemStore, baseURL, 
 
 	probs := make(map[int]storage.ProblemManifest)
 
+	pids := make([]int, 0, len(m))
+
 	for _, v := range m {
 		if !strings.HasPrefix(v.Id, "direct://school.sgu.ru/moodle/") {
 			continue
@@ -335,10 +342,16 @@ func exportProblems(ctx context.Context, backend storage.ProblemStore, baseURL, 
 		if err != nil {
 			continue
 		}
-		if prev, ok := probs[int(pidint)]; !ok || prev.Revision < v.Revision {
+		prev, ok := probs[int(pidint)]
+		if !ok {
+			pids = append(pids, int(pidint))
+		}
+		if !ok || prev.Revision < v.Revision {
 			probs[int(pidint)] = v
 		}
 	}
+
+	sort.Ints(pids)
 
 	outf, err := os.Create(destfile)
 	if err != nil {
@@ -350,7 +363,7 @@ func exportProblems(ctx context.Context, backend storage.ProblemStore, baseURL, 
 	defer zw.Close()
 	lzw := &localZipWriter{w: zw}
 
-	for pidint, v := range probs {
+	for _, pidint := range pids {
 		fmt.Printf("Exporting problem %d ... [", pidint)
 		os.Stdout.Sync()
 
@@ -358,6 +371,8 @@ func exportProblems(ctx context.Context, backend storage.ProblemStore, baseURL, 
 		if err != nil {
 			return err
 		}
+
+		v := probs[pidint]
 
 		if err = exportProblem(ctx, pw, v, baseURL); err != nil {
 			return err

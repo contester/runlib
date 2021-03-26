@@ -41,3 +41,12 @@ func ReaderDefault() (*os.File, error) {
 func WriterDefault() (*os.File, error) {
 	return nil, nil
 }
+
+func hackPipe() (r *os.File, w *os.File, err error) {
+	var p [2]syscall.Handle
+	e := syscall.CreatePipe(&p[0], &p[1], nil, 1024*1024*4)
+	if e != nil {
+		return nil, nil, os.NewSyscallError("pipe", e)
+	}
+	return os.NewFile(uintptr(p[0]), "|0"), os.NewFile(uintptr(p[1]), "|1"), nil
+}

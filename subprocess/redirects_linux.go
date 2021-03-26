@@ -18,3 +18,7 @@ func ReaderDefault() (*os.File, error) {
 func WriterDefault() (*os.File, error) {
 	return os.Create("/dev/null")
 }
+
+func hackPipe() (r *os.File, w *os.File, err error) {
+	return os.Pipe()
+}

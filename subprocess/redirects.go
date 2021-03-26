@@ -173,21 +173,17 @@ func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer, recorder func(
 	}
 }
 
-// In functions below, we are forced to use *os.File instead of, say, io.Writer
-// for the reasons mentioned in http://golang.org/doc/go_faq.html#nil_error
-// I could work around it by using reflection, but why...
-
 func RecordingPipe(d *os.File, recorder func(int64, error)) (*os.File, *os.File, error) {
 	if d == nil && recorder == nil {
-		return os.Pipe()
+		return hackPipe()
 	}
 
-	r1, w1, e := os.Pipe()
+	r1, w1, e := hackPipe()
 	if e != nil {
 		return nil, nil, errors.Trace(e)
 	}
 
-	r2, w2, e := os.Pipe()
+	r2, w2, e := hackPipe()
 	if e != nil {
 		return nil, nil, errors.Trace(e)
 	}

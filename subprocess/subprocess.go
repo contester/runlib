@@ -132,8 +132,10 @@ func (sub *Subprocess) Execute() (*SubprocessResult, error) {
 
 	d, err := sub.CreateFrozen()
 	if err != nil {
-		for _, v := range d.cleanupIfFailed {
-			v()
+		if d != nil {
+			for _, v := range d.cleanupIfFailed {
+				v()
+			}
 		}
 		return nil, err
 	}

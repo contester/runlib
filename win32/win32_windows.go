@@ -42,6 +42,7 @@ var (
 	procGetProcessAffinityMask    = kernel32.NewProc("GetProcessAffinityMask")
 	procVerifyVersionInfoW        = kernel32.NewProc("VerifyVersionInfoW")
 	procVerSetConditionMask       = kernel32.NewProc("VerSetConditionMask")
+	procGetBinaryTypeW            = kernel32.NewProc("GetBinaryTypeW")
 )
 
 const (
@@ -662,4 +663,28 @@ func GetProcessAffinityMask(process syscall.Handle) (processMask, systemMask uin
 		return 0, 0, os.NewSyscallError("GetProcessAffinityMask", e1)
 	}
 	return processMask, systemMask, nil
+}
+
+const (
+	SCS_32BIT_BINARY = 0
+	SCS_64BIT_BINARY = 6
+	SCS_DOS_BINARY   = 1
+	SCS_OS216_BINARY = 5
+	SCS_PIF_BINARY   = 3
+	SCS_POSIX_BINARY = 4
+	SCS_WOW_BINARY   = 2
+)
+
+func GetBinaryType(applicationName string) (uint64, error) {
+	lp, err := syscall.UTF16PtrFromString(applicationName)
+	if err != nil {
+		return 0, err
+	}
+
+	var result uint64
+	r1, _, e1 := procGetBinaryTypeW.Call(uintptr(unsafe.Pointer(lp)), uintptr(unsafe.Pointer(&result)))
+	if int(r1) == 0 {
+		return 0, os.NewSyscallError("GetBinaryType", e1)
+	}
+	return result, nil
 }

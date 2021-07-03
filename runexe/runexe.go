@@ -154,7 +154,7 @@ func readEnvironmentFile(name string) ([]string, error) {
 	return result, nil
 }
 
-func SetupSubprocess(s *processConfig, desktop *platform.ContesterDesktop, loadLibraryW uintptr) (*subprocess.Subprocess, error) {
+func SetupSubprocess(s *processConfig, env *platform.GlobalData) (*subprocess.Subprocess, error) {
 	sub := subprocess.SubprocessCreate()
 
 	sub.Cmd = &subprocess.CommandLine{}
@@ -209,6 +209,7 @@ func SetupSubprocess(s *processConfig, desktop *platform.ContesterDesktop, loadL
 	}
 
 	sub.Options = newPlatformOptions()
+	sub.Options.Environment = env
 
 	var err error
 	if s.NeedLogin() {
@@ -216,10 +217,9 @@ func SetupSubprocess(s *processConfig, desktop *platform.ContesterDesktop, loadL
 		if err != nil {
 			return nil, err
 		}
-		setDesktop(sub.Options, desktop)
 	}
 
-	setInject(sub.Options, s.InjectDLL, loadLibraryW)
+	setInject(sub.Options, s.InjectDLL)
 	return sub, nil
 }
 
@@ -284,18 +284,17 @@ func main() {
 		failLog = FailXml
 	}
 
-	desktop, err := createDesktopIfNeeded(programFlags, interactorFlags)
-	if err != nil {
-		Fail(err, "Create desktop if needed")
-	}
+	globalData, err := platform.CreateGlobalData(platform.GlobalDataOptions{
+		NeedDesktop:     desktopNeeded(programFlags, interactorFlags),
+		NeedLoadLibrary: loadLibraryNeeded(programFlags, interactorFlags),
+	})
 
-	loadLibrary, err := getLoadLibraryIfNeeded(programFlags, interactorFlags)
 	if err != nil {
-		Fail(err, "Load library if needed")
+		Fail(err, "Creating platform data")
 	}
 
 	var program, interactor *subprocess.Subprocess
-	program, err = SetupSubprocess(programFlags, desktop, loadLibrary)
+	program, err = SetupSubprocess(programFlags, globalData)
 	if err != nil {
 		Fail(err, "Setup main subprocess")
 	}
@@ -303,7 +302,7 @@ func main() {
 	var recorder subprocess.OrderedRecorder
 
 	if interactorFlags != nil {
-		interactor, err = SetupSubprocess(interactorFlags, desktop, loadLibrary)
+		interactor, err = SetupSubprocess(interactorFlags, globalData)
 		if err != nil {
 			Fail(err, "Setup interactor subprocess")
 		}

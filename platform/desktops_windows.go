@@ -1,13 +1,19 @@
 package platform
 
 import (
+	"io/fs"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
+	"sync"
 	"syscall"
 
 	"github.com/contester/runlib/win32"
 	"golang.org/x/sys/windows"
+
+	_ "embed"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -19,41 +25,79 @@ type ContesterDesktop struct {
 }
 
 type GlobalData struct {
-	Desktop      *ContesterDesktop
-	LoadLibraryW uintptr
+	mu sync.Mutex
+
+	desktop        *ContesterDesktop
+	loadLibraryW   uintptr
+	loadLibraryW32 uintptr
 }
 
-func CreateContesterDesktopStruct() (*ContesterDesktop, error) {
-	var result ContesterDesktop
-	var err error
-	result.WindowStation, result.Desktop, result.DesktopName, err = CreateContesterDesktop()
-	if err != nil {
-		return nil, err
+type errNoGlobalDataT struct{}
+
+func (errNoGlobalDataT) Error() string { return "" }
+
+var errNoGlobalData = errNoGlobalDataT{}
+
+func (s *GlobalData) GetDesktopName() (string, error) {
+	if s == nil {
+		return "", errNoGlobalData
 	}
-	return &result, nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.desktop == nil {
+		return "", errNoGlobalData
+	}
+	return s.desktop.DesktopName, nil
+}
+
+func (s *GlobalData) GetLoadLibraryW() (uintptr, error) {
+	if s == nil {
+		return 0, errNoGlobalData
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.loadLibraryW == 0 {
+		return 0, errNoGlobalData
+	}
+	return s.loadLibraryW, nil
+}
+
+func (s *GlobalData) GetLoadLibraryW32() (uintptr, error) {
+	if s == nil {
+		return 0, errNoGlobalData
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.loadLibraryW32 == 0 {
+		return 0, errNoGlobalData
+	}
+	return s.loadLibraryW32, nil
 }
 
 func threadIdName(prefix string) string {
 	return prefix + strconv.FormatUint(uint64(windows.GetCurrentThreadId()), 10)
 }
 
-func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name string, err error) {
-	var origWinsta win32.Hwinsta
-	if origWinsta, err = win32.GetProcessWindowStation(); err != nil {
+func createContesterDesktop() (result *ContesterDesktop, err error) {
+	var desk win32.Hdesk
+	var name string
+	origWinsta, err := win32.GetProcessWindowStation()
+	if err != nil {
 		return
 	}
 
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	var origDesktop win32.Hdesk
-	if origDesktop, err = win32.GetThreadDesktop(windows.GetCurrentThreadId()); err != nil {
-		return
+	origDesktop, err := win32.GetThreadDesktop(windows.GetCurrentThreadId())
+	if err != nil {
+		return nil, err
 	}
 
-	if winsta, err = win32.CreateWindowStation(
-		syscall.StringToUTF16Ptr(threadIdName("w")), 0, win32.MAXIMUM_ALLOWED, win32.MakeInheritSa()); err != nil {
-		return
+	winsta, err := win32.CreateWindowStation(
+		syscall.StringToUTF16Ptr(threadIdName("w")), 0, win32.MAXIMUM_ALLOWED, win32.MakeInheritSa())
+	if err != nil {
+		return nil, err
 	}
 
 	if err = win32.SetProcessWindowStation(winsta); err != nil {
@@ -61,8 +105,8 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 		return
 	}
 
-	var winstaName string
-	if winstaName, err = win32.GetUserObjectName(syscall.Handle(winsta)); err == nil {
+	winstaName, err := win32.GetUserObjectName(syscall.Handle(winsta))
+	if err == nil {
 		shortName := threadIdName("c")
 
 		desk, err = win32.CreateDesktop(
@@ -76,7 +120,6 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 
 	win32.SetProcessWindowStation(origWinsta)
 	win32.SetThreadDesktop(origDesktop)
-
 	if err != nil {
 		return
 	}
@@ -91,12 +134,37 @@ func CreateContesterDesktop() (winsta win32.Hwinsta, desk win32.Hdesk, name stri
 		}
 	} else {
 		err = os.NewSyscallError("StringToSid", err)
+		log.Error(err)
 	}
 
-	return
+	return &ContesterDesktop{
+		WindowStation: winsta,
+		Desktop:       desk,
+		DesktopName:   name,
+	}, nil
 }
 
-func GetLoadLibrary() (uintptr, error) {
+//go:embed Detect32BitEntryPoint.exe.embed
+var detect32BitEntryPointBinary []byte
+
+func getLoadLibrary32Bit() (uintptr, error) {
+	fname := filepath.Join(os.TempDir(), "Detect32BitEntryPoint.exe")
+	if err := os.WriteFile(fname, detect32BitEntryPointBinary, fs.ModePerm); err != nil {
+		return 0, err
+	}
+	cmd := exec.Command(fname)
+	txt, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, err
+	}
+	cval, err := strconv.ParseInt(string(txt), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return uintptr(cval), nil
+}
+
+func getLoadLibrary() (uintptr, error) {
 	handle, err := win32.GetModuleHandle(syscall.StringToUTF16Ptr("kernel32"))
 	if err != nil {
 		return 0, err
@@ -108,18 +176,30 @@ func GetLoadLibrary() (uintptr, error) {
 	return addr, nil
 }
 
-func CreateGlobalData() (*GlobalData, error) {
+type GlobalDataOptions struct {
+	NeedDesktop     bool
+	NeedLoadLibrary bool
+}
+
+func CreateGlobalData(opts GlobalDataOptions) (*GlobalData, error) {
 	var err error
 	var result GlobalData
-	result.Desktop, err = CreateContesterDesktopStruct()
-
-	if err != nil {
-		return nil, err
+	if opts.NeedDesktop {
+		result.desktop, err = createContesterDesktop()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	result.LoadLibraryW, err = GetLoadLibrary()
-	if err != nil {
-		return nil, err
+	if opts.NeedLoadLibrary {
+		result.loadLibraryW, err = getLoadLibrary()
+		if err != nil {
+			return nil, err
+		}
+		result.loadLibraryW32, err = getLoadLibrary32Bit()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &result, nil
 }

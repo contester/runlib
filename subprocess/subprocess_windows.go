@@ -23,12 +23,19 @@ type PlatformData struct {
 	hStdIn  syscall.Handle
 	hStdOut syscall.Handle
 	hStdErr syscall.Handle
+
+	use32BitLoadLibrary bool
+}
+
+type PlatformEnvironment interface {
+	GetDesktopName() (string, error)
+	GetLoadLibraryW() (uintptr, error)
+	GetLoadLibraryW32() (uintptr, error)
 }
 
 type PlatformOptions struct {
-	Desktop      string
-	InjectDLL    []string
-	LoadLibraryW uintptr
+	Environment PlatformEnvironment
+	InjectDLL   []string
 }
 
 type LoginInfo struct {
@@ -141,8 +148,23 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	si.Cb = uint32(unsafe.Sizeof(si))
 	useCreateProcessWithLogonW := sub.NoJob || win32.IsWindows8OrGreater()
 
-	if !useCreateProcessWithLogonW && sub.Options != nil && sub.Options.Desktop != "" {
-		si.Desktop = syscall.StringToUTF16Ptr(sub.Options.Desktop)
+	if sub.Options != nil && sub.Options.Environment != nil {
+		if len(sub.Options.InjectDLL) != 0 {
+			binaryType, err := win32.GetBinaryType(sub.Cmd.ApplicationName)
+			if err != nil {
+				return nil, err
+			}
+			d.platformData.use32BitLoadLibrary = binaryType == win32.SCS_32BIT_BINARY
+		}
+
+		if !useCreateProcessWithLogonW {
+			desktopName, err := sub.Options.Environment.GetDesktopName()
+			if err != nil {
+				return nil, err
+			}
+
+			si.Desktop = syscall.StringToUTF16Ptr(desktopName)
+		}
 	}
 
 	e := d.wAllRedirects(sub, &si)
@@ -224,7 +246,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d.platformData.hJob = syscall.InvalidHandle
 
 	for _, dll := range sub.Options.InjectDLL {
-		if e = InjectDll(&d, sub.Options.LoadLibraryW, dll); e != nil {
+		if e = InjectDll(&d, sub.Options.Environment, dll); e != nil {
 			break
 		}
 	}
@@ -341,7 +363,18 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	return nil
 }
 
-func InjectDll(d *SubprocessData, loadLibraryW uintptr, dll string) error {
+func InjectDll(d *SubprocessData, env PlatformEnvironment, dll string) error {
+
+	var loadLibraryW uintptr
+	var err error
+	if d.platformData.use32BitLoadLibrary {
+		loadLibraryW, err = env.GetLoadLibraryW32()
+	} else {
+		loadLibraryW, err = env.GetLoadLibraryW()
+	}
+	if err != nil {
+		return err
+	}
 	if int(loadLibraryW) == 0 {
 		return nil
 	}

@@ -3,37 +3,29 @@ package main
 import (
 	"strings"
 
-	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"
 )
 
-func createDesktopIfNeeded(program, interactor *processConfig) (*platform.ContesterDesktop, error) {
+func desktopNeeded(program, interactor *processConfig) bool {
 	if !program.NeedLogin() {
 		if interactor == nil || !interactor.NeedLogin() {
-			return nil, nil
+			return false
 		}
 	}
 
-	return platform.CreateContesterDesktopStruct()
+	return true
 }
 
-func getLoadLibraryIfNeeded(program, interactor *processConfig) (uintptr, error) {
+func loadLibraryNeeded(program, interactor *processConfig) bool {
 	if program.InjectDLL == "" && (interactor == nil || interactor.InjectDLL == "") {
-		return 0, nil
+		return false
 	}
-	return platform.GetLoadLibrary()
+	return true
 }
 
-func setDesktop(p *subprocess.PlatformOptions, desktop *platform.ContesterDesktop) {
-	if desktop != nil {
-		p.Desktop = desktop.DesktopName
-	}
-}
-
-func setInject(p *subprocess.PlatformOptions, injectDll string, loadLibraryW uintptr) {
-	if injectDll != "" && loadLibraryW != 0 {
+func setInject(p *subprocess.PlatformOptions, injectDll string) {
+	if injectDll != "" {
 		p.InjectDLL = []string{injectDll}
-		p.LoadLibraryW = loadLibraryW
 	}
 }
 

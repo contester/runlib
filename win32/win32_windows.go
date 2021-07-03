@@ -683,6 +683,7 @@ func GetBinaryType(applicationName string) (uint64, error) {
 
 	var result uint64
 	r1, _, e1 := procGetBinaryTypeW.Call(uintptr(unsafe.Pointer(lp)), uintptr(unsafe.Pointer(&result)))
+	runtime.KeepAlive(lp)
 	if int(r1) == 0 {
 		return 0, os.NewSyscallError("GetBinaryType", e1)
 	}

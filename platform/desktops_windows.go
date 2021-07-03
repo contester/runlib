@@ -1,10 +1,8 @@
 package platform
 
 import (
-	"io/fs"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync"
@@ -148,10 +146,22 @@ func createContesterDesktop() (result *ContesterDesktop, err error) {
 var detect32BitEntryPointBinary []byte
 
 func getLoadLibrary32Bit() (uintptr, error) {
-	fname := filepath.Join(os.TempDir(), "Detect32BitEntryPoint.exe")
-	if err := os.WriteFile(fname, detect32BitEntryPointBinary, fs.ModePerm); err != nil {
+	tfile, err := os.CreateTemp("", "detect32bit.*.exe")
+	if err != nil {
 		return 0, err
 	}
+	fname := tfile.Name()
+	defer os.Remove(fname)
+	_, err = tfile.Write(detect32BitEntryPointBinary)
+	if err != nil {
+		tfile.Close()
+		return 0, err
+	}
+	err = tfile.Close()
+	if err != nil {
+		return 0, err
+	}
+
 	cmd := exec.Command(fname)
 	txt, err := cmd.CombinedOutput()
 	if err != nil {

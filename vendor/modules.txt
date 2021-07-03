@@ -1,17 +1,35 @@
 # github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237
+## explicit
 github.com/contester/rpc4/proto
 github.com/contester/rpc4/rpc4go
+# github.com/gogo/protobuf v1.2.1
+## explicit
 # github.com/golang/protobuf v1.4.3
+## explicit
 github.com/golang/protobuf/proto
 # github.com/juju/errors v0.0.0-20200330140219-3fe23663418f
+## explicit
 github.com/juju/errors
+# github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8
+## explicit
+# github.com/juju/testing v0.0.0-20190613124551-e81189438503
+## explicit
+# github.com/kr/pretty v0.1.0
+## explicit
 # github.com/sirupsen/logrus v1.7.0
+## explicit
 github.com/sirupsen/logrus
+# github.com/stretchr/testify v1.3.0
+## explicit
+# golang.org/x/crypto v0.0.0-20201112155050-0c6587e931a9
+## explicit
 # golang.org/x/sys v0.0.0-20201113233024-12cec1faf1ba
+## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # google.golang.org/protobuf v1.25.0
+## explicit
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -38,10 +56,22 @@ google.golang.org/protobuf/reflect/protoreflect
 google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
+# gopkg.in/airbrake/gobrake.v2 v2.0.9
+## explicit
+# gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
+## explicit
 # gopkg.in/gcfg.v1 v1.2.3
+## explicit
 gopkg.in/gcfg.v1
 gopkg.in/gcfg.v1/scanner
 gopkg.in/gcfg.v1/token
 gopkg.in/gcfg.v1/types
+# gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2
+## explicit
+# gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
+## explicit
 # gopkg.in/warnings.v0 v0.1.2
+## explicit
 gopkg.in/warnings.v0
+# gopkg.in/yaml.v2 v2.2.2
+## explicit

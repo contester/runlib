@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"regexp"
 	"runtime"
 	"syscall"
 	"time"
@@ -138,6 +139,16 @@ func (d *PlatformData) terminateAndClose() (err error) {
 	return
 }
 
+var quoteSplitRegexp = regexp.MustCompile("'.+'|\".+\"|\\S+")
+
+func getImageName(sub *Subprocess) string {
+	if sub.Cmd.ApplicationName != "" {
+		return sub.Cmd.ApplicationName
+	}
+	m := quoteSplitRegexp.FindAllString(sub.Cmd.CommandLine, -1)
+	return m[0]
+}
+
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	var d SubprocessData
 
@@ -150,7 +161,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 	if sub.Options != nil && sub.Options.Environment != nil {
 		if len(sub.Options.InjectDLL) != 0 {
-			binaryType, err := win32.GetBinaryType(sub.Cmd.ApplicationName)
+			binaryType, err := win32.GetBinaryType(getImageName(sub))
 			if err != nil {
 				return nil, err
 			}

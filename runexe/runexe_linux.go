@@ -16,10 +16,7 @@ func getLoadLibraryIfNeeded(program, interactor *processConfig) (uintptr, error)
 	return 0, nil
 }
 
-func setDesktop(p *subprocess.PlatformOptions, desktop *platform.ContesterDesktop) {
-}
-
-func setInject(p *subprocess.PlatformOptions, injectDll string, loadLibraryW uintptr) {
+func setInject(p *subprocess.PlatformOptions, injectDll string) {
 }
 
 func newPlatformOptions() *subprocess.PlatformOptions {

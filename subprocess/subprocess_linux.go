@@ -17,8 +17,12 @@ type LoginInfo struct {
 	Uid int
 }
 
+type PlatformEnvironment interface {
+}
+
 type PlatformOptions struct {
-	Cg *linux.Cgroups
+	Environment PlatformEnvironment
+	Cg          *linux.Cgroups
 }
 
 type PlatformData struct {

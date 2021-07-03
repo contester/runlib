@@ -8,12 +8,12 @@ import (
 	"github.com/contester/runlib/subprocess"
 )
 
-func createDesktopIfNeeded(program, interactor *processConfig) (*platform.ContesterDesktop, error) {
-	return nil, nil
+func desktopNeeded(program, interactor *processConfig) bool {
+	return false
 }
 
-func getLoadLibraryIfNeeded(program, interactor *processConfig) (uintptr, error) {
-	return 0, nil
+func loadLibraryNeeded(program, interactor *processConfig) bool {
+	return false
 }
 
 func setInject(p *subprocess.PlatformOptions, injectDll string) {

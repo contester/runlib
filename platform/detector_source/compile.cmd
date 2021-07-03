@@ -1,0 +1,1 @@
+cl /O1 /FAsu /GS- Detect32BitEntryPoint.c kernel32.lib

@@ -589,9 +589,13 @@ func WriteProcessMemory(process syscall.Handle, addr uintptr, buf unsafe.Pointer
 	return nLength, nil
 }
 
-func GetModuleHandle(name *uint16) (syscall.Handle, error) {
-	r1, _, e1 := procGetModuleHandleW.Call(uintptr(unsafe.Pointer(name)))
-	runtime.KeepAlive(name)
+func GetModuleHandle(name string) (syscall.Handle, error) {
+	pName, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return 0, err
+	}
+	r1, _, e1 := procGetModuleHandleW.Call(uintptr(unsafe.Pointer(pName)))
+	runtime.KeepAlive(pName)
 	if int(r1) == 0 {
 		return syscall.InvalidHandle, os.NewSyscallError("GetModuleHandle", e1)
 	}

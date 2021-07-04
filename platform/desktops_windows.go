@@ -175,7 +175,7 @@ func getLoadLibrary32Bit() (uintptr, error) {
 }
 
 func getLoadLibrary() (uintptr, error) {
-	handle, err := win32.GetModuleHandle(syscall.StringToUTF16Ptr("kernel32"))
+	handle, err := win32.GetModuleHandle("kernel32")
 	if err != nil {
 		return 0, err
 	}

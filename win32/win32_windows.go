@@ -356,16 +356,19 @@ func SetProcessWindowStation(winsta Hwinsta) error {
 	return nil
 }
 
-func CreateDesktop(desktop, device *uint16, devmode uintptr, flags, desiredAccess uint32, sa *syscall.SecurityAttributes) (Hdesk, error) {
+func CreateDesktop(desktop string, flags, desiredAccess uint32, sa *syscall.SecurityAttributes) (Hdesk, error) {
+	pDesktop, err := syscall.UTF16PtrFromString(desktop)
+	if err != nil {
+		return 0, err
+	}
 	r1, _, e1 := procCreateDesktopW.Call(
-		uintptr(unsafe.Pointer(desktop)),
-		uintptr(unsafe.Pointer(device)),
-		devmode,
+		uintptr(unsafe.Pointer(pDesktop)),
+		0,
+		0,
 		uintptr(flags),
 		uintptr(desiredAccess),
 		uintptr(unsafe.Pointer(sa)))
-	runtime.KeepAlive(desktop)
-	runtime.KeepAlive(device)
+	runtime.KeepAlive(pDesktop)
 	runtime.KeepAlive(sa)
 	if int(r1) == 0 {
 		return Hdesk(r1), os.NewSyscallError("CreateDesktop", e1)

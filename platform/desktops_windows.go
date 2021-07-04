@@ -108,8 +108,7 @@ func createContesterDesktop() (result *ContesterDesktop, err error) {
 		shortName := threadIdName("c")
 
 		desk, err = win32.CreateDesktop(
-			syscall.StringToUTF16Ptr(shortName),
-			nil, 0, 0, syscall.GENERIC_ALL, win32.MakeInheritSa())
+			shortName, 0, syscall.GENERIC_ALL, win32.MakeInheritSa())
 
 		if err == nil {
 			name = winstaName + "\\" + shortName

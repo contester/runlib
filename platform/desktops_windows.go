@@ -25,14 +25,20 @@ type ContesterDesktop struct {
 type GlobalData struct {
 	mu sync.Mutex
 
-	desktop        *ContesterDesktop
-	loadLibraryW   uintptr
-	loadLibraryW32 uintptr
+	desktop    *ContesterDesktop
+	desktopErr error
+
+	loadLibraryW    uintptr
+	loadLibraryWErr error
+
+	loadLibraryW32    uintptr
+	loadLibraryW32Err error
 }
 
-type errNoGlobalDataT struct{}
+type errNoGlobalDataT struct {
+}
 
-func (errNoGlobalDataT) Error() string { return "" }
+func (s errNoGlobalDataT) Error() string { return "no global data" }
 
 var errNoGlobalData = errNoGlobalDataT{}
 
@@ -42,9 +48,14 @@ func (s *GlobalData) GetDesktopName() (string, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.desktop == nil {
-		return "", errNoGlobalData
+	if s.desktop == nil && s.desktopErr == nil {
+		s.desktop, s.desktopErr = createContesterDesktop()
 	}
+
+	if s.desktopErr != nil {
+		return "", s.desktopErr
+	}
+
 	return s.desktop.DesktopName, nil
 }
 
@@ -54,8 +65,13 @@ func (s *GlobalData) GetLoadLibraryW() (uintptr, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.loadLibraryW == 0 {
-		return 0, errNoGlobalData
+
+	if s.loadLibraryWErr == nil && s.loadLibraryW == 0 {
+		s.loadLibraryW, s.loadLibraryWErr = getLoadLibrary()
+	}
+
+	if s.loadLibraryWErr != nil {
+		return 0, s.loadLibraryWErr
 	}
 	return s.loadLibraryW, nil
 }
@@ -66,8 +82,13 @@ func (s *GlobalData) GetLoadLibraryW32() (uintptr, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.loadLibraryW32 == 0 {
-		return 0, errNoGlobalData
+
+	if s.loadLibraryW32Err == nil && s.loadLibraryW32 == 0 {
+		s.loadLibraryW32, s.loadLibraryW32Err = getLoadLibrary32Bit()
+	}
+
+	if s.loadLibraryW32Err != nil {
+		return 0, s.loadLibraryW32Err
 	}
 	return s.loadLibraryW32, nil
 }

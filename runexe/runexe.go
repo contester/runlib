@@ -284,10 +284,7 @@ func main() {
 		failLog = FailXml
 	}
 
-	globalData, err := platform.CreateGlobalData(platform.GlobalDataOptions{
-		NeedDesktop:     desktopNeeded(programFlags, interactorFlags),
-		NeedLoadLibrary: loadLibraryNeeded(programFlags, interactorFlags),
-	})
+	globalData, err := platform.CreateGlobalData(desktopNeeded(programFlags, interactorFlags))
 
 	if err != nil {
 		Fail(err, "Creating platform data")

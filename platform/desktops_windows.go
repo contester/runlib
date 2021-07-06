@@ -2,7 +2,6 @@ package platform
 
 import (
 	"os"
-	"os/exec"
 	"runtime"
 	"strconv"
 	"sync"
@@ -10,8 +9,6 @@ import (
 
 	"github.com/contester/runlib/win32"
 	"golang.org/x/sys/windows"
-
-	_ "embed"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -31,8 +28,7 @@ type GlobalData struct {
 	loadLibraryW    uintptr
 	loadLibraryWErr error
 
-	loadLibraryW32    uintptr
-	loadLibraryW32Err error
+	archDependentData
 }
 
 type errNoGlobalDataT struct {
@@ -42,6 +38,10 @@ func (s errNoGlobalDataT) Error() string { return "no global data" }
 
 var errNoGlobalData = errNoGlobalDataT{}
 
+func (s *GlobalData) onceInitDesktop() {
+	s.desktop, s.desktopErr = createContesterDesktop()
+}
+
 func (s *GlobalData) GetDesktopName() (string, error) {
 	if s == nil {
 		return "", errNoGlobalData
@@ -49,7 +49,7 @@ func (s *GlobalData) GetDesktopName() (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.desktop == nil && s.desktopErr == nil {
-		s.desktop, s.desktopErr = createContesterDesktop()
+		s.onceInitDesktop()
 	}
 
 	if s.desktopErr != nil {
@@ -57,6 +57,10 @@ func (s *GlobalData) GetDesktopName() (string, error) {
 	}
 
 	return s.desktop.DesktopName, nil
+}
+
+func (s *GlobalData) onceInitLibraryW() {
+	s.loadLibraryW, s.loadLibraryWErr = getLoadLibrary()
 }
 
 func (s *GlobalData) GetLoadLibraryW() (uintptr, error) {
@@ -67,30 +71,13 @@ func (s *GlobalData) GetLoadLibraryW() (uintptr, error) {
 	defer s.mu.Unlock()
 
 	if s.loadLibraryWErr == nil && s.loadLibraryW == 0 {
-		s.loadLibraryW, s.loadLibraryWErr = getLoadLibrary()
+		s.onceInitLibraryW()
 	}
 
 	if s.loadLibraryWErr != nil {
 		return 0, s.loadLibraryWErr
 	}
 	return s.loadLibraryW, nil
-}
-
-func (s *GlobalData) GetLoadLibraryW32() (uintptr, error) {
-	if s == nil {
-		return 0, errNoGlobalData
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.loadLibraryW32Err == nil && s.loadLibraryW32 == 0 {
-		s.loadLibraryW32, s.loadLibraryW32Err = getLoadLibrary32Bit()
-	}
-
-	if s.loadLibraryW32Err != nil {
-		return 0, s.loadLibraryW32Err
-	}
-	return s.loadLibraryW32, nil
 }
 
 func threadIdName(prefix string) string {
@@ -162,38 +149,6 @@ func createContesterDesktop() (result *ContesterDesktop, err error) {
 	}, nil
 }
 
-//go:embed Detect32BitEntryPoint.exe.embed
-var detect32BitEntryPointBinary []byte
-
-func getLoadLibrary32Bit() (uintptr, error) {
-	tfile, err := os.CreateTemp("", "detect32bit.*.exe")
-	if err != nil {
-		return 0, err
-	}
-	fname := tfile.Name()
-	defer os.Remove(fname)
-	_, err = tfile.Write(detect32BitEntryPointBinary)
-	if err != nil {
-		tfile.Close()
-		return 0, err
-	}
-	err = tfile.Close()
-	if err != nil {
-		return 0, err
-	}
-
-	cmd := exec.Command(fname)
-	txt, err := cmd.CombinedOutput()
-	if err != nil {
-		return 0, err
-	}
-	cval, err := strconv.ParseInt(string(txt), 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return uintptr(cval), nil
-}
-
 func getLoadLibrary() (uintptr, error) {
 	handle, err := win32.GetModuleHandle("kernel32")
 	if err != nil {
@@ -206,29 +161,12 @@ func getLoadLibrary() (uintptr, error) {
 	return addr, nil
 }
 
-type GlobalDataOptions struct {
-	NeedDesktop     bool
-	NeedLoadLibrary bool
-}
-
-func CreateGlobalData(opts GlobalDataOptions) (*GlobalData, error) {
-	var err error
+func CreateGlobalData(needDesktop bool) (*GlobalData, error) {
 	var result GlobalData
-	if opts.NeedDesktop {
-		result.desktop, err = createContesterDesktop()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if opts.NeedLoadLibrary {
-		result.loadLibraryW, err = getLoadLibrary()
-		if err != nil {
-			return nil, err
-		}
-		result.loadLibraryW32, err = getLoadLibrary32Bit()
-		if err != nil {
-			return nil, err
+	if needDesktop {
+		result.onceInitDesktop()
+		if result.desktopErr != nil {
+			return nil, result.desktopErr
 		}
 	}
 	return &result, nil

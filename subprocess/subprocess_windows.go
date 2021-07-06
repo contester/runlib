@@ -28,12 +28,6 @@ type PlatformData struct {
 	use32BitLoadLibrary bool
 }
 
-type PlatformEnvironment interface {
-	GetDesktopName() (string, error)
-	GetLoadLibraryW() (uintptr, error)
-	GetLoadLibraryW32() (uintptr, error)
-}
-
 type PlatformOptions struct {
 	Environment PlatformEnvironment
 	InjectDLL   []string
@@ -160,12 +154,8 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	useCreateProcessWithLogonW := sub.NoJob || win32.IsWindows8OrGreater()
 
 	if sub.Options != nil && sub.Options.Environment != nil {
-		if len(sub.Options.InjectDLL) != 0 {
-			binaryType, err := win32.GetBinaryType(getImageName(sub))
-			if err != nil {
-				return nil, err
-			}
-			d.platformData.use32BitLoadLibrary = binaryType == win32.SCS_32BIT_BINARY
+		if err := d.initArchDependentData(sub); err != nil {
+			return nil, err
 		}
 
 		if !useCreateProcessWithLogonW {
@@ -375,14 +365,7 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 }
 
 func InjectDll(d *SubprocessData, env PlatformEnvironment, dll string) error {
-
-	var loadLibraryW uintptr
-	var err error
-	if d.platformData.use32BitLoadLibrary {
-		loadLibraryW, err = env.GetLoadLibraryW32()
-	} else {
-		loadLibraryW, err = env.GetLoadLibraryW()
-	}
+	loadLibraryW, err := d.getLoadLibraryW(env)
 	if err != nil {
 		return err
 	}

@@ -26,10 +26,7 @@ func main() {
 	log.SetOutput(f)
 	log.SetLevel(log.DebugLevel)
 
-	globalData, err := platform.CreateGlobalData(platform.GlobalDataOptions{
-		NeedDesktop:     true,
-		NeedLoadLibrary: true,
-	})
+	globalData, err := platform.CreateGlobalData(true)
 	if err != nil {
 		log.Fatal(err)
 		return

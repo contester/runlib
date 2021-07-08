@@ -5,10 +5,6 @@ type GlobalData struct{}
 type ContesterDesktop struct {
 }
 
-type GlobalDataOptions struct {
-	NeedDesktop, NeedLoadLibrary bool
-}
-
-func CreateGlobalData(opts GlobalDataOptions) (*GlobalData, error) {
+func CreateGlobalData(opts bool) (*GlobalData, error) {
 	return nil, nil
 }

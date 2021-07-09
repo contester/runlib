@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"regexp"
 	"runtime"
 	"syscall"
 	"time"
@@ -131,16 +130,6 @@ func (d *PlatformData) terminateAndClose() (err error) {
 	syscall.CloseHandle(d.hThread)
 	syscall.CloseHandle(d.hProcess)
 	return
-}
-
-var quoteSplitRegexp = regexp.MustCompile("'.+'|\".+\"|\\S+")
-
-func getImageName(sub *Subprocess) string {
-	if sub.Cmd.ApplicationName != "" {
-		return sub.Cmd.ApplicationName
-	}
-	m := quoteSplitRegexp.FindAllString(sub.Cmd.CommandLine, -1)
-	return m[0]
 }
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {

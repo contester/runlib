@@ -152,13 +152,6 @@ func MakeInheritSa() *syscall.SecurityAttributes {
 	return &sa
 }
 
-func StringNEToUTF16Ptr(src string) *uint16 {
-	if src == "" {
-		return nil
-	}
-	return syscall.StringToUTF16Ptr(src)
-}
-
 func UTF16PtrFromStringOrNil(src string) (*uint16, error) {
 	if src == "" {
 		return nil, nil
@@ -388,7 +381,7 @@ func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx,
 		Cb: uint32(unsafe.Sizeof(*pmc)),
 	}
 	if r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(pmc)),
-		uintptr(pmc.Cb)); int(r1) == 0 {
+		unsafe.Sizeof(*pmc)); int(r1) == 0 {
 		return nil, os.NewSyscallError("GetProcessMemoryInfo", e1)
 	}
 	return pmc, nil

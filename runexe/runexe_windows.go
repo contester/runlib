@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"syscall"
 
 	"github.com/contester/runlib/subprocess"
 )
@@ -34,6 +35,10 @@ func newPlatformOptions() *subprocess.PlatformOptions {
 }
 
 func argsToPc(pc *processConfig, args []string) {
-	pc.CommandLine = strings.Join(args, " ")
+	var eargs []string
+	for _, v := range args {
+		eargs = append(eargs, syscall.EscapeArg(v))
+	}
+	pc.CommandLine = strings.Join(eargs, " ")
 	pc.Parameters = args
 }

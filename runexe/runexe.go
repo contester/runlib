@@ -257,7 +257,6 @@ func ParseFlags(globals bool, args []string) (pc *processConfig, gc *runexeConfi
 
 func main() {
 	programFlags, globalFlags, err := ParseFlags(true, os.Args[1:])
-
 	if err != nil {
 		Fail(err, "Parse main flags")
 	}

@@ -164,59 +164,60 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 	var pi syscall.ProcessInformation
 
-	applicationName := win32.StringNEToUTF16Ptr(sub.Cmd.ApplicationName)
-	commandLine := win32.StringNEToUTF16Ptr(sub.Cmd.CommandLine)
-	var environment *uint16
-	if sub.NoInheritEnvironment {
-		environment = win32.ListToEnvironmentBlock(sub.Environment)
-	}
-	currentDirectory := win32.StringNEToUTF16Ptr(sub.CurrentDirectory)
-
 	syscall.ForkLock.Lock()
 	wSetInherit(&si)
 
 	if sub.Login != nil {
 		if useCreateProcessWithLogonW {
 			e = win32.CreateProcessWithLogonW(
-				syscall.StringToUTF16Ptr(sub.Login.Username),
-				syscall.StringToUTF16Ptr("."),
-				syscall.StringToUTF16Ptr(sub.Login.Password),
+				sub.Login.Username,
+				".",
+				sub.Login.Password,
 				win32.LOGON_WITH_PROFILE,
-				applicationName,
-				commandLine,
+				sub.Cmd.ApplicationName,
+				sub.Cmd.CommandLine,
 				win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT,
-				environment,
-				currentDirectory,
+				win32.ProcessEnvironmentOptions{
+					NoInherit: sub.NoInheritEnvironment,
+					Env:       sub.Environment,
+				},
+				sub.CurrentDirectory,
 				&si,
 				&pi)
 		} else {
 			e = win32.CreateProcessAsUser(
 				sub.Login.HUser,
-				applicationName,
-				commandLine,
+				sub.Cmd.ApplicationName,
+				sub.Cmd.CommandLine,
 				nil,
 				nil,
 				true,
 				win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|
 					syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
-				environment,
-				currentDirectory,
+				win32.ProcessEnvironmentOptions{
+					NoInherit: sub.NoInheritEnvironment,
+					Env:       sub.Environment,
+				},
+				sub.CurrentDirectory,
 				&si,
 				&pi)
 		}
 	} else {
-		e = os.NewSyscallError("CreateProcess", syscall.CreateProcess(
-			applicationName,
-			commandLine,
+		e = win32.CreateProcess(
+			sub.Cmd.ApplicationName,
+			sub.Cmd.CommandLine,
 			nil,
 			nil,
 			true,
 			win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|
 				syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
-			environment,
-			currentDirectory,
+			win32.ProcessEnvironmentOptions{
+				NoInherit: sub.NoInheritEnvironment,
+				Env:       sub.Environment,
+			},
+			sub.CurrentDirectory,
 			&si,
-			&pi))
+			&pi)
 	}
 
 	closeDescriptors(d.closeAfterStart)

@@ -159,54 +159,94 @@ func StringNEToUTF16Ptr(src string) *uint16 {
 	return syscall.StringToUTF16Ptr(src)
 }
 
-func ListToEnvironmentBlock(list []string) *uint16 {
-	converted := make([][]uint16, 0, len(list))
-	size := 1
+func UTF16PtrFromStringOrNil(src string) (*uint16, error) {
+	if src == "" {
+		return nil, nil
+	}
+	return syscall.UTF16PtrFromString(src)
+}
+
+func ListToEnvironmentBlock(list []string) (*uint16, error) {
+	result := make([]uint16, 0, 16*1024)
 	for _, v := range list {
-		c := syscall.StringToUTF16(v)
-		size += len(c)
-		converted = append(converted, c)
+		c, err := syscall.UTF16FromString(v)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, c...)
 	}
+	result = append(result, 0)
+	return &result[0], nil
+}
 
-	result := make([]uint16, 0, size)
-	for _, v := range converted {
-		result = append(result, v...)
-	}
-
-	return &result[0]
+type ProcessEnvironmentOptions struct {
+	NoInherit bool
+	Env       []string
 }
 
 func CreateProcessWithLogonW(
-	username *uint16,
-	domain *uint16,
-	password *uint16,
+	username,
+	domain,
+	password string,
 	logonFlags uint32,
-	applicationName *uint16,
-	commandLine *uint16,
+	applicationName,
+	commandLine string,
 	creationFlags uint32,
-	environment *uint16,
-	currentDirectory *uint16,
+	environment ProcessEnvironmentOptions,
+	currentDirectory string,
 	startupInfo *syscall.StartupInfo,
 	processInformation *syscall.ProcessInformation) error {
+	pUsername, err := syscall.UTF16PtrFromString(username)
+	if err != nil {
+		return err
+	}
+	pDomain, err := syscall.UTF16PtrFromString(domain)
+	if err != nil {
+		return err
+	}
+	pPassword, err := syscall.UTF16PtrFromString(password)
+	if err != nil {
+		return err
+	}
+	pApplicationName, err := UTF16PtrFromStringOrNil(applicationName)
+	if err != nil {
+		return err
+	}
+	pCommandLine, err := UTF16PtrFromStringOrNil(commandLine)
+	if err != nil {
+		return err
+	}
+	pCurrentDirectory, err := UTF16PtrFromStringOrNil(currentDirectory)
+	if err != nil {
+		return err
+	}
+	var pEnvironment *uint16
+	if environment.NoInherit {
+		pEnvironment, err = ListToEnvironmentBlock(environment.Env)
+		if err != nil {
+			return err
+		}
+	}
+
 	r1, _, e1 := procCreateProcessWithLogonW.Call(
-		uintptr(unsafe.Pointer(username)),
-		uintptr(unsafe.Pointer(domain)),
-		uintptr(unsafe.Pointer(password)),
+		uintptr(unsafe.Pointer(pUsername)),
+		uintptr(unsafe.Pointer(pDomain)),
+		uintptr(unsafe.Pointer(pPassword)),
 		uintptr(logonFlags),
-		uintptr(unsafe.Pointer(applicationName)),
-		uintptr(unsafe.Pointer(commandLine)),
+		uintptr(unsafe.Pointer(pApplicationName)),
+		uintptr(unsafe.Pointer(pCommandLine)),
 		uintptr(creationFlags),
-		uintptr(unsafe.Pointer(environment)), // env
-		uintptr(unsafe.Pointer(currentDirectory)),
+		uintptr(unsafe.Pointer(pEnvironment)),
+		uintptr(unsafe.Pointer(pCurrentDirectory)),
 		uintptr(unsafe.Pointer(startupInfo)),
 		uintptr(unsafe.Pointer(processInformation)))
-	runtime.KeepAlive(username)
-	runtime.KeepAlive(domain)
-	runtime.KeepAlive(password)
-	runtime.KeepAlive(applicationName)
-	runtime.KeepAlive(commandLine)
-	runtime.KeepAlive(environment)
-	runtime.KeepAlive(currentDirectory)
+	runtime.KeepAlive(pUsername)
+	runtime.KeepAlive(pDomain)
+	runtime.KeepAlive(pPassword)
+	runtime.KeepAlive(pApplicationName)
+	runtime.KeepAlive(pCommandLine)
+	runtime.KeepAlive(pEnvironment)
+	runtime.KeepAlive(pCurrentDirectory)
 	runtime.KeepAlive(startupInfo)
 	runtime.KeepAlive(processInformation)
 	if int(r1) == 0 {
@@ -224,41 +264,115 @@ func boolToUint32(src bool) uint32 {
 
 func CreateProcessAsUser(
 	token syscall.Handle,
-	applicationName *uint16,
-	commandLine *uint16,
+	applicationName,
+	commandLine string,
 	procSecurity *syscall.SecurityAttributes,
 	threadSecurity *syscall.SecurityAttributes,
 	inheritHandles bool,
 	creationFlags uint32,
-	environment *uint16,
-	currentDirectory *uint16,
+	environment ProcessEnvironmentOptions,
+	currentDirectory string,
 	startupInfo *syscall.StartupInfo,
 	processInformation *syscall.ProcessInformation) error {
 
+	pApplicationName, err := UTF16PtrFromStringOrNil(applicationName)
+	if err != nil {
+		return err
+	}
+	pCommandLine, err := UTF16PtrFromStringOrNil(commandLine)
+	if err != nil {
+		return err
+	}
+	pCurrentDirectory, err := UTF16PtrFromStringOrNil(currentDirectory)
+	if err != nil {
+		return err
+	}
+	var pEnvironment *uint16
+	if environment.NoInherit {
+		pEnvironment, err = ListToEnvironmentBlock(environment.Env)
+		if err != nil {
+			return err
+		}
+	}
+
 	r1, _, e1 := procCreateProcessAsUserW.Call(
 		uintptr(token),
-		uintptr(unsafe.Pointer(applicationName)),
-		uintptr(unsafe.Pointer(commandLine)),
+		uintptr(unsafe.Pointer(pApplicationName)),
+		uintptr(unsafe.Pointer(pCommandLine)),
 		uintptr(unsafe.Pointer(procSecurity)),
 		uintptr(unsafe.Pointer(threadSecurity)),
 		uintptr(boolToUint32(inheritHandles)),
 		uintptr(creationFlags),
-		uintptr(unsafe.Pointer(environment)), // env
-		uintptr(unsafe.Pointer(currentDirectory)),
+		uintptr(unsafe.Pointer(pEnvironment)), // env
+		uintptr(unsafe.Pointer(pCurrentDirectory)),
 		uintptr(unsafe.Pointer(startupInfo)),
 		uintptr(unsafe.Pointer(processInformation)))
-	runtime.KeepAlive(applicationName)
-	runtime.KeepAlive(commandLine)
+	runtime.KeepAlive(pApplicationName)
+	runtime.KeepAlive(pCommandLine)
 	runtime.KeepAlive(procSecurity)
 	runtime.KeepAlive(threadSecurity)
-	runtime.KeepAlive(environment)
-	runtime.KeepAlive(currentDirectory)
+	runtime.KeepAlive(pEnvironment)
+	runtime.KeepAlive(pCurrentDirectory)
 	runtime.KeepAlive(startupInfo)
 	runtime.KeepAlive(processInformation)
 	if int(r1) == 0 {
 		return os.NewSyscallError("CreateProcessAsUser", e1)
 	}
 	return nil
+}
+
+func CreateProcess(
+	applicationName,
+	commandLine string,
+	procSecurity *syscall.SecurityAttributes,
+	threadSecurity *syscall.SecurityAttributes,
+	inheritHandles bool,
+	creationFlags uint32,
+	environment ProcessEnvironmentOptions,
+	currentDirectory string,
+	startupInfo *syscall.StartupInfo,
+	processInformation *syscall.ProcessInformation) error {
+
+	pApplicationName, err := UTF16PtrFromStringOrNil(applicationName)
+	if err != nil {
+		return err
+	}
+	pCommandLine, err := UTF16PtrFromStringOrNil(commandLine)
+	if err != nil {
+		return err
+	}
+	pCurrentDirectory, err := UTF16PtrFromStringOrNil(currentDirectory)
+	if err != nil {
+		return err
+	}
+	var pEnvironment *uint16
+	if environment.NoInherit {
+		pEnvironment, err = ListToEnvironmentBlock(environment.Env)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = syscall.CreateProcess(
+		pApplicationName,
+		pCommandLine,
+		procSecurity,
+		threadSecurity,
+		inheritHandles,
+		creationFlags,
+		pEnvironment,
+		pCurrentDirectory,
+		startupInfo,
+		processInformation)
+	runtime.KeepAlive(pApplicationName)
+	runtime.KeepAlive(pCommandLine)
+	runtime.KeepAlive(procSecurity)
+	runtime.KeepAlive(threadSecurity)
+	runtime.KeepAlive(pEnvironment)
+	runtime.KeepAlive(pCurrentDirectory)
+	runtime.KeepAlive(startupInfo)
+	runtime.KeepAlive(processInformation)
+	return os.NewSyscallError("CreateProcess", err)
 }
 
 func ResumeThread(thread syscall.Handle) (suspendCount int, err error) {
@@ -270,8 +384,9 @@ func ResumeThread(thread syscall.Handle) (suspendCount int, err error) {
 }
 
 func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx, err error) {
-	pmc = &ProcessMemoryCountersEx{}
-	pmc.Cb = uint32(unsafe.Sizeof(*pmc))
+	pmc = &ProcessMemoryCountersEx{
+		Cb: uint32(unsafe.Sizeof(*pmc)),
+	}
 	if r1, _, e1 := procGetProcessMemoryInfo.Call(uintptr(process), uintptr(unsafe.Pointer(pmc)),
 		uintptr(pmc.Cb)); int(r1) == 0 {
 		return nil, os.NewSyscallError("GetProcessMemoryInfo", e1)

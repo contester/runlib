@@ -387,17 +387,30 @@ func GetProcessMemoryInfo(process syscall.Handle) (pmc *ProcessMemoryCountersEx,
 	return pmc, nil
 }
 
-func LogonUser(username *uint16, domain *uint16, password *uint16, logonType uint32, logonProvider uint32) (token syscall.Handle, err error) {
+func LogonUser(username, domain, password string, logonType uint32, logonProvider uint32) (token syscall.Handle, err error) {
+	pUsername, err := syscall.UTF16PtrFromString(username)
+	if err != nil {
+		return syscall.InvalidHandle, err
+	}
+	pDomain, err := syscall.UTF16PtrFromString(domain)
+	if err != nil {
+		return syscall.InvalidHandle, err
+	}
+	pPassword, err := syscall.UTF16PtrFromString(password)
+	if err != nil {
+		return syscall.InvalidHandle, err
+	}
+
 	r1, _, e1 := procLogonUserW.Call(
-		uintptr(unsafe.Pointer(username)),
-		uintptr(unsafe.Pointer(domain)),
-		uintptr(unsafe.Pointer(password)),
+		uintptr(unsafe.Pointer(pUsername)),
+		uintptr(unsafe.Pointer(pDomain)),
+		uintptr(unsafe.Pointer(pPassword)),
 		uintptr(logonType),
 		uintptr(logonProvider),
 		uintptr(unsafe.Pointer(&token)))
-	runtime.KeepAlive(username)
-	runtime.KeepAlive(domain)
-	runtime.KeepAlive(password)
+	runtime.KeepAlive(pUsername)
+	runtime.KeepAlive(pDomain)
+	runtime.KeepAlive(pPassword)
 	if int(r1) == 0 {
 		return syscall.InvalidHandle, os.NewSyscallError("LogonUser", e1)
 	}

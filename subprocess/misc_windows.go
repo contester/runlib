@@ -63,9 +63,9 @@ func (s *LoginInfo) Prepare() error {
 
 	var err error
 	s.HUser, err = win32.LogonUser(
-		syscall.StringToUTF16Ptr(s.Username),
-		syscall.StringToUTF16Ptr("."),
-		syscall.StringToUTF16Ptr(s.Password),
+		s.Username,
+		".",
+		s.Password,
 		win32.LOGON32_LOGON_INTERACTIVE,
 		win32.LOGON32_PROVIDER_DEFAULT)
 

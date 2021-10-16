@@ -16,7 +16,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: 1.17.2
 
     - name: Build amd64
       run: GOOS=windows GOARCH=amd64 go build -o runexe.exe -a -ldflags "-X main.version=${GITHUB_SHA} -X main.buildid=${GITHUB_RUN_NUMBER}" ./runexe

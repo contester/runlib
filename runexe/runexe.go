@@ -288,6 +288,11 @@ func main() {
 		Fail(err, "Creating platform data")
 	}
 
+	// This is a temporary hack to always create and run 32-bit detector.
+	// If we run it concurrently to our custom createprocess, it fails somewhere
+	// in go runtime.
+	globalData.GetLoadLibraryW32()
+
 	var program, interactor *subprocess.Subprocess
 	program, err = SetupSubprocess(programFlags, globalData)
 	if err != nil {

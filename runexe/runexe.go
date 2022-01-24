@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -42,6 +43,8 @@ type processConfig struct {
 	TrustedMode bool
 	NoIdleCheck bool
 	NoJob       bool
+
+	ProcessLimit int
 }
 
 type runexeConfig struct {
@@ -94,6 +97,7 @@ func CreateFlagSet() (*flag.FlagSet, *processConfig) {
 	fs.BoolVar(&result.TrustedMode, "z", false, "")
 	fs.BoolVar(&result.NoIdleCheck, "no-idleness-check", false, "")
 	fs.BoolVar(&result.NoJob, "no-job", false, "")
+	fs.IntVar(&result.ProcessLimit, "process-limit", 0, "")
 
 	return fs, &result
 }
@@ -187,6 +191,13 @@ func SetupSubprocess(s *processConfig, env *platform.GlobalData) (*subprocess.Su
 	sub.RestrictUi = !s.TrustedMode
 	sub.ProcessAffinityMask = uint64(s.ProcessAffinity)
 	sub.NoJob = s.NoJob
+	if s.ProcessLimit > 0 {
+		if s.NoJob {
+			return nil, errors.New("can't enforce process limit if not using job object")
+		}
+		sub.FailOnJobCreationFailure = true
+		sub.ProcessLimit = uint32(s.ProcessLimit)
+	}
 
 	if s.EnvironmentFile != "" {
 		var err error

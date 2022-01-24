@@ -154,9 +154,24 @@ Process properties:
   -o <filename> - redirect standard output to <filename>.
   -e <filename> - redirect standard error to <filename>.
   -u            - instead of using separate stderr, join error output to standard output.
-  -z            - run process in trusted mode.
   -no-idleness-check - switch off idleness checking.
   -a <value>	- set process affinity to <value>. You can either specify it
                   as plain int, or as a bit mask starting with 0, so 2 and
                   010 are equivalent.
+
+  Some options require job objects to function. When process is created, runexe attempts
+  to create a job object. If it can't, it will continue without it unless internal flag
+  FailOnJobCreationFailure is set (which is false by default). If job object can be created, then:
+    - extra set of UI restrictions is applied unless -z is specified
+	- flag to force close on unhandled exception is set
+	- hard time limit of "time limit + 1s" is applied
+
+  Options which control job object behavior:
+  -no-job       - don't even try creating job objects.
+  -z            - don't restrict process UI. This option doesn't set
+				  FailOnJobCreationFailure, so if job creation fails the job will run
+				  unrestricted.
+  -process-limit <intvalue> - set process limit to <intvalue>. Windows will refuse
+                  to create processes above the limit. Setting this sets FailOnJobCreationFailure
+				  and is incompatible with -no-job.
 `

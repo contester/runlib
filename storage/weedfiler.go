@@ -12,7 +12,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
@@ -23,7 +22,6 @@ var _ ProblemStore = &weedfilerStorage{}
 
 type weedfilerStorage struct {
 	URL string
-	mu  sync.RWMutex
 }
 
 func NewWeed(url string) *weedfilerStorage {
@@ -123,6 +121,7 @@ func filerDownload(ctx context.Context, localName, remoteName, authToken string)
 }
 
 func FilerReadRemote(ctx context.Context, name, authToken string) (*RemoteFile, error) {
+	name = remoteNameCleanup(name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, name, nil)
 	if err != nil {
 		return nil, err
@@ -153,7 +152,12 @@ func FilerReadRemote(ctx context.Context, name, authToken string) (*RemoteFile, 
 	return &result, nil
 }
 
+func remoteNameCleanup(s string) string {
+	return strings.TrimPrefix(s, "filer:")
+}
+
 func FilerCopy(ctx context.Context, localName, remoteName string, toRemote bool, checksum, moduleType, authToken string) (stat *contester_proto.FileStat, err error) {
+	remoteName = remoteNameCleanup(remoteName)
 	if toRemote {
 		return filerUpload(ctx, localName, remoteName, checksum, moduleType, authToken)
 	}

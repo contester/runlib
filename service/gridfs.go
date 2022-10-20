@@ -32,6 +32,7 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 
 		resolved, _, err := resolvePath(s.Sandboxes, item.GetLocalFileName(), false)
 		if err != nil {
+			log.Errorf("path resolve error: %v", err)
 			continue // TODO
 		}
 

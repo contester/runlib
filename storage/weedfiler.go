@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -113,10 +114,16 @@ func filerDownload(ctx context.Context, localName, remoteName, authToken string)
 		}
 		return nil, errors.Errorf("invalid status: %d %q", resp.StatusCode, resp.Status)
 	}
-	if _, err = io.Copy(local, resp.Body); err != nil {
+	n, err := io.Copy(local, resp.Body)
+	if err != nil {
 		return nil, err
 	}
 	local.Close()
+
+	if resp.ContentLength != -1 && n != resp.ContentLength {
+		return nil, fmt.Errorf("incomplete read %d want %d", n, resp.ContentLength)
+	}
+
 	return tools.StatFile(localName, true)
 }
 

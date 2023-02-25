@@ -6,6 +6,8 @@ package contester.proto;
 
 option java_package = "org.stingray.contester.proto";
 
+option go_package = "github.com/contester/runlib/contester_proto";
+
 message RedirectParameters {
     string filename = 1;
     bool memory = 2;

@@ -23,7 +23,7 @@ func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 	if info.IsDir() {
 		result.IsDirectory = true
 	} else {
-		result.Size_ = uint64(info.Size())
+		result.Size = uint64(info.Size())
 		if hash_it {
 			checksum, err := HashFileString(name)
 			if err != nil {

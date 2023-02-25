@@ -1,6 +1,6 @@
 package contester_proto
 
-//go:generate protoc --gofast_out=. Blobs.proto Contester.proto Execution.proto Local.proto
+//go:generate protoc --go_out=. --go_opt=paths=source_relative Blobs.proto Contester.proto Execution.proto Local.proto
 
 import (
 	"bytes"

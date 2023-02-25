@@ -61,7 +61,7 @@ func filerUpload(ctx context.Context, localName, remoteName, checksum, moduleTyp
 	if authToken != "" {
 		req.Header.Add("Authorization", "bearer "+authToken)
 	}
-	req.Header.Add("X-FS-Content-Length", strconv.FormatUint(stat.GetSize_(), 10))
+	req.Header.Add("X-FS-Content-Length", strconv.FormatUint(stat.GetSize(), 10))
 	var base64sha1 string
 	if checksum != "" && strings.HasPrefix(checksum, "sha1:") {
 		if data, err := hex.DecodeString(strings.TrimPrefix(checksum, "sha1:")); err == nil {
@@ -83,7 +83,7 @@ func filerUpload(ctx context.Context, localName, remoteName, checksum, moduleTyp
 	if err != nil {
 		return nil, errors.Annotate(err, "json.Decode")
 	}
-	if st.Size != int64(stat.GetSize_()) || (base64sha1 != "" && base64sha1 != st.Digests["SHA"]) {
+	if st.Size != int64(stat.GetSize()) || (base64sha1 != "" && base64sha1 != st.Digests["SHA"]) {
 		return nil, errors.NotValidf("upload integrity verification failed")
 	}
 	return stat, nil
@@ -152,7 +152,7 @@ func FilerReadRemote(ctx context.Context, name, authToken string) (*RemoteFile, 
 
 	if sz := resp.Header.Get("Content-Length"); sz != "" {
 		if isz, err := strconv.ParseUint(sz, 10, 64); err == nil {
-			result.Stat.Size_ = isz
+			result.Stat.Size = isz
 		}
 	}
 

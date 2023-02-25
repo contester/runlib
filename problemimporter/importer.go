@@ -262,7 +262,7 @@ func (s *localZipPw) writeFile(as string, size uint64, body io.Reader) error {
 }
 
 func (s *localZipPw) writeLocal(as string, rf *storage.RemoteFile) error {
-	return s.writeFile(as, uint64(rf.Stat.GetSize_()), rf.Body)
+	return s.writeFile(as, uint64(rf.Stat.GetSize()), rf.Body)
 }
 
 func withRemoteFile(ctx context.Context, remote string, f func(rf *storage.RemoteFile) error) error {

@@ -302,7 +302,7 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 				win32.JOB_OBJECT_UILIMIT_WRITECLIPBOARD),
 		}
 
-		if e = win32.SetJobObjectBasicUiRestrictions(d.platformData.hJo, &info); e != nil {
+		if e = win32.SetJobObjectBasicUiRestrictions(d.platformData.hJob, &info); e != nil {
 			syscall.CloseHandle(d.platformData.hJob)
 			return fmt.Errorf("SetJobObjectBasicUiRestrictions: %w", e)
 		}

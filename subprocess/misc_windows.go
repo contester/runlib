@@ -69,7 +69,7 @@ func (s *LoginInfo) Prepare() error {
 		win32.LOGON32_PROVIDER_DEFAULT)
 
 	if err != nil {
-		return errors.Trace(err)
+		return fmt.Errorf("win32.LogonUser(%q): %w", s.Username, err)
 	}
 
 	s.HProfile, err = loadProfile(s.HUser, s.Username)
@@ -77,7 +77,7 @@ func (s *LoginInfo) Prepare() error {
 	if err != nil {
 		syscall.CloseHandle(s.HUser)
 		s.HUser = syscall.InvalidHandle
-		return errors.Trace(err)
+		return fmt.Errorf("loadProfile(%q): %w", s.Username, err)
 	}
 
 	runtime.SetFinalizer(s, logout)

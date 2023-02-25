@@ -1,6 +1,7 @@
 package subprocess
 
 import (
+	"fmt"
 	"os/user"
 	"runtime"
 	"strconv"
@@ -8,7 +9,6 @@ import (
 	"time"
 
 	"github.com/contester/runlib/linux"
-	"github.com/juju/errors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -34,11 +34,11 @@ type PlatformData struct {
 func NewLoginInfo(username, password string) (*LoginInfo, error) {
 	u, err := user.Lookup(username)
 	if err != nil {
-		return nil, errors.Annotatef(err, "user.Lookup(%q)", username)
+		return nil, fmt.Errorf("user.Lookup(%q): %w", username, err)
 	}
 	uid, err := strconv.Atoi(u.Uid)
 	if err != nil {
-		return nil, errors.Annotatef(err, "strconv.Atoi(%q)", u.Uid)
+		return nil, fmt.Errorf("strconv.Atoi(%q): %w", u.Uid, err)
 	}
 	return &LoginInfo{
 		Uid: uid,
@@ -62,14 +62,14 @@ func (d *SubprocessData) wAllRedirects(s *Subprocess, result *linux.StdHandles) 
 
 func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	if sub.Cmd.ApplicationName == "" {
-		return nil, errors.NotValidf("Application name must be present")
+		return nil, fmt.Errorf("Application name must be present")
 	}
 	d := &SubprocessData{}
 	var stdh linux.StdHandles
 	err := d.wAllRedirects(sub, &stdh)
 	defer stdh.Close()
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 	var uid int
 	if sub.Login != nil {
@@ -78,18 +78,18 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d.platformData.params, err = linux.CreateCloneParams(
 		sub.Cmd.ApplicationName, sub.Cmd.Parameters, sub.Environment, sub.CurrentDirectory, uid, stdh)
 	if err != nil {
-		return nil, errors.Annotate(err, "CreateCloneParams")
+		return nil, fmt.Errorf("CreateCloneParams(): %w", err)
 	}
 	syscall.ForkLock.Lock()
 	d.platformData.Pid, err = d.platformData.params.CloneFrozen()
 	closeDescriptors(d.closeAfterStart)
 	syscall.ForkLock.Unlock()
 	if err != nil {
-		return nil, errors.Annotate(err, "CloneFrozen")
+		return nil, fmt.Errorf("CloneFrozen(): %w", err)
 	}
 	err = SetupControlGroup(sub, d)
 	if err != nil {
-		return nil, errors.Annotate(err, "SetupControlGroup")
+		return nil, fmt.Errorf("SetupControlGroup(): %w", err)
 	}
 	return d, nil
 }

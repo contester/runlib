@@ -6,9 +6,8 @@ import (
 	"bytes"
 	"compress/zlib"
 	"crypto/sha1"
+	"fmt"
 	"io"
-
-	"github.com/juju/errors"
 )
 
 func (blob *Blob) Reader() (io.Reader, error) {
@@ -16,7 +15,7 @@ func (blob *Blob) Reader() (io.Reader, error) {
 		buf := bytes.NewReader(blob.Data)
 		r, err := zlib.NewReader(buf)
 		if err != nil {
-			return nil, errors.Annotate(err, "zlib.NewReader")
+			return nil, fmt.Errorf("zlib.NewReader(): %w", err)
 		}
 		return r, nil
 	}
@@ -31,7 +30,7 @@ func (blob *Blob) Bytes() ([]byte, error) {
 	var result bytes.Buffer
 	_, err = io.Copy(&result, reader)
 	if err != nil {
-		return nil, errors.Annotate(err, "io.Copy")
+		return nil, fmt.Errorf("io.Copy: %w", err)
 	}
 	return result.Bytes(), nil
 }
@@ -91,7 +90,7 @@ func BlobFromStream(r io.Reader) (*Blob, error) {
 
 	size, err := io.Copy(writer, r)
 	if err != nil {
-		return nil, errors.Annotate(err, "io.Copy")
+		return nil, fmt.Errorf("io.Copy: %w", err)
 	}
 	compressor.Close()
 	return &Blob{

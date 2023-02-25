@@ -1,13 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/contester/runlib/contester_proto"
-	"github.com/juju/errors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -15,7 +15,7 @@ import (
 func tryClearPath(path string) (bool, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return false, errors.Annotate(err, "ioutil.ReadDir")
+		return false, fmt.Errorf("ReadDir(%q): %w", path, err)
 	}
 
 	if len(files) == 0 {
@@ -29,7 +29,7 @@ func tryClearPath(path string) (bool, error) {
 		fullpath := filepath.Join(path, info.Name())
 		err = os.RemoveAll(fullpath)
 		if err != nil {
-			return true, errors.Annotate(err, "os.RemoveAll")
+			return true, fmt.Errorf("os.RemoveAll(%q): %w", fullpath, err)
 		}
 	}
 	return true, nil

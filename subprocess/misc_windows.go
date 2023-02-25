@@ -7,7 +7,6 @@ import (
 	"unsafe"
 
 	"github.com/contester/runlib/win32"
-	"github.com/juju/errors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -20,13 +19,13 @@ func loadProfile(user syscall.Handle, username string) (syscall.Handle, error) {
 	pinfo.Flags = win32.PI_NOUI
 	pinfo.Username, err = syscall.UTF16PtrFromString(username)
 	if err != nil {
-		return syscall.InvalidHandle, errors.NewBadRequest(err, fmt.Sprintf("UTF16PtrFromString(%q)", username))
+		return syscall.InvalidHandle, fmt.Errorf("%w: UTF16PtrFromString(%q): %w", ErrUserError, username, err)
 	}
 
 	err = win32.LoadUserProfile(user, &pinfo)
 	if err != nil {
 		log.Debug("Error loading profile for %d/%s", user, username)
-		return syscall.InvalidHandle, errors.Annotatef(err, "LoadUserProfile(%q, %+v)", user, &pinfo)
+		return syscall.InvalidHandle, fmt.Errorf("LoadUserProfile(%q, %+v): %w", user, &pinfo, err)
 	}
 	return pinfo.Profile, nil
 }

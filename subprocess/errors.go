@@ -1,13 +1,15 @@
 package subprocess
 
 import (
-	"syscall"
+	"errors"
 	"os"
-	"github.com/juju/errors"
+	"syscall"
 )
 
+var ErrUserError = errors.New("user error")
+
 func IsUserError(err error) bool {
-	return errors.IsBadRequest(err)
+	return errors.Is(err, ErrUserError)
 }
 
 func extractErrno(e error) (syscall.Errno, bool) {

@@ -1,11 +1,11 @@
 package service
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"github.com/juju/errors"
 )
 
 func (s *Contester) Stat(request *contester_proto.StatRequest, response *contester_proto.FileStats) error {
@@ -28,7 +28,7 @@ func (s *Contester) Stat(request *contester_proto.StatRequest, response *contest
 		if request.GetExpand() {
 			expanded, err = filepath.Glob(resolved)
 			if err != nil {
-				return errors.Annotatef(err, "filepath.Glob(%q)", resolved)
+				return fmt.Errorf("filepath.Glob(%q): %w", resolved, err)
 			}
 		} else {
 			expanded = []string{resolved}

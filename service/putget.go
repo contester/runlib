@@ -1,11 +1,12 @@
 package service
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"github.com/juju/errors"
+	"google.golang.org/protobuf/proto"
 )
 
 func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_proto.FileStat) error {
@@ -26,7 +27,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		loop, err := OnOsCreateError(err)
 
 		if err != nil {
-			return errors.Annotatef(err, "os.Create(%q)", resolved)
+			return fmt.Errorf("os.Create(%q): %w", resolved, err)
 		}
 		if !loop {
 			break
@@ -40,7 +41,7 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 	_, err = destination.Write(data)
 	destination.Close()
 	if err != nil {
-		return errors.Annotate(err, "destination.Write")
+		return fmt.Errorf("destination.Write(): %w", err)
 	}
 	if sandbox != nil {
 		return sandbox.Own(resolved)
@@ -51,7 +52,9 @@ func (s *Contester) Put(request *contester_proto.FileBlob, response *contester_p
 		return err
 	}
 
-	*response = *stat
+	response.Reset()
+	proto.Merge(response, stat)
+
 	return nil
 }
 
@@ -68,7 +71,7 @@ func (s *Contester) Get(request *contester_proto.GetRequest, response *contester
 
 	source, err := os.Open(resolved)
 	if err != nil {
-		return errors.Annotatef(err, "os.Open(%q)", resolved)
+		return fmt.Errorf("os.Open(%q): %w", resolved, err)
 	}
 	defer source.Close()
 

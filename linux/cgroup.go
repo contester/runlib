@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/contester/runlib/tools"
-	"github.com/juju/errors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -63,12 +62,12 @@ func parseProcMounts(r io.Reader, cgroups map[string]string) map[string]string {
 }
 
 func openAndParse(filename string, parser func(io.Reader) map[string]string) (map[string]string, error) {
-	if f, err := os.Open(filename); err == nil {
-		defer f.Close()
-		return parser(f), nil
-	} else {
-		return nil, errors.Annotate(err, "os.Open")
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot open %q: %w", filename, err)
 	}
+	defer f.Close()
+	return parser(f), nil
 }
 
 func combineCgPmap(procmap, cgmap map[string]string, name string) string {

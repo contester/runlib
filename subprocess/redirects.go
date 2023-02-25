@@ -2,12 +2,11 @@ package subprocess
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"sync"
 	"time"
-
-	"github.com/juju/errors"
 )
 
 type Redirect struct {
@@ -55,7 +54,7 @@ func (s *OrderedRecorder) GetEntries() []PipeRecordEntry {
 func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, errors.Trace(e)
+		return nil, fmt.Errorf("SetupOutputMemory: os.Pipe: %w", e)
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
@@ -106,7 +105,7 @@ func (d *SubprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, er
 func (d *SubprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, errors.Annotate(e, "os.Pipe")
+		return nil, fmt.Errorf("SetupInputMemory: os.Pipe: %w", e)
 	}
 	d.closeAfterStart = append(d.closeAfterStart, reader)
 	d.startAfterStart = append(d.startAfterStart, func() error {
@@ -122,7 +121,7 @@ func (d *SubprocessData) SetupInputMemory(b []byte) (*os.File, error) {
 func (d *SubprocessData) SetupInputRemote(r io.ReadCloser) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
-		return nil, errors.Annotate(e, "os.Pipe")
+		return nil, fmt.Errorf("SetupInputRemote: os.Pipe: %w", e)
 	}
 
 	// TODO: rewrite resource management to not leak on startup failure.
@@ -180,12 +179,14 @@ func RecordingPipe(d *os.File, recorder func(int64, error)) (*os.File, *os.File,
 
 	r1, w1, e := hackPipe()
 	if e != nil {
-		return nil, nil, errors.Trace(e)
+		return nil, nil, fmt.Errorf("RecordingPipe: first hackPipe: %w", e)
 	}
 
 	r2, w2, e := hackPipe()
 	if e != nil {
-		return nil, nil, errors.Trace(e)
+		r1.Close()
+		w1.Close()
+		return nil, nil, fmt.Errorf("RecordingPipe: second hackPipe: %w", e)
 	}
 
 	var t io.Writer

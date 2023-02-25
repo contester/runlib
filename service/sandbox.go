@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -8,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/contester/runlib/subprocess"
-	"github.com/juju/errors"
 )
 
 type Sandbox struct {
@@ -23,20 +23,20 @@ type SandboxPair struct {
 
 func getSandboxById(s []SandboxPair, id string) (*Sandbox, error) {
 	if len(id) < 4 || id[0] != '%' {
-		return nil, errors.BadRequestf("Malformed sandbox ID %s", id)
+		return nil, fmt.Errorf("Malformed sandbox ID %s", id)
 	}
 	parts := strings.Split(id[1:], ".")
 	if len(parts) != 2 {
-		return nil, errors.BadRequestf("Malformed sandbox ID %s", id)
+		return nil, fmt.Errorf("Malformed sandbox ID %s", id)
 	}
 
 	index, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return nil, errors.BadRequestf("Can't parse non-int sandbox index %s", parts[0])
+		return nil, fmt.Errorf("Can't parse non-int sandbox index %s", parts[0])
 	}
 
 	if index < 0 || index >= len(s) {
-		return nil, errors.BadRequestf("Sandbox index %d is out of range (max=%d)", index, len(s))
+		return nil, fmt.Errorf("Sandbox index %d is out of range (max=%d)", index, len(s))
 	}
 
 	switch strings.ToUpper(parts[1]) {
@@ -45,7 +45,7 @@ func getSandboxById(s []SandboxPair, id string) (*Sandbox, error) {
 	case "R":
 		return s[index].Run, nil
 	}
-	return nil, errors.BadRequestf("Sandbox variant %s is unknown", parts[1])
+	return nil, fmt.Errorf("Sandbox variant %s is unknown", parts[1])
 }
 
 func getSandboxByPath(s []SandboxPair, id string) (*Sandbox, error) {
@@ -58,12 +58,12 @@ func getSandboxByPath(s []SandboxPair, id string) (*Sandbox, error) {
 			return v.Run, nil
 		}
 	}
-	return nil, errors.BadRequestf("No sandbox corresponds to path %s", cleanid)
+	return nil, fmt.Errorf("No sandbox corresponds to path %s", cleanid)
 }
 
 func resolvePath(s []SandboxPair, source string, restricted bool) (string, *Sandbox, error) {
 	if len(source) < 1 {
-		return source, nil, errors.BadRequestf("Invalid path %s", source)
+		return source, nil, fmt.Errorf("Invalid path %s", source)
 	}
 
 	if source[0] == '%' {
@@ -79,7 +79,7 @@ func resolvePath(s []SandboxPair, source string, restricted bool) (string, *Sand
 	}
 
 	if !filepath.IsAbs(source) {
-		return source, nil, errors.BadRequestf("Relative path %s", source)
+		return source, nil, fmt.Errorf("Relative path %s", source)
 	}
 
 	if restricted {

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/tools"
-	"github.com/juju/errors"
 )
 
 var _ ProblemStore = &weedfilerStorage{}
@@ -41,19 +41,19 @@ func filerUpload(ctx context.Context, localName, remoteName, checksum, moduleTyp
 		return stat, err
 	}
 	if checksum != "" && stat.GetChecksum() != checksum {
-		return nil, errors.BadRequestf("Checksum mismatch, local %q != %q", stat.GetChecksum(), checksum)
+		return nil, fmt.Errorf("Checksum mismatch, local %q != %q", stat.GetChecksum(), checksum)
 	}
 	checksum = stat.GetChecksum()
 
 	local, err := os.Open(localName)
 	if err != nil {
-		return nil, errors.Annotatef(err, "os.Open(%q)", localName)
+		return nil, fmt.Errorf("os.Open(%q): %w", localName, err)
 	}
 	defer local.Close()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, remoteName, local)
 	if err != nil {
-		return nil, errors.Annotatef(err, "http.NewRequest('PUT', %q, %q", remoteName, local)
+		return nil, fmt.Errorf("http.NewRequest('PUT', %q, %q): %w", remoteName, localName, err)
 	}
 	if moduleType != "" {
 		req.Header.Add("X-FS-Module-Type", moduleType)
@@ -72,19 +72,19 @@ func filerUpload(ctx context.Context, localName, remoteName, checksum, moduleTyp
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, errors.Annotate(err, "http.Do")
+		return nil, fmt.Errorf("http.Do: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return nil, errors.Errorf("invalid status: %d %q", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("invalid status: %d %q", resp.StatusCode, resp.Status)
 	}
 	var st uploadStatus
 	err = json.NewDecoder(resp.Body).Decode(&st)
 	if err != nil {
-		return nil, errors.Annotate(err, "json.Decode")
+		return nil, fmt.Errorf("json.Decode: %w", err)
 	}
 	if st.Size != int64(stat.GetSize()) || (base64sha1 != "" && base64sha1 != st.Digests["SHA"]) {
-		return nil, errors.NotValidf("upload integrity verification failed")
+		return nil, fmt.Errorf("upload integrity verification failed")
 	}
 	return stat, nil
 }
@@ -110,9 +110,9 @@ func filerDownload(ctx context.Context, localName, remoteName, authToken string)
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		if resp.StatusCode == 404 {
-			return nil, errors.NotFoundf("not found: %q", remoteName)
+			return nil, fmt.Errorf("%w: %q", fs.ErrNotExist, remoteName)
 		}
-		return nil, errors.Errorf("invalid status: %d %q", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("invalid status: %d %q", resp.StatusCode, resp.Status)
 	}
 	n, err := io.Copy(local, resp.Body)
 	if err != nil {
@@ -142,9 +142,9 @@ func FilerReadRemote(ctx context.Context, name, authToken string) (*RemoteFile, 
 	}
 	if resp.StatusCode != 200 {
 		if resp.StatusCode == 404 {
-			return nil, errors.NotFoundf("not found: %q", name)
+			return nil, fmt.Errorf("%w: %q", fs.ErrNotExist, name)
 		}
-		return nil, errors.Errorf("invalid status: %d %q", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("invalid status: %d %q", resp.StatusCode, resp.Status)
 	}
 	result := RemoteFile{
 		Body: resp.Body,

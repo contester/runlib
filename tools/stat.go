@@ -1,10 +1,12 @@
 package tools
 
 import (
+	"errors"
+	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/contester/runlib/contester_proto"
-	"github.com/juju/errors"
 )
 
 func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
@@ -13,12 +15,11 @@ func StatFile(name string, hash_it bool) (*contester_proto.FileStat, error) {
 	}
 	info, err := os.Stat(name)
 	if err != nil {
-		// Handle ERROR_FILE_NOT_FOUND - return no error and nil instead of stat struct
-		if IsStatErrorFileNotFound(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
 		}
 
-		return nil, errors.Annotatef(err, "os.Stat(%q)", name)
+		return nil, fmt.Errorf("os.Stat(%q): %w", name, err)
 	}
 	if info.IsDir() {
 		result.IsDirectory = true

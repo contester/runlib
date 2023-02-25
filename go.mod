@@ -5,7 +5,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/juju/errors v0.0.0-20210818161939-5560c4c073ff
 	github.com/sirupsen/logrus v1.8.1
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
+	golang.org/x/sys v0.1.0
 	gopkg.in/gcfg.v1 v1.2.3
 )
 

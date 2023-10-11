@@ -10,10 +10,12 @@ import (
 )
 
 type Redirect struct {
-	Mode     int
+	Mode     RedirectMode
 	Filename string
 	Pipe     *os.File
 	Data     []byte
+
+	MaxOutputSize int64
 }
 
 const MAX_MEM_OUTPUT = 1024 * 1024
@@ -51,7 +53,7 @@ func (s *OrderedRecorder) GetEntries() []PipeRecordEntry {
 	return s.entries
 }
 
-func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
+func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer, maxOutputSize int64) (*os.File, error) {
 	reader, writer, e := os.Pipe()
 	if e != nil {
 		return nil, fmt.Errorf("SetupOutputMemory: os.Pipe: %w", e)
@@ -59,8 +61,12 @@ func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
 
+	if maxOutputSize <= 0 {
+		maxOutputSize = MAX_MEM_OUTPUT
+	}
+
 	d.startAfterStart = append(d.startAfterStart, func() error {
-		_, err := io.Copy(b, io.LimitReader(reader, MAX_MEM_OUTPUT))
+		_, err := io.Copy(b, io.LimitReader(reader, maxOutputSize))
 		reader.Close()
 		return err
 	})
@@ -71,13 +77,40 @@ func (d *SubprocessData) SetupOutputMemory(b *bytes.Buffer) (*os.File, error) {
 	return writer, nil
 }
 
-func (d *SubprocessData) SetupFile(filename string, read bool) (*os.File, error) {
+func (d *SubprocessData) SetupFile(filename string, read bool, maxOutputSize int64, isStdErr bool) (*os.File, error) {
 	writer, e := OpenFileForRedirect(filename, read)
 	if e != nil {
 		return nil, e
 	}
 
 	d.closeAfterStart = append(d.closeAfterStart, writer)
+
+	if maxOutputSize < 0 || read {
+		return writer, nil
+	}
+
+	if maxOutputSize == 0 {
+		maxOutputSize = MAX_MEM_OUTPUT
+	}
+
+	wcheck, err := OpenFileForCheck(filename)
+	if err != nil {
+		writer.Close()
+		return nil, fmt.Errorf("opening %q for size check: %w", filename, err)
+	}
+
+	cw := &outputRedirectCheck{
+		n:       filename,
+		f:       wcheck,
+		maxSize: maxOutputSize,
+	}
+
+	if isStdErr {
+		d.errCheck = cw
+	} else {
+		d.outCheck = cw
+	}
+
 	return writer, nil
 }
 
@@ -86,16 +119,16 @@ func (d *SubprocessData) SetupPipe(f *os.File) (*os.File, error) {
 	return f, nil
 }
 
-func (d *SubprocessData) SetupOutput(w *Redirect, b *bytes.Buffer) (*os.File, error) {
+func (d *SubprocessData) SetupOutput(w *Redirect, b *bytes.Buffer, isStdErr bool) (*os.File, error) {
 	if w == nil {
 		return WriterDefault()
 	}
 
 	switch w.Mode {
 	case REDIRECT_MEMORY:
-		return d.SetupOutputMemory(b)
+		return d.SetupOutputMemory(b, w.MaxOutputSize)
 	case REDIRECT_FILE:
-		return d.SetupFile(w.Filename, false)
+		return d.SetupFile(w.Filename, false, w.MaxOutputSize, isStdErr)
 	case REDIRECT_PIPE:
 		return d.SetupPipe(w.Pipe)
 	}
@@ -152,7 +185,7 @@ func (d *SubprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	case REDIRECT_PIPE:
 		return d.SetupPipe(w.Pipe)
 	case REDIRECT_FILE:
-		return d.SetupFile(w.Filename, true)
+		return d.SetupFile(w.Filename, true, 0, false)
 	}
 	return ReaderDefault()
 }

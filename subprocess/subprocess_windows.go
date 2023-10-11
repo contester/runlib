@@ -51,8 +51,8 @@ func NewLoginInfo(username, password string) (*LoginInfo, error) {
 // 4. unfreeze
 // 5. wait
 
-func (d *SubprocessData) wOutputRedirect(w *Redirect, b *bytes.Buffer) (syscall.Handle, error) {
-	f, err := d.SetupOutput(w, b)
+func (d *SubprocessData) wOutputRedirect(w *Redirect, b *bytes.Buffer, isStdErr bool) (syscall.Handle, error) {
+	f, err := d.SetupOutput(w, b, isStdErr)
 	if err != nil || f == nil {
 		return syscall.InvalidHandle, err
 	}
@@ -73,13 +73,13 @@ func (d *SubprocessData) wAllRedirects(s *Subprocess, si *syscall.StartupInfo) e
 	if si.StdInput, err = d.wInputRedirect(s.StdIn); err != nil {
 		return err
 	}
-	if si.StdOutput, err = d.wOutputRedirect(s.StdOut, &d.stdOut); err != nil {
+	if si.StdOutput, err = d.wOutputRedirect(s.StdOut, &d.stdOut, false); err != nil {
 		return err
 	}
 	if s.JoinStdOutErr {
 		si.StdErr = si.StdOutput
 	} else {
-		if si.StdErr, err = d.wOutputRedirect(s.StdErr, &d.stdErr); err != nil {
+		if si.StdErr, err = d.wOutputRedirect(s.StdErr, &d.stdErr, true); err != nil {
 			return err
 		}
 	}
@@ -490,6 +490,20 @@ func UpdateProcessMemory(pdata *PlatformData, result *SubprocessResult) {
 	}
 }
 
+func loopTerminate(hProcess syscall.Handle) {
+	for {
+		if err := syscall.TerminateProcess(hProcess, 0); err != nil {
+			log.Errorf("Error terminating process %d: %s", hProcess, err)
+		}
+		waitResult, err := syscall.WaitForSingleObject(hProcess, 1000)
+		if err != nil {
+			log.Errorf("Error waiting for kill %d: %s", hProcess, err)
+		} else if waitResult != syscall.WAIT_TIMEOUT {
+			break
+		}
+	}
+}
+
 func (sub *Subprocess) BottomHalf(d *SubprocessData) *SubprocessResult {
 	hProcess := d.platformData.hProcess
 	hJob := d.platformData.hJob
@@ -501,7 +515,7 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData) *SubprocessResult {
 	var err error
 
 	for result.SuccessCode == 0 && waitResult == syscall.WAIT_TIMEOUT {
-		waitResult, err = syscall.WaitForSingleObject(hProcess, uint32(sub.TimeQuantum.Nanoseconds()/1000000))
+		waitResult, err = syscall.WaitForSingleObject(hProcess, uint32(sub.TimeQuantum.Milliseconds()))
 		if waitResult != syscall.WAIT_TIMEOUT {
 			break
 		}
@@ -517,25 +531,40 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData) *SubprocessResult {
 		}
 
 		runState.Update(sub, &result)
+
+		if d.outCheck != nil {
+			err = d.outCheck.Check()
+			if err != nil {
+				result.OutputLimitExceeded = true
+				result.SuccessCode |= EF_STDOUT_OVERFLOW
+				break
+			}
+		}
+
+		if d.errCheck != nil {
+			err = d.errCheck.Check()
+			if err != nil {
+				result.ErrorLimitExceeded = true
+				result.SuccessCode |= EF_STDERR_OVERFLOW
+				break
+			}
+		}
 	}
 
-	switch waitResult {
-	case syscall.WAIT_OBJECT_0:
-		if err = syscall.GetExitCodeProcess(hProcess, &result.ExitCode); err != nil {
-			log.Errorf("Error getting exit code %d: %s", hProcess, err)
-		}
+	if err != nil {
+		loopTerminate(hProcess)
+	} else {
+		switch waitResult {
+		case syscall.WAIT_OBJECT_0:
+			if err = syscall.GetExitCodeProcess(hProcess, &result.ExitCode); err != nil {
+				log.Errorf("Error getting exit code %d: %s", hProcess, err)
+			}
 
-	case syscall.WAIT_TIMEOUT:
-		for waitResult == syscall.WAIT_TIMEOUT {
-			if err = syscall.TerminateProcess(hProcess, 0); err != nil {
-				log.Errorf("Error terminating process %d: %s", hProcess, err)
-			}
-			if waitResult, err = syscall.WaitForSingleObject(hProcess, 1000); err != nil {
-				log.Errorf("Error waiting for kill %d: %s", hProcess, err)
-			}
+		case syscall.WAIT_TIMEOUT:
+			loopTerminate(hProcess)
+		default:
+			log.Errorf("Unexpected waitResult %d: %d", hProcess, waitResult)
 		}
-	default:
-		log.Errorf("Unexpected waitResult %d: %d", hProcess, waitResult)
 	}
 
 	UpdateProcessTimes(&d.platformData, &result, true)
@@ -559,6 +588,13 @@ func (sub *Subprocess) BottomHalf(d *SubprocessData) *SubprocessResult {
 	}
 	if d.stdErr.Len() > 0 {
 		result.Error = d.stdErr.Bytes()
+	}
+
+	if d.errCheck != nil {
+		d.errCheck.Close()
+	}
+	if d.outCheck != nil {
+		d.outCheck.Close()
 	}
 
 	return &result

@@ -2,7 +2,9 @@ package subprocess
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"os"
 	"time"
 )
 
@@ -24,12 +26,16 @@ const (
 	EF_KERNEL_TIME_LIMIT_HIT_POST = (1 << 16)
 	EF_WALL_TIME_LIMIT_HIT        = (1 << 2)
 	EF_WALL_TIME_LIMIT_HIT_POST   = (1 << 14)
+)
 
-	REDIRECT_NONE   = 0
-	REDIRECT_MEMORY = 1
-	REDIRECT_FILE   = 2
-	REDIRECT_PIPE   = 3
-	REDIRECT_REMOTE = 4
+type RedirectMode int
+
+const (
+	REDIRECT_NONE RedirectMode = iota
+	REDIRECT_MEMORY
+	REDIRECT_FILE
+	REDIRECT_PIPE
+	REDIRECT_REMOTE
 )
 
 func GetMicros(d time.Duration) uint64 {
@@ -50,6 +56,9 @@ type SubprocessResult struct {
 	TimeStats
 	PeakMemory     uint64
 	TotalProcesses uint64
+
+	OutputLimitExceeded bool
+	ErrorLimitExceeded  bool
 
 	Output []byte
 	Error  []byte
@@ -72,12 +81,15 @@ type Subprocess struct {
 	ProcessLimit             uint32
 	FailOnJobCreationFailure bool
 
-	TimeLimit           time.Duration
-	KernelTimeLimit     time.Duration
-	WallTimeLimit       time.Duration
-	CheckIdleness       bool
-	MemoryLimit         uint64
-	HardMemoryLimit     uint64
+	TimeLimit       time.Duration
+	KernelTimeLimit time.Duration
+	WallTimeLimit   time.Duration
+
+	CheckIdleness   bool
+	MemoryLimit     uint64
+	HardMemoryLimit uint64
+	// TimeQuantum: how often to run checks/housekeeping on running process
+	// By default, 4 times per second.
 	TimeQuantum         time.Duration
 	ProcessAffinityMask uint64
 
@@ -89,12 +101,41 @@ type Subprocess struct {
 	Options *PlatformOptions
 }
 
+type outputRedirectCheck struct {
+	n       string
+	f       *os.File
+	maxSize int64
+}
+
+func (s *outputRedirectCheck) Check() error {
+	if s == nil || s.f == nil {
+		return nil
+	}
+	fi, err := s.f.Stat()
+	if err != nil {
+		return err
+	}
+	if fi.Size() > s.maxSize {
+		return fmt.Errorf("%q: output size %d exceeded", s.n, s.maxSize)
+	}
+	return nil
+}
+
+func (s *outputRedirectCheck) Close() error {
+	if s == nil || s.f == nil {
+		return nil
+	}
+	return s.f.Close()
+}
+
 // State for the running subprocess.
 type SubprocessData struct {
 	bufferChan      chan error     // receives buffer errors
 	startAfterStart []func() error // buffer functions, launch after createFrozen
 	closeAfterStart []io.Closer    // close after createFrozen
 	cleanupIfFailed []func()
+
+	outCheck, errCheck *outputRedirectCheck
 
 	stdOut bytes.Buffer
 	stdErr bytes.Buffer

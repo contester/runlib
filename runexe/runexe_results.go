@@ -21,6 +21,7 @@ const (
 	verdictMemoryLimitExceeded = verdict(4)
 	verdictIdle                = verdict(5)
 	verdictSecurityViolation   = verdict(6)
+	verdictOutputLimitExceeded = verdict(7)
 )
 
 func (v verdict) String() string {
@@ -39,12 +40,16 @@ func (v verdict) String() string {
 		return "IDLENESS_LIMIT_EXCEEDED"
 	case verdictSecurityViolation:
 		return "SECURITY_VIOLATION"
+	case verdictOutputLimitExceeded:
+		return "OUTPUT_LIMIT_EXCEEDED"
 	}
 	return "FAILED"
 }
 
 func getVerdict(r *subprocess.SubprocessResult) verdict {
 	switch {
+	case r.OutputLimitExceeded || r.ErrorLimitExceeded:
+		return verdictOutputLimitExceeded
 	case r.SuccessCode == 0:
 		return verdictSuccess
 	case r.SuccessCode&(subprocess.EF_PROCESS_LIMIT_HIT|subprocess.EF_PROCESS_LIMIT_HIT_POST) != 0:
@@ -136,6 +141,8 @@ func PrintResultText(kernelTime bool, result *RunResult, pipeRecords []subproces
 	case verdictSuccess:
 		fmt.Println(result.T.String(), "successfully terminated")
 		fmt.Println("  exit code:    " + strconv.Itoa(int(result.R.ExitCode)))
+	case verdictOutputLimitExceeded:
+		fmt.Println(result.T.String(), "output limit exceeded")
 	case verdictTimeLimitExceeded:
 		fmt.Println("Time limit exceeded")
 		fmt.Println(result.T.String(), "failed to terminate within", strTime(result.S.TimeLimit), "sec")

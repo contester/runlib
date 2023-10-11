@@ -40,6 +40,9 @@ type processConfig struct {
 	StdErr        string
 	JoinStdOutErr bool
 
+	StdOutMaxSize int64
+	StdErrMaxSize int64
+
 	TrustedMode bool
 	NoIdleCheck bool
 	NoJob       bool
@@ -91,6 +94,8 @@ func CreateFlagSet() (*flag.FlagSet, *processConfig) {
 	fs.StringVar(&result.InjectDLL, "j", "", "")
 	fs.StringVar(&result.StdIn, "i", "", "")
 	fs.StringVar(&result.StdOut, "o", "", "")
+	fs.Int64Var(&result.StdOutMaxSize, "os", 0, "")
+	fs.Int64Var(&result.StdErrMaxSize, "es", 0, "")
 	fs.StringVar(&result.StdErr, "e", "", "")
 	fs.StringVar(&result.EnvironmentFile, "envfile", "", "")
 	fs.BoolVar(&result.JoinStdOutErr, "u", false, "")
@@ -130,13 +135,14 @@ func (pc *processConfig) NeedLogin() bool {
 	return pc.LoginName != "" && pc.Password != ""
 }
 
-func fillRedirect(x string) *subprocess.Redirect {
+func fillRedirect(x string, maxSize int64) *subprocess.Redirect {
 	if x == "" {
 		return nil
 	}
 	return &subprocess.Redirect{
-		Filename: x,
-		Mode:     subprocess.REDIRECT_FILE,
+		Filename:      x,
+		Mode:          subprocess.REDIRECT_FILE,
+		MaxOutputSize: maxSize,
 	}
 }
 
@@ -210,12 +216,12 @@ func SetupSubprocess(s *processConfig, env *platform.GlobalData) (*subprocess.Su
 		sub.NoInheritEnvironment = true
 	}
 
-	sub.StdIn = fillRedirect(s.StdIn)
-	sub.StdOut = fillRedirect(s.StdOut)
+	sub.StdIn = fillRedirect(s.StdIn, 0)
+	sub.StdOut = fillRedirect(s.StdOut, s.StdOutMaxSize)
 	if s.JoinStdOutErr {
 		sub.JoinStdOutErr = true
 	} else {
-		sub.StdErr = fillRedirect(s.StdErr)
+		sub.StdErr = fillRedirect(s.StdErr, s.StdErrMaxSize)
 	}
 
 	sub.Options = newPlatformOptions()

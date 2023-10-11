@@ -8,6 +8,29 @@ import (
 	"github.com/contester/runlib/win32"
 )
 
+// OpenFileForCheck opens the given file for read. It can be then used to check the size.
+func OpenFileForCheck(name string) (*os.File, error) {
+	uname, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return nil, fmt.Errorf("invalid redirect name: %w", err)
+	}
+
+	h, e := syscall.CreateFile(
+		uname,
+		syscall.GENERIC_READ,
+		syscall.FILE_SHARE_READ|syscall.FILE_SHARE_WRITE|syscall.FILE_SHARE_DELETE,
+		nil,
+		syscall.OPEN_EXISTING,
+		win32.FILE_FLAG_SEQUENTIAL_SCAN,
+		0)
+
+	if e != nil {
+		return nil, fmt.Errorf("CreateFile(%q): %w", name, os.NewSyscallError("CreateFile", e))
+	}
+
+	return os.NewFile(uintptr(h), name), nil
+}
+
 func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 	var wmode, cmode uint32
 	if read {
@@ -18,10 +41,15 @@ func OpenFileForRedirect(name string, read bool) (*os.File, error) {
 		cmode = syscall.CREATE_ALWAYS
 	}
 
+	uname, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return nil, fmt.Errorf("invalid redirect name: %w", err)
+	}
+
 	h, e := syscall.CreateFile(
-		syscall.StringToUTF16Ptr(name),
+		uname,
 		wmode,
-		syscall.FILE_SHARE_READ|syscall.FILE_SHARE_WRITE,
+		syscall.FILE_SHARE_READ|syscall.FILE_SHARE_WRITE|syscall.FILE_SHARE_DELETE,
 		nil,
 		cmode,
 		win32.FILE_FLAG_SEQUENTIAL_SCAN,

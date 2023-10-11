@@ -153,6 +153,8 @@ Process properties:
   -i <filename> - redirect standard input to <filename>.
   -o <filename> - redirect standard output to <filename>.
   -e <filename> - redirect standard error to <filename>.
+  -os <value>   - limit size of standard output file to <value>.
+  -es <value>   - limit size of standard error file to <value>.
   -u            - instead of using separate stderr, join error output to standard output.
   -no-idleness-check - switch off idleness checking.
   -a <value>	- set process affinity to <value>. You can either specify it

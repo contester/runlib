@@ -18,7 +18,7 @@ type Redirect struct {
 	MaxOutputSize int64
 }
 
-const MAX_MEM_OUTPUT = 1024 * 1024
+const MAX_MEM_OUTPUT = 1024 * 1024 * 1024
 
 type PipeResultRecorder interface {
 	Record(direction int, numBytes int64, err error)

@@ -20,10 +20,9 @@ type Contester struct {
 	Env           []*contester_proto.LocalEnvironment_Variable
 	ServerAddress string
 
-	Platform      string
-	PathSeparator string
-	Disks         []string
-	ProgramFiles  []string
+	Platform     string
+	Disks        []string
+	ProgramFiles []string
 
 	GData *platform.GlobalData
 }
@@ -131,7 +130,6 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 		Platform:      PLATFORM_ID,
 		Disks:         PLATFORM_DISKS,
 		ProgramFiles:  PLATFORM_PFILES,
-		PathSeparator: string(os.PathSeparator),
 		GData:         gData,
 	}
 
@@ -155,7 +153,7 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 			Run:     p.Run.Path})
 	}
 	response.Platform = s.Platform
-	response.PathSeparator = s.PathSeparator
+	response.PathSeparator = string(os.PathSeparator)
 	response.Disks = s.Disks
 	response.ProgramFiles = s.ProgramFiles
 

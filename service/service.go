@@ -87,6 +87,10 @@ func configureSandboxes(config *contesterConfig) ([]SandboxPair, error) {
 
 		restrictedUser := "tester" + strconv.Itoa(index)
 
+		if err := ensureRestrictedUser(restrictedUser, password); err != nil {
+			return nil, err
+		}
+
 		e = setAcl(result[index].Run.Path, restrictedUser)
 		if e != nil {
 			return nil, e

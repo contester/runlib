@@ -98,7 +98,17 @@ func configureSandboxes(config *contesterConfig) ([]SandboxPair, error) {
 		// HACK HACK: on linux, passwords are ignored.
 		result[index].Run.Login, e = subprocess.NewLoginInfo(restrictedUser, password)
 		if e != nil {
-			return nil, e
+			if !isLogonFailure(e) {
+				return nil, e
+			}
+			log.Infof("Logon failure for %q, trying to reset password", restrictedUser)
+			if err := maybeResetPassword(restrictedUser, password); err != nil {
+				return nil, err
+			}
+			result[index].Run.Login, e = subprocess.NewLoginInfo(restrictedUser, password)
+			if e != nil {
+				return nil, e
+			}
 		}
 	}
 	return result, nil

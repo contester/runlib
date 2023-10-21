@@ -69,7 +69,7 @@ func (s *LoginInfo) Prepare() error {
 		win32.LOGON32_PROVIDER_DEFAULT)
 
 	if err != nil {
-		return fmt.Errorf("win32.LogonUser(%q): %w", s.Username, err)
+		return err
 	}
 
 	s.HProfile, err = loadProfile(s.HUser, s.Username)

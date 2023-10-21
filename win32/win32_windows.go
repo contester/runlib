@@ -1,6 +1,7 @@
 package win32
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"syscall"
@@ -412,7 +413,11 @@ func LogonUser(username, domain, password string, logonType uint32, logonProvide
 	runtime.KeepAlive(pDomain)
 	runtime.KeepAlive(pPassword)
 	if int(r1) == 0 {
-		return syscall.InvalidHandle, os.NewSyscallError("LogonUser", e1)
+		if domain == "" {
+			domain = "."
+		}
+		combinedCredential := domain + "\\" + username
+		return syscall.InvalidHandle, fmt.Errorf("win32.LogonUser(%q): %w", combinedCredential, e1)
 	}
 	return token, nil
 }

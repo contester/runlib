@@ -1,10 +1,12 @@
 package service
 
 import (
+	"errors"
 	"os/exec"
 	"strings"
 
 	"github.com/contester/runlib/win32"
+	"golang.org/x/sys/windows"
 )
 
 const PLATFORM_ID = "win32"
@@ -30,5 +32,14 @@ func ensureRestrictedUser(username, password string) error {
 	if !win32.IsAccountAlreadyExists(err) {
 		return err
 	}
+	return nil
+	// return win32.SetLocalUserPassword(username, password)
+}
+
+func isLogonFailure(err error) bool {
+	return errors.Is(err, windows.ERROR_LOGON_FAILURE)
+}
+
+func maybeResetPassword(username, password string) error {
 	return win32.SetLocalUserPassword(username, password)
 }

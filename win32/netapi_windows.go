@@ -89,7 +89,7 @@ func SetLocalUserPassword(username, password string) error {
 
 	uStruct := &userInfo1003{password: p16}
 
-	ret, _, _ := netUserSetInfoProc.Call(
+	ret, _, err := netUserSetInfoProc.Call(
 		0, // local computer
 		uintptr(unsafe.Pointer(u16)),
 		1003,
@@ -101,7 +101,7 @@ func SetLocalUserPassword(username, password string) error {
 	runtime.KeepAlive(u16)
 
 	if ret != 0 {
-		return syscall.Errno(ret)
+		return err
 	}
 
 	return nil

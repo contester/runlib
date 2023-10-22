@@ -38,7 +38,8 @@ func getPasswords(c *contesterConfig) []string {
 	}
 	cores := c.SandboxCount
 	if cores == 0 {
-		cores = runtime.NumCPU() - 1
+		// Getting real CPU count is too hard, let's just assume we have HT on.
+		cores = (runtime.NumCPU() / 2) - 1
 	}
 	if cores < 1 {
 		cores = 1

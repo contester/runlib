@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/contester/runlib/contester_proto"
 	"github.com/contester/runlib/platform"
 	"github.com/contester/runlib/subprocess"
-	"gopkg.in/gcfg.v1"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -58,7 +58,7 @@ func newSandboxPair(base string) SandboxPair {
 }
 
 func configureSandboxes(config *contesterConfig) ([]SandboxPair, error) {
-	basePath := config.Default.Path
+	basePath := config.Path
 	passwords := getPasswords(config)
 	result := make([]SandboxPair, len(passwords))
 	for index, password := range passwords {
@@ -123,15 +123,13 @@ func checkSandbox(path string) error {
 }
 
 type contesterConfig struct {
-	Default struct {
-		Server, Passwords, Path string
-		SandboxCount            int
-	}
+	Server, Passwords, Path string
+	SandboxCount            int
 }
 
 func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
 	var config contesterConfig
-	if err := gcfg.ReadFileInto(&config, configFile); err != nil {
+	if _, err := toml.DecodeFile(configFile, &config); err != nil {
 		return nil, err
 	}
 
@@ -140,7 +138,7 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	result := Contester{
 		InvokerId:     getHostname(),
 		Env:           getLocalEnvironment(),
-		ServerAddress: config.Default.Server,
+		ServerAddress: config.Server,
 		Platform:      PLATFORM_ID,
 		Disks:         PLATFORM_DISKS,
 		ProgramFiles:  PLATFORM_PFILES,

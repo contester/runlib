@@ -1,3 +1,7 @@
+github.com/BurntSushi/toml v1.3.2 h1:o7IhLm0Msx3BaB+n3Ag7L8EVlByGnpq14C4YWiu/gL8=
+github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
+github.com/alecthomas/kong v0.8.1 h1:acZdn3m4lLRobeh3Zi2S2EpnXTd1mOL6U7xVml+vfkY=
+github.com/alecthomas/kong v0.8.1/go.mod h1:n1iCIO2xS46oE8ZfYCNDqdR0b0wZNrXAIAqro/2132U=
 github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237 h1:+fVstP61d4GuJOEBJSv+vQtC7mKYnwEqtgSBzrbwSq0=
 github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237/go.mod h1:hFR+9+xvFqA9vMwfEaVINNfHQalKjuLoCdK/kaSCVmE=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

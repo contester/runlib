@@ -9,6 +9,8 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.3.2
+	github.com/alecthomas/kong v0.8.1
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/stretchr/testify v1.8.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

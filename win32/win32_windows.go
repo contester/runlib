@@ -6,14 +6,16 @@ import (
 	"runtime"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
 var (
-	advapi32 = syscall.NewLazyDLL("advapi32.dll")
-	kernel32 = syscall.NewLazyDLL("kernel32.dll")
-	psapi    = syscall.NewLazyDLL("psapi.dll")
-	userenv  = syscall.NewLazyDLL("userenv.dll")
-	user32   = syscall.NewLazyDLL("user32.dll")
+	advapi32 = windows.NewLazySystemDLL("advapi32.dll")
+	kernel32 = windows.NewLazySystemDLL("kernel32.dll")
+	psapi    = windows.NewLazySystemDLL("psapi.dll")
+	userenv  = windows.NewLazySystemDLL("userenv.dll")
+	user32   = windows.NewLazySystemDLL("user32.dll")
 
 	procCreateProcessWithLogonW   = advapi32.NewProc("CreateProcessWithLogonW")
 	procCreateProcessAsUserW      = advapi32.NewProc("CreateProcessAsUserW")

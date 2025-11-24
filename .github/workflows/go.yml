@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build:
     strategy:
       matrix:
@@ -27,10 +26,16 @@ jobs:
       run: echo "DATETIME=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
       
     - name: Build runexe-amd64
-      run: GOOS=windows GOARCH=amd64 go build -o runexe.exe -a -ldflags "-X main.version=${{ env.DATETIME }}-${GITHUB_SHA} -X main.buildid=${GITHUB_RUN_NUMBER}" ./runexe
+      env:
+        GOOS: windows
+        GOARCH: amd64
+      run: go build -o runexe.exe -a -ldflags "-X main.version=${{ env.DATETIME }}-${{ github.sha }} -X main.buildid=${{github.run_number}}" ./runexe
 
     - name: Build runner-amd64
-      run: GOOS=windows GOARCH=amd64 go build -o runner.exe -a -ldflags "-X main.version=${{ env.DATETIME }}-${GITHUB_SHA} -X main.buildid=${GITHUB_RUN_NUMBER}" ./runner
+      env:
+        GOOS: windows
+        GOARCH: amd64
+      run: go build -o runner.exe -a -ldflags "-X main.version=${{ env.DATETIME }}-${{ github.sha }} -X main.buildid=${{github.run_number}}" ./runner
 
     - name: Upload runexe
       uses: actions/upload-artifact@v4

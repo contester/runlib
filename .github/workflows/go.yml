@@ -30,7 +30,7 @@ jobs:
       run: GOOS=windows GOARCH=amd64 go build -o runner.exe -a -ldflags "-X main.version=${{ env.DATETIME }}-${GITHUB_SHA} -X main.buildid=${GITHUB_RUN_NUMBER}" ./runner
 
     - name: Upload runexe
-      uses: actions/upload-artifact@v3.1.3
+      uses: actions/upload-artifact@v4
       with:
         # Artifact name
         name: runexe.exe

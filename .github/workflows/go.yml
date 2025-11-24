@@ -40,7 +40,7 @@ jobs:
         if-no-files-found: error
 
     - name: Upload runner
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         # Artifact name
         name: runner.exe

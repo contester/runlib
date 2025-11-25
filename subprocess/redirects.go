@@ -316,8 +316,14 @@ func (w *InteractionLogWriter) Write(p []byte) (n int, err error) {
 }
 
 func Interconnect(s1, s2 *Subprocess, d1, d2, interactionLogFile *os.File, recorder PipeResultRecorder) error {
-	var w1 io.Writer = d1
-	var w2 io.Writer = d2
+	var w1 io.Writer
+	if d1 != nil {
+		w1 = d1
+	}
+	var w2 io.Writer
+	if d2 != nil {
+		w2 = d2
+	}
 
 	if interactionLogFile != nil {
 		interactionLog := &InteractionLog{

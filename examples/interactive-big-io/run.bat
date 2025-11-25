@@ -1,4 +1,8 @@
+set P=%USERPROFILE%\Work
+
 set RUNEXE=..\..\runexe.exe
+@REM set RUNEXE=%P%\commons-ext\code\commons\src\main\files\com\codeforces\commons\invoke\runexe.exe
+@REM set RUNEXE=%P%\commons-ext\code\commons\src\main\files\com\codeforces\commons\invoke\runexe2.exe
 
 %RUNEXE% -xml -a 8 -t 1000ms -h 36000ms -m 16777216 ^
     -ilog=log.txt ^

@@ -51,13 +51,14 @@ type processConfig struct {
 }
 
 type runexeConfig struct {
-	XML                 bool
-	Interactor          string
-	ShowKernelModeTime  bool
-	ReturnExitCode      bool
-	Logfile             string
-	RecordProgramInput  string
-	RecordProgramOutput string
+	XML                  bool
+	Interactor           string
+	ShowKernelModeTime   bool
+	ReturnExitCode       bool
+	Logfile              string
+	RecordProgramInput   string
+	RecordProgramOutput  string
+	RecordInteractionLog string
 }
 
 type processType int
@@ -114,6 +115,7 @@ func AddGlobalFlags(fs *flag.FlagSet) *runexeConfig {
 	fs.StringVar(&result.Logfile, "logfile", "", "")
 	fs.StringVar(&result.RecordProgramInput, "ri", "", "")
 	fs.StringVar(&result.RecordProgramOutput, "ro", "", "")
+	fs.StringVar(&result.RecordInteractionLog, "ilog", "", "")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "")
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "")
 	return &result
@@ -324,7 +326,7 @@ func main() {
 			Fail(err, "Setup interactor subprocess")
 		}
 
-		var recordI, recordO *os.File
+		var recordI, recordO, recordInteractionLog *os.File
 
 		if globalFlags.RecordProgramInput != "" {
 			recordI, err = os.Create(globalFlags.RecordProgramInput)
@@ -338,8 +340,17 @@ func main() {
 				Fail(err, "Create output recorder")
 			}
 		}
+		if globalFlags.RecordInteractionLog != "" {
+			recordInteractionLog, err = os.Create(globalFlags.RecordInteractionLog)
+			if err != nil {
+				Fail(err, "Create interaction log recorder")
+			}
+		}
 
-		err = subprocess.Interconnect(program, interactor, recordI, recordO, &recorder)
+		err = subprocess.Interconnect(
+			program, interactor,
+			recordI, recordO, recordInteractionLog,
+			&recorder)
 		if err != nil {
 			Fail(err, "Interconnect")
 		}

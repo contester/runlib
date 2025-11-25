@@ -215,7 +215,7 @@ func (s *Contester) LocalExecuteConnected(request *contester_proto.LocalExecuteC
 		return err
 	}
 
-	err = subprocess.Interconnect(first, second, nil, nil, nil)
+	err = subprocess.Interconnect(first, second, nil, nil, nil, nil)
 	if err != nil {
 		return err
 	}

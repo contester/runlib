@@ -1,6 +1,7 @@
 package subprocess
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -197,7 +198,7 @@ func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer, recorder func(
 	var wc io.Writer = w
 
 	if t != nil {
-		wc = io.MultiWriter(t, w)
+		wc = io.MultiWriter(t, w) // we want to prioritize t for interaction log
 	}
 	n, err := io.Copy(wc, r)
 	if recorder != nil {
@@ -241,27 +242,107 @@ func recordDirection(recorder PipeResultRecorder, direction int) func(int64, err
 	}
 }
 
-type SyncWriter struct {
-	w     io.Writer
-	Mutex sync.RWMutex
+type InteractionLog struct {
+	writer           *bufio.Writer
+	mutex            sync.RWMutex
+	hadEol           bool
+	currentDirection int
 }
 
-func (w *SyncWriter) Write(p []byte) (n int, err error) {
-	// w.Mutex.Lock()
-	// defer w.Mutex.Unlock()
-	n, err = w.w.Write(p)
-	return n, err
+func (w *InteractionLog) write(direction int, p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	if direction != w.currentDirection {
+		if !w.hadEol {
+			eol := []byte("\n")
+			n, err = w.writer.Write(eol)
+			if err != nil {
+				return
+			}
+			if n != len(eol) {
+				err = io.ErrShortWrite
+				return
+			}
+		}
+
+		w.currentDirection = direction
+		var prefix []byte
+		if direction == 0 {
+			prefix = []byte("< ")
+		} else {
+			prefix = []byte("> ")
+		}
+		n, err = w.writer.Write(prefix)
+		if err != nil {
+			return
+		}
+		if n != len(prefix) {
+			err = io.ErrShortWrite
+			return
+		}
+	}
+	n, err = w.writer.Write(p)
+	if err != nil {
+		return
+	}
+	w.hadEol = p[len(p)-1] == '\n'
+	err = w.writer.Flush()
+	return
 }
 
-func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File, recorder PipeResultRecorder) error {
-	writer := &SyncWriter{w: d1}
+type InteractionLogWriter struct {
+	interactionLog *InteractionLog
+	direction      int
+	d              *os.File
+}
 
-	read1, write1, err := RecordingPipe(writer, recordDirection(recorder, 0))
+func (w *InteractionLogWriter) Write(p []byte) (n int, err error) {
+	if w.d != nil {
+		n, err = w.d.Write(p)
+		if err != nil {
+			return
+		}
+		if n != len(p) {
+			err = io.ErrShortWrite
+			return
+		}
+	}
+	return w.interactionLog.write(w.direction, p)
+}
+
+func Interconnect(s1, s2 *Subprocess, d1, d2, interactionLogFile *os.File, recorder PipeResultRecorder) error {
+	var w1 io.Writer = d1
+	var w2 io.Writer = d2
+
+	if interactionLogFile != nil {
+		interactionLog := &InteractionLog{
+			writer:           bufio.NewWriter(interactionLogFile),
+			hadEol:           true,
+			currentDirection: -1,
+		}
+		w1 = &InteractionLogWriter{
+			interactionLog: interactionLog,
+			direction:      0,
+			d:              d1,
+		}
+		w2 = &InteractionLogWriter{
+			interactionLog: interactionLog,
+			direction:      1,
+			d:              d2,
+		}
+	}
+
+	read1, write1, err := RecordingPipe(w1, recordDirection(recorder, 0))
 	if err != nil {
 		return err
 	}
 
-	read2, write2, err := RecordingPipe(writer, recordDirection(recorder, 1))
+	read2, write2, err := RecordingPipe(w2, recordDirection(recorder, 1))
 	if err != nil {
 		read1.Close()
 		write1.Close()

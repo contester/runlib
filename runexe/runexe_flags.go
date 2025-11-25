@@ -134,11 +134,15 @@ Global options:
     program and interactor.
   -ri=<f>       - in interactor mode, record program input to file <f>.
   -ro=<f>       - in interactor mode, record program output to file <f>.
+  -ilog=<f>     - in interactor mode, record interaction to file <f>
 
 Process properties:
   -t <value>    - time limit. Terminate after <value> seconds, you can use
                   suffix ms to switch to milliseconds. Suffix "s" (seconds)
                   can be omitted.
+  -h <value>	- wall time limit. Terminate after <value> real time seconds,
+  				  you can use suffix ms to switch to milliseconds.
+				  Suffix "s" (seconds) can be omitted
   -m <value>    - memory limit. Terminate if anonymous virtual memory of the
                   process exceeds <value> bytes. Use suffixes K, M, G to
                   specify kilo, mega, gigabytes.

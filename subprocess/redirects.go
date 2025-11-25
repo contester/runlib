@@ -191,7 +191,7 @@ func (d *SubprocessData) SetupInput(w *Redirect) (*os.File, error) {
 	return ReaderDefault()
 }
 
-func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer, recorder func(int64, error)) {
+func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer, recorder func(int64, error), wg *sync.WaitGroup) {
 	defer r.Close()
 	defer w.Close()
 
@@ -204,9 +204,12 @@ func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer, recorder func(
 	if recorder != nil {
 		recorder(n, err)
 	}
+	if wg != nil {
+		wg.Done()
+	}
 }
 
-func RecordingPipe(d io.Writer, recorder func(int64, error)) (*os.File, *os.File, error) {
+func RecordingPipe(d io.Writer, recorder func(int64, error), wg *sync.WaitGroup) (*os.File, *os.File, error) {
 	if d == nil && recorder == nil {
 		return hackPipe()
 	}
@@ -228,7 +231,7 @@ func RecordingPipe(d io.Writer, recorder func(int64, error)) (*os.File, *os.File
 		t = d
 	}
 
-	go recordingTee(w1, r2, t, recorder)
+	go recordingTee(w1, r2, t, recorder, wg)
 
 	return r1, w2, nil
 }
@@ -291,7 +294,6 @@ func (w *InteractionLog) write(direction int, p []byte) (n int, err error) {
 		return
 	}
 	w.hadEol = p[len(p)-1] == '\n'
-	err = w.writer.Flush()
 	return
 }
 
@@ -325,9 +327,18 @@ func Interconnect(s1, s2 *Subprocess, d1, d2, interactionLogFile *os.File, recor
 		w2 = d2
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	if interactionLogFile != nil {
+		writer := bufio.NewWriter(interactionLogFile)
+		go func() {
+			wg.Wait()
+			err := writer.Flush()
+			_ = err // TODO ???
+		}()
 		interactionLog := &InteractionLog{
-			writer:           bufio.NewWriter(interactionLogFile),
+			writer:           writer,
 			hadEol:           true,
 			currentDirection: -1,
 		}
@@ -343,12 +354,12 @@ func Interconnect(s1, s2 *Subprocess, d1, d2, interactionLogFile *os.File, recor
 		}
 	}
 
-	read1, write1, err := RecordingPipe(w1, recordDirection(recorder, 0))
+	read1, write1, err := RecordingPipe(w1, recordDirection(recorder, 0), &wg)
 	if err != nil {
 		return err
 	}
 
-	read2, write2, err := RecordingPipe(w2, recordDirection(recorder, 1))
+	read2, write2, err := RecordingPipe(w2, recordDirection(recorder, 1), &wg)
 	if err != nil {
 		read1.Close()
 		write1.Close()

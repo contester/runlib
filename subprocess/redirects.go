@@ -197,7 +197,7 @@ func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer, recorder func(
 	var wc io.Writer = w
 
 	if t != nil {
-		wc = io.MultiWriter(w, t)
+		wc = io.MultiWriter(t, w)
 	}
 	n, err := io.Copy(wc, r)
 	if recorder != nil {
@@ -205,7 +205,7 @@ func recordingTee(w io.WriteCloser, r io.ReadCloser, t io.Writer, recorder func(
 	}
 }
 
-func RecordingPipe(d *os.File, recorder func(int64, error)) (*os.File, *os.File, error) {
+func RecordingPipe(d io.Writer, recorder func(int64, error)) (*os.File, *os.File, error) {
 	if d == nil && recorder == nil {
 		return hackPipe()
 	}
@@ -241,13 +241,28 @@ func recordDirection(recorder PipeResultRecorder, direction int) func(int64, err
 	}
 }
 
+type SyncWriter struct {
+	w     io.Writer
+	Mutex sync.RWMutex
+}
+
+func (w *SyncWriter) Write(p []byte) (n int, err error) {
+	// w.Mutex.Lock()
+	// defer w.Mutex.Unlock()
+	w.w.Write([]byte("    "))
+	n, err = w.w.Write(p)
+	return n, err
+}
+
 func Interconnect(s1, s2 *Subprocess, d1, d2 *os.File, recorder PipeResultRecorder) error {
-	read1, write1, err := RecordingPipe(d1, recordDirection(recorder, 0))
+	writer := &SyncWriter{w: d1}
+
+	read1, write1, err := RecordingPipe(writer, recordDirection(recorder, 0))
 	if err != nil {
 		return err
 	}
 
-	read2, write2, err := RecordingPipe(d2, recordDirection(recorder, 1))
+	read2, write2, err := RecordingPipe(writer, recordDirection(recorder, 1))
 	if err != nil {
 		read1.Close()
 		write1.Close()

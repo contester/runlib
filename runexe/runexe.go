@@ -318,7 +318,10 @@ func main() {
 		Fail(err, "Setup main subprocess")
 	}
 
-	var recorder subprocess.OrderedRecorder
+	var recorder *subprocess.OrderedRecorder = nil
+	if !globalFlags.XML {
+		recorder = &subprocess.OrderedRecorder{}
+	}
 
 	if interactorFlags != nil {
 		interactor, err = SetupSubprocess(interactorFlags, globalData)
@@ -347,10 +350,14 @@ func main() {
 			}
 		}
 
+		var pipeResultRecorder subprocess.PipeResultRecorder = nil
+		if recorder != nil {
+			pipeResultRecorder = recorder
+		}
 		err = subprocess.Interconnect(
 			program, interactor,
 			recordI, recordO, recordInteractionLog,
-			&recorder)
+			pipeResultRecorder)
 		if err != nil {
 			Fail(err, "Interconnect")
 		}

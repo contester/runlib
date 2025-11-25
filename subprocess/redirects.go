@@ -249,7 +249,6 @@ type SyncWriter struct {
 func (w *SyncWriter) Write(p []byte) (n int, err error) {
 	// w.Mutex.Lock()
 	// defer w.Mutex.Unlock()
-	w.w.Write([]byte("    "))
 	n, err = w.w.Write(p)
 	return n, err
 }

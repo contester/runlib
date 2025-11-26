@@ -115,7 +115,7 @@ func AddGlobalFlags(fs *flag.FlagSet) *runexeConfig {
 	fs.StringVar(&result.Logfile, "logfile", "", "")
 	fs.StringVar(&result.RecordProgramInput, "ri", "", "")
 	fs.StringVar(&result.RecordProgramOutput, "ro", "", "")
-	fs.StringVar(&result.RecordInteractionLog, "ilog", "", "")
+	fs.StringVar(&result.RecordInteractionLog, "interaction-log", "", "")
 	fs.BoolVar(&result.ShowKernelModeTime, "show-kernel-mode-time", false, "")
 	fs.BoolVar(&result.ReturnExitCode, "x", false, "")
 	return &result

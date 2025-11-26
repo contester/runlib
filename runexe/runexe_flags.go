@@ -134,7 +134,7 @@ Global options:
     program and interactor.
   -ri=<f>       - in interactor mode, record program input to file <f>.
   -ro=<f>       - in interactor mode, record program output to file <f>.
-  -ilog=<f>     - in interactor mode, record interaction to file <f>
+  -interaction-log=<f> - in interactor mode, record interaction to file <f>
 
 Process properties:
   -t <value>    - time limit. Terminate after <value> seconds, you can use

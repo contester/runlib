@@ -5,7 +5,7 @@ set RUNEXE=..\..\runexe.exe
 @REM set RUNEXE=%P%\commons-ext\code\commons\src\main\files\com\codeforces\commons\invoke\runexe2.exe
 
 %RUNEXE% -xml -a 8 -t 1000ms -h 36000ms -m 16777216 ^
-    -ilog=log.txt ^
+    -interaction-log=log.txt ^
     -os 67108864 -es 67108864 ^
     --interactor="-a 16 -d . -t 60000ms -h 240000ms -m 536870912 -no-idleness-check -process-limit 1 interactor.exe input.txt output.txt" ^
     -process-limit 1 solution.exe

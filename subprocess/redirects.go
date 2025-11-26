@@ -246,10 +246,10 @@ func recordDirection(recorder PipeResultRecorder, direction int) func(int64, err
 }
 
 type InteractionLog struct {
-	writer           *bufio.Writer
-	mutex            sync.RWMutex
-	hadEol           bool
-	currentDirection int
+	writer               *bufio.Writer
+	mutex                sync.RWMutex
+	hadEol               bool
+	currentLineDirection int
 }
 
 func (w *InteractionLog) write(direction int, p []byte) (n int, err error) {
@@ -260,41 +260,73 @@ func (w *InteractionLog) write(direction int, p []byte) (n int, err error) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	if direction != w.currentDirection {
-		if !w.hadEol {
-			eol := []byte("\n")
-			n, err = w.writer.Write(eol)
+	eol := []byte("\n")
+
+	var prefix []byte
+	if direction == 0 {
+		prefix = []byte("< ")
+	} else {
+		prefix = []byte("> ")
+	}
+
+	n = 0
+	lines := bytes.Split(p, eol)
+	for i, line := range lines {
+		var wn int
+
+		if i+1 >= len(lines) && len(line) == 0 {
+			break
+		}
+
+		if direction != w.currentLineDirection {
+			if !w.hadEol {
+				wn, err = w.writer.Write(eol)
+				if err != nil {
+					return
+				}
+				if wn != len(eol) {
+					err = io.ErrShortWrite
+					return
+				}
+			}
+
+			w.currentLineDirection = direction
+			wn, err = w.writer.Write(prefix)
 			if err != nil {
 				return
 			}
-			if n != len(eol) {
+			if wn != len(prefix) {
 				err = io.ErrShortWrite
 				return
 			}
 		}
 
-		w.currentDirection = direction
-		var prefix []byte
-		if direction == 0 {
-			prefix = []byte("< ")
-		} else {
-			prefix = []byte("> ")
-		}
-		n, err = w.writer.Write(prefix)
+		wn, err = w.writer.Write(line)
+		n += wn
 		if err != nil {
 			return
 		}
-		if n != len(prefix) {
+		if wn != len(line) {
 			err = io.ErrShortWrite
 			return
 		}
+		if i+1 < len(lines) {
+			wn, err = w.writer.Write(eol)
+			n += wn
+			if err != nil {
+				return
+			}
+			if wn != len(eol) {
+				err = io.ErrShortWrite
+				return
+			}
+			w.hadEol = true
+			w.currentLineDirection = -1
+		} else {
+			w.hadEol = false
+		}
 	}
-	n, err = w.writer.Write(p)
-	if err != nil {
-		return
-	}
-	w.hadEol = p[len(p)-1] == '\n'
-	return
+	return n, nil
 }
 
 type InteractionLogWriter struct {
@@ -338,9 +370,9 @@ func Interconnect(s1, s2 *Subprocess, d1, d2, interactionLogFile *os.File, recor
 			_ = err // TODO ???
 		}()
 		interactionLog := &InteractionLog{
-			writer:           writer,
-			hadEol:           true,
-			currentDirection: -1,
+			writer:               writer,
+			hadEol:               true,
+			currentLineDirection: -1,
 		}
 		w1 = &InteractionLogWriter{
 			interactionLog: interactionLog,

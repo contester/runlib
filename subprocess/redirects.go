@@ -261,6 +261,8 @@ func (w *InteractionLog) write(direction int, p []byte) (n int, err error) {
 	defer w.mutex.Unlock()
 
 	eol := []byte("\n")
+	// When direction switches without eol written
+	switch_without_eol := []byte("\n~")
 
 	var prefix []byte
 	if direction == 0 {
@@ -280,11 +282,11 @@ func (w *InteractionLog) write(direction int, p []byte) (n int, err error) {
 
 		if direction != w.currentLineDirection {
 			if !w.hadEol {
-				wn, err = w.writer.Write(eol)
+				wn, err = w.writer.Write(switch_without_eol)
 				if err != nil {
 					return
 				}
-				if wn != len(eol) {
+				if wn != len(switch_without_eol) {
 					err = io.ErrShortWrite
 					return
 				}

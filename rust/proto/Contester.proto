@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+import "Local.proto";
+
+package contester.proto;
+
+message Compilation {
+    enum Code {
+        Unknown = 0;
+        Success = 1;
+        Failure = 2;
+    }
+
+    message Result {
+        string step_name = 1;
+        LocalExecution execution = 2;
+        bool failure = 3;
+    }
+
+    bool failure = 1;
+    repeated Result result_steps = 2;
+};

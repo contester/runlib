@@ -1,0 +1,15 @@
+[package]
+name = "runexe"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+contester-subprocess = { workspace = true }
+contester-proto = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+quick-xml = { workspace = true }
+serde = { workspace = true }
+anyhow = { workspace = true }

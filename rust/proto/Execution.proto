@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "Blobs.proto";
+
+package contester.proto;
+
+message RedirectParameters {
+    string filename = 1;
+    bool memory = 2;
+    Blob buffer = 3;
+    string remote_filename = 4;
+    string remote_authorization_token = 5;
+}
+
+message ExecutionResultFlags {
+    bool killed = 1;
+    bool time_limit_hit = 2;
+    bool memory_limit_hit = 3;
+    bool inactive = 4;
+    bool stdout_overflow = 6;
+    bool stderr_overflow = 7;
+    bool stdpipe_timeout = 8;
+    bool time_limit_hit_post = 9;
+    bool memory_limit_hit_post = 10;
+    bool process_limit_hit = 11;
+    bool stopped_by_signal = 12;
+    bool killed_by_signal = 13;
+    bool kernel_time_limit_hit = 14;
+    bool kernel_time_limit_hit_post = 15;
+    bool wall_time_limit_hit = 16;
+};
+
+message ExecutionResultTime {
+    uint64 user_time_micros = 1;
+    uint64 kernel_time_micros = 2;
+    uint64 wall_time_micros = 3;
+};

@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+import "Blobs.proto";
+import "Execution.proto";
+
+package contester.proto;
+
+message LocalEnvironment {
+    message Variable {
+        string name = 1;
+        string value = 2;
+        bool expand = 3;
+    }
+
+    bool empty = 1;
+    repeated Variable variable = 2;
+};
+
+message LocalExecutionParameters {
+    string application_name = 1;
+    string command_line = 2;
+    string current_directory = 3;
+
+    uint64 time_limit_micros = 4;
+    uint64 memory_limit = 5;
+    bool check_idleness = 6;
+    LocalEnvironment environment = 7;
+    bool restrict_ui = 8;
+    bool no_job = 9;
+    uint32 process_limit = 10;
+    uint64 kernel_time_limit_micros = 19;
+    uint64 wall_time_limit_micros = 20;
+
+    RedirectParameters std_in = 12;
+    RedirectParameters std_out = 13;
+    RedirectParameters std_err = 14;
+
+    repeated string command_line_parameters = 16;
+
+    string sandbox_id = 17;
+
+    bool join_stdout_stderr = 18;
+};
+
+message LocalExecuteConnected {
+    LocalExecutionParameters first = 1;
+    LocalExecutionParameters second = 2;
+};
+
+message LocalExecutionResult {
+    ExecutionResultFlags flags = 1;
+    ExecutionResultTime time = 2;
+    uint64 memory = 3;
+    uint32 return_code = 4;
+    Blob std_out = 5;
+    Blob std_err = 6;
+    uint64 total_processes = 7;
+    int32 kill_signal = 8;
+    int32 stop_signal = 9;
+    string error = 10;
+};
+
+message LocalExecuteConnectedResult {
+    LocalExecutionResult first = 1;
+    LocalExecutionResult second = 2;
+};
+
+message LocalExecution {
+    LocalExecutionParameters parameters = 1;
+    LocalExecutionResult result = 2;
+};
+
+message BinaryTypeRequest {
+    string pathname = 1;
+};
+
+message BinaryTypeResponse {
+    enum Win32BinaryType {
+        SCS_32BIT_BINARY = 0;
+        SCS_DOS_BINARY = 1;
+        SCS_WOW_BINARY = 2;
+        SCS_PIF_BINARY = 3;
+        SCS_POSIX_BINARY = 4;
+        SCS_OS216_BINARY = 5;
+        SCS_64BIT_BINARY = 6;
+    };
+
+    bool failure = 1;
+    Win32BinaryType result = 2;
+};
+
+message ClearSandboxRequest {
+    string sandbox = 1;
+};
+
+message IdentifyRequest {
+    string contester_id = 1;
+};
+
+message SandboxLocations {
+    string compile = 1;
+    string run = 2;
+}
+
+message IdentifyResponse {
+    string invoker_id = 1;
+    repeated SandboxLocations sandboxes = 2;
+    LocalEnvironment environment = 3;
+    string platform = 4;
+    string path_separator = 5;
+    repeated string disks = 6;
+    repeated string programFiles = 7;
+};
+
+message FileStat {
+    string name = 1;
+    bool is_directory = 2;
+    uint64 size = 3;
+    string checksum = 4;
+};
+
+message StatRequest {
+    repeated string name = 1;
+    string sandbox_id = 2;
+    bool expand = 3;
+    bool calculate_checksum = 4;
+};
+
+message FileStats {
+    repeated FileStat entries = 1;
+};
+
+message GetRequest {
+    string name = 1;
+};
+
+message EmptyMessage {};
+
+message CopyOperation {
+    string local_file_name = 1;
+    string remote_location = 2;
+    bool upload = 3;
+    string checksum = 4;
+    string module_type = 5;
+    string authorization_token = 6;
+};
+
+message CopyOperations {
+    repeated CopyOperation entries = 1;
+    string sandbox_id = 2;
+};
+
+message NamePair {
+    string source = 1;
+    string destination = 2;
+};
+
+message RepeatedNamePairEntries {
+    repeated NamePair entries = 1;
+    string sandbox_id = 2;
+};
+
+message RepeatedStringEntries {
+    repeated string entries = 1;
+};

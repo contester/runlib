@@ -1,0 +1,13 @@
+[package]
+name = "contester-rpc4"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+contester-proto = { workspace = true }
+prost = { workspace = true }
+tokio = { workspace = true }
+byteorder = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }

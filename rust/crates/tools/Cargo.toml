@@ -1,0 +1,8 @@
+[package]
+name = "contester-tools"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+sha1 = { workspace = true }
+anyhow = { workspace = true }

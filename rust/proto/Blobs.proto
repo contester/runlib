@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package contester.proto;
+
+message Blob {
+    message CompressionInfo {
+        enum CompressionType {
+            METHOD_NONE = 0;
+            METHOD_ZLIB = 1;
+        }
+
+        CompressionType method = 1;
+        uint32 original_size = 2;
+    }
+
+    bytes data = 1;
+    CompressionInfo compression = 2;
+    bytes sha1 = 3;
+};
+
+message Module {
+    string name = 3;
+    Blob data = 2;
+    string type = 1;
+};
+
+message FileBlob {
+    string name = 1;
+    Blob data = 2;
+};

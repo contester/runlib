@@ -80,3 +80,6 @@ _testmain.go
 #vendor/
 
 # End of https://www.gitignore.io/api/intellij,go
+
+### Rust ###
+rust/target/

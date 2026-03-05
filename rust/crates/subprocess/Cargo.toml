@@ -10,6 +10,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+os_pipe = "1"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = ">=0.59", features = [
@@ -20,6 +21,8 @@ windows-sys = { version = ">=0.59", features = [
     "Win32_System_Memory",
     "Win32_System_ProcessStatus",
     "Win32_System_Diagnostics_Debug",
+    "Win32_System_Console",
+    "Win32_System_SystemInformation",
     "Win32_UI_WindowsAndMessaging",
     "Win32_Storage_FileSystem",
 ] }

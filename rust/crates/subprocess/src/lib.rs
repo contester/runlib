@@ -1,6 +1,9 @@
 pub mod interconnect;
 pub mod redirects;
 
+// Re-export interconnect for convenience.
+pub use interconnect::interconnect;
+
 #[cfg(windows)]
 pub mod platform_windows;
 #[cfg(unix)]

@@ -1,12 +1,14 @@
-pub mod redirects;
 pub mod interconnect;
+pub mod redirects;
 
 #[cfg(windows)]
-mod platform_windows;
+pub mod platform_windows;
 #[cfg(unix)]
 mod platform_linux;
 
 use std::time::Duration;
+
+use anyhow::Result;
 
 /// Convert a Duration to microseconds.
 pub fn get_micros(d: Duration) -> u64 {
@@ -49,13 +51,14 @@ pub enum RedirectMode {
 }
 
 /// I/O redirect configuration.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct Redirect {
     pub mode: RedirectMode,
     pub filename: String,
     pub data: Vec<u8>,
     pub max_output_size: i64,
-    // Pipe handles are set up at execution time, not stored here.
+    /// Pipe handle for REDIRECT_PIPE mode (set up externally, e.g. by Interconnect).
+    pub pipe: Option<std::fs::File>,
 }
 
 /// Command specification.
@@ -67,7 +70,7 @@ pub struct CommandLine {
 }
 
 /// Immutable subprocess configuration.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Subprocess {
     pub cmd: CommandLine,
     pub current_directory: String,
@@ -155,6 +158,9 @@ impl SubprocessResult {
         if sub.kernel_time_limit > Duration::ZERO && self.time.kernel_time > sub.kernel_time_limit {
             self.success_code |= EF_KERNEL_TIME_LIMIT_HIT_POST;
         }
+        if sub.wall_time_limit > Duration::ZERO && self.time.wall_time > sub.wall_time_limit {
+            self.success_code |= EF_WALL_TIME_LIMIT_HIT_POST;
+        }
     }
 }
 
@@ -215,4 +221,26 @@ impl RunningState {
 pub fn is_user_error(_err: &anyhow::Error) -> bool {
     // TODO: implement proper error classification
     false
+}
+
+// ── Execute ──────────────────────────────────────────────────────────────────
+
+impl Subprocess {
+    /// Execute the subprocess: create frozen, set up buffers, unfreeze, monitor.
+    #[cfg(windows)]
+    pub fn execute(&self) -> Result<SubprocessResult> {
+        let mut d = platform_windows::create_frozen(self).map_err(|e| {
+            // cleanup_if_failed is already handled inside create_frozen on error
+            e
+        })?;
+
+        d.setup_redirection_buffers();
+        platform_windows::unfreeze(&mut d);
+        Ok(platform_windows::bottom_half(self, &mut d))
+    }
+
+    #[cfg(unix)]
+    pub fn execute(&self) -> Result<SubprocessResult> {
+        anyhow::bail!("subprocess execution not implemented on this platform")
+    }
 }

@@ -1,1 +1,606 @@
-// Contester service — will be implemented in Phase 5.
+//! Contester service — RPC method implementations.
+//!
+//! Handles: Identify, LocalExecute, LocalExecuteConnected, Put, Get, Stat, Clear, GridfsCopy.
+
+mod sandbox;
+
+use std::path::Path;
+use std::sync::Arc;
+
+use anyhow::Result;
+use prost::Message;
+use serde::Deserialize;
+
+use contester_proto::*;
+use contester_rpc4::{RpcRequest, ServerCodec};
+use contester_subprocess::{
+    Redirect, RedirectMode, Subprocess, SubprocessResult,
+    du_from_micros, get_micros,
+    EF_INACTIVE, EF_KILLED, EF_MEMORY_LIMIT_HIT, EF_MEMORY_LIMIT_HIT_POST,
+    EF_PROCESS_LIMIT_HIT, EF_TIME_LIMIT_HIT, EF_TIME_LIMIT_HIT_POST,
+    EF_KERNEL_TIME_LIMIT_HIT, EF_KERNEL_TIME_LIMIT_HIT_POST,
+    EF_WALL_TIME_LIMIT_HIT,
+};
+
+use sandbox::{Sandbox, SandboxPair, get_sandbox_by_id, get_sandbox_by_path, resolve_path};
+
+/// Convert a tools::FileStat to a proto::FileStat.
+fn tools_stat_to_proto(s: &contester_tools::FileStat) -> contester_proto::FileStat {
+    contester_proto::FileStat {
+        name: s.name.clone(),
+        is_directory: s.is_directory,
+        size: s.size,
+        checksum: s.checksum.clone().unwrap_or_default(),
+    }
+}
+
+// ── Config ──────────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct ContesterConfig {
+    pub server: String,
+    #[serde(default)]
+    pub passwords: String,
+    pub path: String,
+    #[serde(default)]
+    pub sandbox_count: usize,
+}
+
+// ── Contester service ───────────────────────────────────────────────────────
+
+pub struct Contester {
+    pub invoker_id: String,
+    pub sandboxes: Vec<SandboxPair>,
+    pub env: Vec<local_environment::Variable>,
+    pub server_address: String,
+    pub platform: String,
+    pub disks: Vec<String>,
+    pub program_files: Vec<String>,
+    pub http_client: reqwest::Client,
+}
+
+impl Contester {
+    pub fn new(config: ContesterConfig) -> Result<Self> {
+        let invoker_id = hostname::get()
+            .map(|h| h.to_string_lossy().into_owned())
+            .unwrap_or_else(|_| "undefined".to_string());
+
+        let env = get_local_environment();
+
+        let passwords = get_passwords(&config);
+        let mut sandboxes = Vec::with_capacity(passwords.len());
+        for (index, _password) in passwords.iter().enumerate() {
+            let local_base = format!("{}/{}", config.path, index);
+            let pair = SandboxPair::new(&local_base);
+
+            // Ensure sandbox directories exist
+            std::fs::create_dir_all(&pair.compile.lock().unwrap().path)?;
+            std::fs::create_dir_all(&pair.run.lock().unwrap().path)?;
+
+            sandboxes.push(pair);
+        }
+
+        let (platform, disks, program_files) = platform_info();
+
+        Ok(Self {
+            invoker_id,
+            sandboxes,
+            env,
+            server_address: config.server,
+            platform,
+            disks,
+            program_files,
+            http_client: reqwest::Client::new(),
+        })
+    }
+
+    // ── RPC dispatch ────────────────────────────────────────────────────
+
+    /// Dispatch an RPC request to the appropriate handler.
+    pub async fn dispatch<R, W>(
+        &self,
+        codec: &mut ServerCodec<R, W>,
+        request: RpcRequest,
+    ) -> Result<()>
+    where
+        R: tokio::io::AsyncRead + Unpin,
+        W: tokio::io::AsyncWrite + Unpin,
+    {
+        let method = &request.method;
+        let seq = request.sequence;
+
+        let result: Result<Vec<u8>> = match method.as_str() {
+            "Contester.Identify" => self.handle_identify(&request),
+            "Contester.LocalExecute" => self.handle_local_execute(&request).await,
+            "Contester.LocalExecuteConnected" => {
+                self.handle_local_execute_connected(&request).await
+            }
+            "Contester.Put" => self.handle_put(&request).await,
+            "Contester.Get" => self.handle_get(&request),
+            "Contester.Stat" => self.handle_stat(&request),
+            "Contester.Clear" => self.handle_clear(&request),
+            "Contester.GridfsCopy" => self.handle_gridfs_copy(&request).await,
+            _ => Err(anyhow::anyhow!("unknown method: {method}")),
+        };
+
+        match result {
+            Ok(response_bytes) => {
+                // Write raw response bytes as a "generic" protobuf message
+                let wrapper = RawMessage(response_bytes);
+                codec.write_response(method, seq, &wrapper).await?;
+            }
+            Err(e) => {
+                codec.write_error(method, seq, &e.to_string()).await?;
+            }
+        }
+        Ok(())
+    }
+
+    // ── Identify ────────────────────────────────────────────────────────
+
+    fn handle_identify(&self, _request: &RpcRequest) -> Result<Vec<u8>> {
+        let response = IdentifyResponse {
+            invoker_id: self.invoker_id.clone(),
+            environment: Some(LocalEnvironment {
+                variable: self.env.clone(),
+                empty: false,
+            }),
+            sandboxes: self
+                .sandboxes
+                .iter()
+                .map(|p| SandboxLocations {
+                    compile: p.compile.lock().unwrap().path.clone(),
+                    run: p.run.lock().unwrap().path.clone(),
+                })
+                .collect(),
+            platform: self.platform.clone(),
+            path_separator: std::path::MAIN_SEPARATOR.to_string(),
+            disks: self.disks.clone(),
+            program_files: self.program_files.clone(),
+        };
+        Ok(response.encode_to_vec())
+    }
+
+    // ── LocalExecute ────────────────────────────────────────────────────
+
+    async fn handle_local_execute(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+        let params = decode_payload::<LocalExecutionParameters>(request)?;
+
+        let sandbox = find_sandbox(&self.sandboxes, &params)?;
+        let _guard = sandbox.lock().unwrap();
+
+        let sub = self.setup_subprocess(&params, true)?;
+        let result = tokio::task::spawn_blocking(move || sub.execute()).await??;
+
+        let mut response = LocalExecutionResult::default();
+        fill_result(&result, &mut response);
+        Ok(response.encode_to_vec())
+    }
+
+    // ── LocalExecuteConnected ───────────────────────────────────────────
+
+    async fn handle_local_execute_connected(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+        let params = decode_payload::<LocalExecuteConnected>(request)?;
+
+        let first_params = params.first.as_ref().ok_or_else(|| anyhow::anyhow!("missing first"))?;
+        let second_params = params.second.as_ref().ok_or_else(|| anyhow::anyhow!("missing second"))?;
+
+        let first_sandbox = find_sandbox(&self.sandboxes, first_params)?;
+        let second_sandbox = find_sandbox(&self.sandboxes, second_params)?;
+
+        let _guard1 = first_sandbox.lock().unwrap();
+        let _guard2 = second_sandbox.lock().unwrap();
+
+        let mut first = self.setup_subprocess(first_params, false)?;
+        let mut second = self.setup_subprocess(second_params, false)?;
+
+        contester_subprocess::interconnect::interconnect(
+            &mut first,
+            &mut second,
+            None,
+            None,
+            None,
+            None,
+        )?;
+
+        let (r1, r2) = tokio::task::spawn_blocking(move || {
+            let h2 = std::thread::spawn(move || second.execute());
+            let r1 = first.execute();
+            let r2 = h2.join().unwrap();
+            (r1, r2)
+        })
+        .await?;
+
+        let mut response = LocalExecuteConnectedResult::default();
+
+        if let Ok(result) = r1 {
+            let mut first_result = LocalExecutionResult::default();
+            fill_result(&result, &mut first_result);
+            response.first = Some(first_result);
+        }
+        if let Ok(result) = r2 {
+            let mut second_result = LocalExecutionResult::default();
+            fill_result(&result, &mut second_result);
+            response.second = Some(second_result);
+        }
+
+        Ok(response.encode_to_vec())
+    }
+
+    // ── Put ─────────────────────────────────────────────────────────────
+
+    async fn handle_put(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+        let params = decode_payload::<FileBlob>(request)?;
+
+        let (resolved, sandbox) = resolve_path(&self.sandboxes, &params.name, true)?;
+        let _guard = sandbox.map(|s| s.lock().unwrap());
+
+        // Decode blob data
+        let data = match params.data {
+            Some(ref blob) => blob.bytes()?,
+            None => Vec::new(),
+        };
+
+        tokio::fs::write(&resolved, &data).await?;
+
+        let stat = contester_tools::stat_file(Path::new(&resolved), true)?;
+        let response = tools_stat_to_proto(&stat);
+        Ok(response.encode_to_vec())
+    }
+
+    // ── Get ─────────────────────────────────────────────────────────────
+
+    fn handle_get(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+        let params = decode_payload::<GetRequest>(request)?;
+
+        let (resolved, sandbox) = resolve_path(&self.sandboxes, &params.name, false)?;
+        let _guard = sandbox.map(|s| s.lock().unwrap());
+
+        let data = std::fs::read(&resolved)?;
+        let blob = Blob::new(&data)?;
+
+        let response = FileBlob {
+            name: resolved,
+            data: blob,
+        };
+        Ok(response.encode_to_vec())
+    }
+
+    // ── Stat ────────────────────────────────────────────────────────────
+
+    fn handle_stat(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+        let params = decode_payload::<StatRequest>(request)?;
+
+        let mut entries = Vec::new();
+        for name in &params.name {
+            let (resolved, _) = resolve_path(&self.sandboxes, name, false)?;
+
+            let expanded = if params.expand {
+                glob_paths(&resolved)?
+            } else {
+                vec![resolved]
+            };
+
+            for path in expanded {
+                match contester_tools::stat_file(Path::new(&path), params.calculate_checksum) {
+                    Ok(stat) => entries.push(tools_stat_to_proto(&stat)),
+                    Err(_) => {} // file may not exist after glob
+                }
+            }
+        }
+
+        let response = FileStats { entries };
+        Ok(response.encode_to_vec())
+    }
+
+    // ── Clear ───────────────────────────────────────────────────────────
+
+    fn handle_clear(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+        let params = decode_payload::<ClearSandboxRequest>(request)?;
+
+        let sandbox = get_sandbox_by_id(&self.sandboxes, &params.sandbox)?;
+        let guard = sandbox.lock().unwrap();
+
+        for retry in 0..10 {
+            match try_clear_path(&guard.path) {
+                Ok(false) => break, // already empty
+                Ok(true) => break,  // cleared
+                Err(e) => {
+                    if retry == 9 {
+                        return Err(e);
+                    }
+                    tracing::error!("clear retry {}: {}", retry, e);
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                }
+            }
+        }
+
+        let response = EmptyMessage {};
+        Ok(response.encode_to_vec())
+    }
+
+    // ── GridfsCopy ──────────────────────────────────────────────────────
+
+    async fn handle_gridfs_copy(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+        let params = decode_payload::<CopyOperations>(request)?;
+
+        let mut entries = Vec::new();
+        for item in &params.entries {
+            if item.local_file_name.is_empty() || item.remote_location.is_empty() {
+                continue;
+            }
+
+            let (resolved, _) = resolve_path(&self.sandboxes, &item.local_file_name, false)?;
+
+            match contester_storage::filer_copy(
+                &self.http_client,
+                &resolved,
+                &item.remote_location,
+                item.upload,
+                &item.checksum,
+                &item.module_type,
+                &item.authorization_token,
+            )
+            .await
+            {
+                Ok(Some(stat)) => entries.push(tools_stat_to_proto(&stat)),
+                Ok(None) => {}
+                Err(e) => {
+                    tracing::error!("gridfs copy error: {}", e);
+                }
+            }
+        }
+
+        let response = FileStats { entries };
+        Ok(response.encode_to_vec())
+    }
+
+    // ── Subprocess setup ────────────────────────────────────────────────
+
+    fn setup_subprocess(
+        &self,
+        params: &LocalExecutionParameters,
+        do_redirects: bool,
+    ) -> Result<Subprocess> {
+        let mut sub = Subprocess::default();
+
+        sub.cmd.application_name = params.application_name.clone();
+        sub.cmd.command_line = params.command_line.clone();
+        sub.cmd.parameters = params.command_line_parameters.clone();
+        sub.current_directory = params.current_directory.clone();
+
+        sub.time_limit = du_from_micros(params.time_limit_micros);
+        sub.kernel_time_limit = du_from_micros(params.kernel_time_limit_micros);
+        sub.wall_time_limit = du_from_micros(params.wall_time_limit_micros);
+        sub.memory_limit = params.memory_limit;
+        sub.check_idleness = params.check_idleness;
+        sub.restrict_ui = params.restrict_ui;
+        sub.no_job = params.no_job;
+
+        if let Some(ref env) = params.environment {
+            sub.environment = env
+                .variable
+                .iter()
+                .map(|v| format!("{}={}", v.name, v.value))
+                .collect();
+            sub.no_inherit_environment = true;
+        }
+
+        if do_redirects {
+            sub.stdin = fill_redirect(params.std_in.as_ref());
+            sub.stdout = fill_redirect(params.std_out.as_ref());
+        }
+
+        if params.join_stdout_stderr {
+            sub.join_stdout_stderr = true;
+        } else {
+            sub.stderr = fill_redirect(params.std_err.as_ref());
+        }
+
+        Ok(sub)
+    }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+fn fill_redirect(r: Option<&RedirectParameters>) -> Option<Redirect> {
+    let r = r?;
+    if !r.filename.is_empty() {
+        Some(Redirect {
+            filename: r.filename.clone(),
+            mode: RedirectMode::File,
+            ..Default::default()
+        })
+    } else if r.memory {
+        let data = r
+            .buffer
+            .as_ref()
+            .and_then(|b| b.bytes().ok())
+            .unwrap_or_default();
+        Some(Redirect {
+            mode: RedirectMode::Memory,
+            data,
+            ..Default::default()
+        })
+    } else {
+        None
+    }
+}
+
+fn fill_result(result: &SubprocessResult, response: &mut LocalExecutionResult) {
+    response.total_processes = result.total_processes;
+    response.return_code = result.exit_code;
+    response.flags = parse_success_code(result.success_code);
+    response.time = parse_time(result);
+    response.memory = result.peak_memory;
+    response.std_out = Blob::new(&result.output).ok().flatten();
+    response.std_err = Blob::new(&result.error).ok().flatten();
+}
+
+fn parse_success_code(succ: u32) -> Option<ExecutionResultFlags> {
+    if succ == 0 {
+        return None;
+    }
+    Some(ExecutionResultFlags {
+        killed: succ & EF_KILLED != 0,
+        time_limit_hit: succ & EF_TIME_LIMIT_HIT != 0,
+        kernel_time_limit_hit: succ & EF_KERNEL_TIME_LIMIT_HIT != 0,
+        wall_time_limit_hit: succ & EF_WALL_TIME_LIMIT_HIT != 0,
+        memory_limit_hit: succ & EF_MEMORY_LIMIT_HIT != 0,
+        inactive: succ & EF_INACTIVE != 0,
+        time_limit_hit_post: succ & EF_TIME_LIMIT_HIT_POST != 0,
+        kernel_time_limit_hit_post: succ & EF_KERNEL_TIME_LIMIT_HIT_POST != 0,
+        memory_limit_hit_post: succ & EF_MEMORY_LIMIT_HIT_POST != 0,
+        process_limit_hit: succ & EF_PROCESS_LIMIT_HIT != 0,
+        stdout_overflow: false,
+        stderr_overflow: false,
+        stdpipe_timeout: false,
+        stopped_by_signal: false,
+        killed_by_signal: false,
+    })
+}
+
+fn parse_time(r: &SubprocessResult) -> Option<ExecutionResultTime> {
+    let ut = get_micros(r.time.user_time);
+    let kt = get_micros(r.time.kernel_time);
+    let wt = get_micros(r.time.wall_time);
+    if ut == 0 && kt == 0 && wt == 0 {
+        return None;
+    }
+    Some(ExecutionResultTime {
+        user_time_micros: ut,
+        kernel_time_micros: kt,
+        wall_time_micros: wt,
+    })
+}
+
+fn decode_payload<M: Message + Default>(request: &RpcRequest) -> Result<M> {
+    match &request.payload {
+        Some(data) => Ok(M::decode(data.as_slice())?),
+        None => Ok(M::default()),
+    }
+}
+
+fn try_clear_path(path: &str) -> Result<bool> {
+    let entries: Vec<_> = std::fs::read_dir(path)?
+        .collect::<std::io::Result<Vec<_>>>()?;
+
+    if entries.is_empty() {
+        return Ok(false);
+    }
+
+    for entry in entries {
+        let fullpath = entry.path();
+        if fullpath.is_dir() {
+            std::fs::remove_dir_all(&fullpath)?;
+        } else {
+            std::fs::remove_file(&fullpath)?;
+        }
+    }
+    Ok(true)
+}
+
+fn glob_paths(pattern: &str) -> Result<Vec<String>> {
+    let mut results = Vec::new();
+    for entry in glob::glob(pattern)? {
+        results.push(entry?.to_string_lossy().into_owned());
+    }
+    Ok(results)
+}
+
+fn get_local_environment() -> Vec<local_environment::Variable> {
+    std::env::vars()
+        .map(|(k, v)| local_environment::Variable { name: k, value: v, expand: false })
+        .collect()
+}
+
+fn get_passwords(config: &ContesterConfig) -> Vec<String> {
+    if !config.passwords.is_empty() {
+        return config.passwords.split(' ').map(String::from).collect();
+    }
+    let cores = if config.sandbox_count > 0 {
+        config.sandbox_count
+    } else {
+        let cpus = num_cpus::get();
+        std::cmp::max(1, cpus / 2 - 1)
+    };
+
+    // Deterministic password generation based on hostname
+    use std::hash::{Hash, Hasher};
+    use std::collections::hash_map::DefaultHasher;
+    let hostname = hostname::get()
+        .map(|h| h.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let mut hasher = DefaultHasher::new();
+    hostname.hash(&mut hasher);
+    let mut seed = hasher.finish();
+
+    let alphabet = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    (0..cores)
+        .map(|_| {
+            let pw: String = (0..8)
+                .map(|_| {
+                    seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+                    alphabet[(seed >> 33) as usize % alphabet.len()] as char
+                })
+                .collect();
+            pw
+        })
+        .collect()
+}
+
+#[cfg(windows)]
+fn platform_info() -> (String, Vec<String>, Vec<String>) {
+    (
+        "win32".to_string(),
+        vec!["C:\\".to_string()],
+        vec![
+            "C:\\Program Files".to_string(),
+            "C:\\Program Files (x86)".to_string(),
+        ],
+    )
+}
+
+#[cfg(not(windows))]
+fn platform_info() -> (String, Vec<String>, Vec<String>) {
+    ("linux".to_string(), vec!["/".to_string()], vec![])
+}
+
+/// Wrapper to write pre-encoded bytes as a prost Message.
+#[derive(Debug)]
+struct RawMessage(Vec<u8>);
+
+impl prost::Message for RawMessage {
+    fn encode_raw(&self, buf: &mut impl prost::bytes::BufMut) {
+        buf.put_slice(&self.0);
+    }
+
+    fn merge_field(
+        &mut self,
+        _tag: u32,
+        _wire_type: prost::encoding::WireType,
+        _buf: &mut impl prost::bytes::Buf,
+        _ctx: prost::encoding::DecodeContext,
+    ) -> Result<(), prost::DecodeError> {
+        Ok(())
+    }
+
+    fn encoded_len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn clear(&mut self) {
+        self.0.clear();
+    }
+}
+
+fn find_sandbox<'a>(
+    sandboxes: &'a [SandboxPair],
+    params: &LocalExecutionParameters,
+) -> Result<&'a Arc<std::sync::Mutex<Sandbox>>> {
+    if !params.sandbox_id.is_empty() {
+        get_sandbox_by_id(sandboxes, &params.sandbox_id)
+    } else {
+        get_sandbox_by_path(sandboxes, &params.current_directory)
+    }
+}

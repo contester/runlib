@@ -51,8 +51,11 @@ fn parse_affinity(s: &str) -> Result<u64, String> {
 
 /// Process configuration flags.
 #[derive(Parser, Debug)]
-#[command(name = "runexe", version, about = "Run a program with resource limits")]
+#[command(name = "runexe", version, about = "Run a program with resource limits", disable_help_flag = true)]
 pub struct RunexeArgs {
+    /// Show help information
+    #[arg(long = "help", action = clap::ArgAction::Help)]
+    pub help: Option<bool>,
     // ── Global options ──
 
     /// Print result in XML format

@@ -101,6 +101,11 @@ fn setup_subprocess(args: &RunexeArgs) -> Result<Subprocess> {
         });
     }
 
+    // DLL injection
+    if let Some(ref dll) = args.inject_dll {
+        sub.inject_dll.push(dll.clone());
+    }
+
     Ok(sub)
 }
 

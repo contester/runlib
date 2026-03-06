@@ -802,6 +802,180 @@ fn terminate_and_close(pdata: &mut PlatformData) {
     }
 }
 
+/// Terminate a frozen (suspended) process and clean up all handles.
+/// Called when DLL injection or other post-creation setup fails.
+pub fn terminate_frozen(d: &mut SubprocessData) {
+    terminate_and_close(&mut d.platform);
+    if d.platform.job != INVALID_HANDLE_VALUE {
+        unsafe { CloseHandle(d.platform.job) };
+        d.platform.job = INVALID_HANDLE_VALUE;
+    }
+}
+
+// ── DLL Injection ────────────────────────────────────────────────────────────
+
+// FFI for DLL injection (all from kernel32.dll, already linked by windows-sys)
+#[link(name = "kernel32")]
+unsafe extern "system" {
+    fn VirtualAllocEx(
+        hProcess: HANDLE,
+        lpAddress: usize,
+        dwSize: usize,
+        flAllocationType: u32,
+        flProtect: u32,
+    ) -> usize;
+
+    fn VirtualFreeEx(
+        hProcess: HANDLE,
+        lpAddress: usize,
+        dwSize: usize,
+        dwFreeType: u32,
+    ) -> i32;
+
+    fn WriteProcessMemory(
+        hProcess: HANDLE,
+        lpBaseAddress: usize,
+        lpBuffer: *const u8,
+        nSize: usize,
+        lpNumberOfBytesWritten: *mut usize,
+    ) -> i32;
+
+    fn CreateRemoteThread(
+        hProcess: HANDLE,
+        lpThreadAttributes: *const core::ffi::c_void,
+        dwStackSize: usize,
+        lpStartAddress: usize,
+        lpParameter: usize,
+        dwCreationFlags: u32,
+        lpThreadId: *mut u32,
+    ) -> HANDLE;
+
+    fn GetModuleHandleW(lpModuleName: *const u16) -> HANDLE;
+
+    fn GetProcAddress(hModule: HANDLE, lpProcName: *const u8) -> usize;
+}
+
+const MEM_COMMIT: u32 = 0x1000;
+const MEM_RELEASE: u32 = 0x8000;
+const PAGE_READWRITE: u32 = 0x04;
+
+/// Inject a DLL into a suspended process by creating a remote thread
+/// that calls LoadLibraryW with the DLL path.
+pub fn inject_dll(d: &SubprocessData, dll: &str) -> Result<()> {
+    let process = d.platform.process;
+
+    // 1. Resolve LoadLibraryW address in our process.
+    //    Since kernel32.dll is loaded at the same base address in all processes
+    //    (ASLR is per-boot, not per-process), this address is valid in the target too.
+    let kernel32_name = to_wide("kernel32.dll");
+    let kernel32 = unsafe { GetModuleHandleW(kernel32_name.as_ptr()) };
+    if kernel32.is_null() {
+        return Err(anyhow::anyhow!(
+            "GetModuleHandleW(kernel32): {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+
+    let load_library_name = b"LoadLibraryW\0";
+    let load_library_addr =
+        unsafe { GetProcAddress(kernel32, load_library_name.as_ptr()) };
+    if load_library_addr == 0 {
+        return Err(anyhow::anyhow!(
+            "GetProcAddress(LoadLibraryW): {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+
+    tracing::debug!(
+        "InjectDll: injecting {:?} via LoadLibraryW at {:#x}",
+        dll,
+        load_library_addr
+    );
+
+    // 2. Write the DLL path (UTF-16) into the target process
+    let dll_wide = to_wide(dll);
+    let dll_bytes_len = dll_wide.len() * 2; // size in bytes
+
+    let remote_buf = unsafe {
+        VirtualAllocEx(process, 0, dll_bytes_len, MEM_COMMIT, PAGE_READWRITE)
+    };
+    if remote_buf == 0 {
+        return Err(anyhow::anyhow!(
+            "VirtualAllocEx({}): {}",
+            dll_bytes_len,
+            std::io::Error::last_os_error()
+        ));
+    }
+
+    let result = inject_dll_inner(process, remote_buf, &dll_wide, load_library_addr);
+
+    // Always free remote buffer, regardless of success/failure
+    unsafe { VirtualFreeEx(process, remote_buf, 0, MEM_RELEASE) };
+
+    result
+}
+
+/// Inner function for inject_dll — write memory, create remote thread, wait.
+/// Separated so the caller can handle VirtualFreeEx cleanup unconditionally.
+fn inject_dll_inner(
+    process: HANDLE,
+    remote_buf: usize,
+    dll_wide: &[u16],
+    load_library_addr: usize,
+) -> Result<()> {
+    let dll_bytes_len = dll_wide.len() * 2;
+
+    let mut bytes_written: usize = 0;
+    let ok = unsafe {
+        WriteProcessMemory(
+            process,
+            remote_buf,
+            dll_wide.as_ptr() as *const u8,
+            dll_bytes_len,
+            &mut bytes_written,
+        )
+    };
+    if ok == 0 {
+        return Err(anyhow::anyhow!(
+            "WriteProcessMemory: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+
+    // Create a remote thread that calls LoadLibraryW(remote_buf)
+    let mut thread_id: u32 = 0;
+    let thread = unsafe {
+        CreateRemoteThread(
+            process,
+            ptr::null(),
+            0,
+            load_library_addr,
+            remote_buf,
+            0,
+            &mut thread_id,
+        )
+    };
+    if thread.is_null() || thread == INVALID_HANDLE_VALUE {
+        return Err(anyhow::anyhow!(
+            "CreateRemoteThread: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+
+    // Wait for the remote thread to finish loading the DLL
+    let wait_result = unsafe { WaitForSingleObject(thread, INFINITE) };
+    unsafe { CloseHandle(thread) };
+
+    if wait_result != WAIT_OBJECT_0 {
+        return Err(anyhow::anyhow!(
+            "WaitForSingleObject on DLL injection thread: unexpected result {}",
+            wait_result
+        ));
+    }
+
+    Ok(())
+}
+
 // ── BottomHalf monitoring loop ───────────────────────────────────────────────
 
 /// Monitor the process until it exits or limits are exceeded.

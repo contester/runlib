@@ -1,7 +1,7 @@
 //! Windows subprocess implementation using Win32 API.
 //!
 //! Covers process creation (suspended), Job Object configuration,
-//! process monitoring (BottomHalf), and resource measurement.
+//! process monitoring (BottomHalf), resource measurement, and user impersonation.
 
 use std::fs::File;
 use std::mem::{self, zeroed};
@@ -18,12 +18,210 @@ use windows_sys::Win32::System::SystemInformation::GetSystemTimeAsFileTime;
 use windows_sys::Win32::System::Threading::*;
 
 use crate::redirects::SubprocessData;
-use crate::{RunningState, Subprocess, SubprocessResult, EF_STDERR_OVERFLOW, EF_STDOUT_OVERFLOW};
+use crate::{LoginInfo, RunningState, Subprocess, SubprocessResult, EF_STDERR_OVERFLOW, EF_STDOUT_OVERFLOW};
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const STARTF_FORCEOFFFEEDBACK: u32 = 0x00000080;
 const SW_SHOWMINNOACTIVE: u16 = 7;
+
+// ── User impersonation constants ─────────────────────────────────────────────
+
+const LOGON32_LOGON_INTERACTIVE: u32 = 2;
+const LOGON32_PROVIDER_DEFAULT: u32 = 0;
+const LOGON_WITH_PROFILE: u32 = 1;
+const PI_NOUI: u32 = 1;
+
+// ── FFI declarations for user impersonation ──────────────────────────────────
+
+#[repr(C)]
+struct PROFILEINFOW {
+    dw_size: u32,
+    dw_flags: u32,
+    lp_user_name: *mut u16,
+    lp_profile_path: *mut u16,
+    lp_default_path: *mut u16,
+    lp_server_name: *mut u16,
+    lp_policy_path: *mut u16,
+    h_profile: HANDLE,
+}
+
+#[link(name = "advapi32")]
+unsafe extern "system" {
+    fn LogonUserW(
+        lpszUsername: *const u16,
+        lpszDomain: *const u16,
+        lpszPassword: *const u16,
+        dwLogonType: u32,
+        dwLogonProvider: u32,
+        phToken: *mut HANDLE,
+    ) -> i32;
+
+    fn CreateProcessWithLogonW(
+        lpUsername: *const u16,
+        lpDomain: *const u16,
+        lpPassword: *const u16,
+        dwLogonFlags: u32,
+        lpApplicationName: *const u16,
+        lpCommandLine: *mut u16,
+        dwCreationFlags: u32,
+        lpEnvironment: *const core::ffi::c_void,
+        lpCurrentDirectory: *const u16,
+        lpStartupInfo: *const STARTUPINFOW,
+        lpProcessInformation: *mut PROCESS_INFORMATION,
+    ) -> i32;
+}
+
+#[link(name = "userenv")]
+unsafe extern "system" {
+    fn LoadUserProfileW(
+        hToken: HANDLE,
+        lpProfileInfo: *mut PROFILEINFOW,
+    ) -> i32;
+
+    fn UnloadUserProfile(
+        hToken: HANDLE,
+        hProfile: HANDLE,
+    ) -> i32;
+}
+
+// ── WindowsLoginSession ─────────────────────────────────────────────────────
+
+/// A Windows login session obtained via LogonUserW + LoadUserProfileW.
+/// Automatically cleans up (UnloadUserProfile + CloseHandle) on drop.
+pub struct WindowsLoginSession {
+    pub username: String,
+    pub password: String,
+    h_user: HANDLE,
+    h_profile: HANDLE,
+}
+
+// SAFETY: The HANDLE values are only used for cleanup in Drop and are not
+// shared across threads concurrently. The session is typically stored in
+// an Arc<Mutex<Sandbox>> which provides synchronization.
+unsafe impl Send for WindowsLoginSession {}
+unsafe impl Sync for WindowsLoginSession {}
+
+impl std::fmt::Debug for WindowsLoginSession {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WindowsLoginSession")
+            .field("username", &self.username)
+            .field("h_user", &self.h_user)
+            .field("h_profile", &self.h_profile)
+            .finish()
+    }
+}
+
+impl WindowsLoginSession {
+    /// Create a new login session by calling LogonUserW + LoadUserProfileW.
+    pub fn new(username: &str, password: &str) -> Result<Self> {
+        let mut session = Self {
+            username: username.to_string(),
+            password: password.to_string(),
+            h_user: INVALID_HANDLE_VALUE,
+            h_profile: INVALID_HANDLE_VALUE,
+        };
+
+        if username.is_empty() {
+            return Ok(session);
+        }
+
+        session.prepare()?;
+        Ok(session)
+    }
+
+    /// Perform LogonUserW + LoadUserProfileW.
+    fn prepare(&mut self) -> Result<()> {
+        let username_wide = to_wide(&self.username);
+        let domain_wide = to_wide(".");
+        let password_wide = to_wide(&self.password);
+
+        let result = unsafe {
+            LogonUserW(
+                username_wide.as_ptr(),
+                domain_wide.as_ptr(),
+                password_wide.as_ptr(),
+                LOGON32_LOGON_INTERACTIVE,
+                LOGON32_PROVIDER_DEFAULT,
+                &mut self.h_user,
+            )
+        };
+
+        if result == 0 {
+            let err = std::io::Error::last_os_error();
+            return Err(anyhow::anyhow!(
+                "LogonUserW({:?}): {}",
+                self.username,
+                err
+            ));
+        }
+
+        match self.load_profile() {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                unsafe { CloseHandle(self.h_user) };
+                self.h_user = INVALID_HANDLE_VALUE;
+                Err(e)
+            }
+        }
+    }
+
+    /// Load the user profile via LoadUserProfileW.
+    fn load_profile(&mut self) -> Result<()> {
+        let mut username_wide = to_wide(&self.username);
+        let mut pinfo: PROFILEINFOW = unsafe { zeroed() };
+        pinfo.dw_size = mem::size_of::<PROFILEINFOW>() as u32;
+        pinfo.dw_flags = PI_NOUI;
+        pinfo.lp_user_name = username_wide.as_mut_ptr();
+
+        let result = unsafe { LoadUserProfileW(self.h_user, &mut pinfo) };
+
+        if result == 0 {
+            let err = std::io::Error::last_os_error();
+            return Err(anyhow::anyhow!(
+                "LoadUserProfileW({:?}): {}",
+                self.username,
+                err
+            ));
+        }
+
+        self.h_profile = pinfo.h_profile;
+        Ok(())
+    }
+
+    /// Get a LoginInfo (username + password) for use with Subprocess.
+    pub fn to_login_info(&self) -> LoginInfo {
+        LoginInfo {
+            username: self.username.clone(),
+            password: self.password.clone(),
+        }
+    }
+}
+
+impl Drop for WindowsLoginSession {
+    fn drop(&mut self) {
+        // Unload user profile (retry on failure, matching Go behavior)
+        if !self.h_profile.is_null() && self.h_profile != INVALID_HANDLE_VALUE {
+            loop {
+                let result = unsafe { UnloadUserProfile(self.h_user, self.h_profile) };
+                if result != 0 {
+                    break;
+                }
+                let err = std::io::Error::last_os_error();
+                tracing::error!("UnloadUserProfile({:?}): {}", self.username, err);
+                // Break after logging to avoid infinite loop in practice
+                break;
+            }
+            self.h_profile = INVALID_HANDLE_VALUE;
+        }
+
+        // Close logon token
+        if !self.h_user.is_null() && self.h_user != INVALID_HANDLE_VALUE {
+            unsafe { CloseHandle(self.h_user) };
+            self.h_user = INVALID_HANDLE_VALUE;
+        }
+    }
+}
 
 // ── Platform data ────────────────────────────────────────────────────────────
 
@@ -192,12 +390,6 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
         None
     };
 
-    let creation_flags = CREATE_NEW_PROCESS_GROUP
-        | CREATE_NEW_CONSOLE
-        | CREATE_SUSPENDED
-        | CREATE_UNICODE_ENVIRONMENT
-        | CREATE_BREAKAWAY_FROM_JOB;
-
     let mut pi: PROCESS_INFORMATION = unsafe { zeroed() };
 
     // Mark handles as inheritable before CreateProcess
@@ -207,23 +399,61 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
         set_handle_inheritable(si.hStdError, true);
     }
 
-    let result = unsafe {
-        CreateProcessW(
-            app_name_wide.as_ref().map_or(ptr::null(), |v| v.as_ptr()),
-            cmd_line_wide.as_mut_ptr(),
-            ptr::null(),
-            ptr::null(),
-            TRUE, // inherit handles
-            creation_flags,
-            env_block
-                .as_ref()
-                .map_or(ptr::null(), |v| v.as_ptr() as *const _),
-            current_dir_wide
-                .as_ref()
-                .map_or(ptr::null(), |v| v.as_ptr()),
-            &si,
-            &mut pi,
-        )
+    let result = if let Some(ref login) = sub.login {
+        // CreateProcessWithLogonW path — run as another user.
+        // Uses reduced creation flags (no CREATE_NEW_PROCESS_GROUP,
+        // CREATE_NEW_CONSOLE, CREATE_BREAKAWAY_FROM_JOB).
+        let username_wide = to_wide(&login.username);
+        let domain_wide = to_wide(".");
+        let password_wide = to_wide(&login.password);
+
+        let creation_flags = CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT;
+
+        unsafe {
+            CreateProcessWithLogonW(
+                username_wide.as_ptr(),
+                domain_wide.as_ptr(),
+                password_wide.as_ptr(),
+                LOGON_WITH_PROFILE,
+                app_name_wide.as_ref().map_or(ptr::null(), |v| v.as_ptr()),
+                cmd_line_wide.as_mut_ptr(),
+                creation_flags,
+                env_block
+                    .as_ref()
+                    .map_or(ptr::null(), |v| v.as_ptr() as *const core::ffi::c_void),
+                current_dir_wide
+                    .as_ref()
+                    .map_or(ptr::null(), |v| v.as_ptr()),
+                &si,
+                &mut pi,
+            )
+        }
+    } else {
+        // Standard CreateProcessW path.
+        let creation_flags = CREATE_NEW_PROCESS_GROUP
+            | CREATE_NEW_CONSOLE
+            | CREATE_SUSPENDED
+            | CREATE_UNICODE_ENVIRONMENT
+            | CREATE_BREAKAWAY_FROM_JOB;
+
+        unsafe {
+            CreateProcessW(
+                app_name_wide.as_ref().map_or(ptr::null(), |v| v.as_ptr()),
+                cmd_line_wide.as_mut_ptr(),
+                ptr::null(),
+                ptr::null(),
+                TRUE, // inherit handles
+                creation_flags,
+                env_block
+                    .as_ref()
+                    .map_or(ptr::null(), |v| v.as_ptr() as *const _),
+                current_dir_wide
+                    .as_ref()
+                    .map_or(ptr::null(), |v| v.as_ptr()),
+                &si,
+                &mut pi,
+            )
+        }
     };
 
     // Close parent-side redirect handles
@@ -236,8 +466,14 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
         for cleanup in d.cleanup_if_failed.drain(..) {
             cleanup();
         }
+        let api_name = if sub.login.is_some() {
+            "CreateProcessWithLogonW"
+        } else {
+            "CreateProcessW"
+        };
         return Err(anyhow::anyhow!(
-            "CreateProcessW({:?}): {}",
+            "{}({:?}): {}",
+            api_name,
             command_line,
             err
         ));

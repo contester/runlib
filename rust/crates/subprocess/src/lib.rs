@@ -110,6 +110,9 @@ pub struct Subprocess {
 
     /// Login credentials for running the process as another user.
     pub login: Option<LoginInfo>,
+
+    /// DLLs to inject into the process before it starts executing.
+    pub inject_dll: Vec<String>,
 }
 
 impl Default for Subprocess {
@@ -136,6 +139,7 @@ impl Default for Subprocess {
             stderr: None,
             join_stdout_stderr: false,
             login: None,
+            inject_dll: Vec::new(),
         }
     }
 }
@@ -242,13 +246,21 @@ pub fn is_user_error(_err: &anyhow::Error) -> bool {
 // ── Execute ──────────────────────────────────────────────────────────────────
 
 impl Subprocess {
-    /// Execute the subprocess: create frozen, set up buffers, unfreeze, monitor.
+    /// Execute the subprocess: create frozen, inject DLLs, set up buffers, unfreeze, monitor.
     #[cfg(windows)]
     pub fn execute(&self) -> Result<SubprocessResult> {
         let mut d = platform_windows::create_frozen(self).map_err(|e| {
             // cleanup_if_failed is already handled inside create_frozen on error
             e
         })?;
+
+        // Inject DLLs while the process is still suspended
+        for dll in &self.inject_dll {
+            if let Err(e) = platform_windows::inject_dll(&d, dll) {
+                platform_windows::terminate_frozen(&mut d);
+                return Err(e.context(format!("InjectDll({:?})", dll)));
+            }
+        }
 
         d.setup_redirection_buffers();
         platform_windows::unfreeze(&mut d);

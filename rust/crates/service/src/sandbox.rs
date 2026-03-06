@@ -7,6 +7,9 @@ use anyhow::{Result, bail};
 
 pub struct Sandbox {
     pub path: String,
+    /// Windows login session for running restricted processes in this sandbox.
+    #[cfg(windows)]
+    pub login: Option<contester_subprocess::WindowsLoginSession>,
 }
 
 pub struct SandboxPair {
@@ -20,9 +23,13 @@ impl SandboxPair {
         Self {
             compile: Arc::new(Mutex::new(Sandbox {
                 path: base.join("C").to_string_lossy().into_owned(),
+                #[cfg(windows)]
+                login: None,
             })),
             run: Arc::new(Mutex::new(Sandbox {
                 path: base.join("R").to_string_lossy().into_owned(),
+                #[cfg(windows)]
+                login: None,
             })),
         }
     }

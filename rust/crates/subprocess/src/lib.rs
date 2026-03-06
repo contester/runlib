@@ -6,6 +6,8 @@ pub use interconnect::interconnect;
 
 #[cfg(windows)]
 pub mod platform_windows;
+#[cfg(windows)]
+pub use platform_windows::WindowsLoginSession;
 #[cfg(unix)]
 mod platform_linux;
 
@@ -64,6 +66,13 @@ pub struct Redirect {
     pub pipe: Option<std::fs::File>,
 }
 
+/// Login credentials for user impersonation.
+#[derive(Debug, Clone, Default)]
+pub struct LoginInfo {
+    pub username: String,
+    pub password: String,
+}
+
 /// Command specification.
 #[derive(Debug, Clone, Default)]
 pub struct CommandLine {
@@ -98,6 +107,9 @@ pub struct Subprocess {
     pub stdout: Option<Redirect>,
     pub stderr: Option<Redirect>,
     pub join_stdout_stderr: bool,
+
+    /// Login credentials for running the process as another user.
+    pub login: Option<LoginInfo>,
 }
 
 impl Default for Subprocess {
@@ -123,6 +135,7 @@ impl Default for Subprocess {
             stdout: None,
             stderr: None,
             join_stdout_stderr: false,
+            login: None,
         }
     }
 }

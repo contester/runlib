@@ -21,6 +21,8 @@ use contester_subprocess::{
     EF_KERNEL_TIME_LIMIT_HIT, EF_KERNEL_TIME_LIMIT_HIT_POST,
     EF_WALL_TIME_LIMIT_HIT,
 };
+#[cfg(windows)]
+use contester_subprocess::WindowsLoginSession;
 
 use sandbox::{Sandbox, SandboxPair, get_sandbox_by_id, get_sandbox_by_path, resolve_path};
 
@@ -69,13 +71,52 @@ impl Contester {
 
         let passwords = get_passwords(&config);
         let mut sandboxes = Vec::with_capacity(passwords.len());
-        for (index, _password) in passwords.iter().enumerate() {
+        for (index, password) in passwords.iter().enumerate() {
             let local_base = format!("{}/{}", config.path, index);
             let pair = SandboxPair::new(&local_base);
 
             // Ensure sandbox directories exist
             std::fs::create_dir_all(&pair.compile.lock().unwrap().path)?;
             std::fs::create_dir_all(&pair.run.lock().unwrap().path)?;
+
+            // Set up restricted user and login session for the run sandbox
+            #[cfg(windows)]
+            {
+                let restricted_user = format!("tester{}", index);
+                if let Err(e) = ensure_restricted_user(&restricted_user, password) {
+                    tracing::warn!("ensure_restricted_user({:?}): {}", restricted_user, e);
+                }
+                set_acl(&pair.run.lock().unwrap().path, &restricted_user);
+
+                match WindowsLoginSession::new(&restricted_user, password) {
+                    Ok(session) => {
+                        pair.run.lock().unwrap().login = Some(session);
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Login failed for {:?}: {}, trying password reset",
+                            restricted_user,
+                            e
+                        );
+                        if let Err(e2) = set_local_user_password(&restricted_user, password) {
+                            tracing::error!("Password reset failed: {}", e2);
+                        } else {
+                            match WindowsLoginSession::new(&restricted_user, password) {
+                                Ok(session) => {
+                                    pair.run.lock().unwrap().login = Some(session);
+                                }
+                                Err(e2) => {
+                                    tracing::error!(
+                                        "Login still failed for {:?}: {}",
+                                        restricted_user,
+                                        e2
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             sandboxes.push(pair);
         }
@@ -167,9 +208,9 @@ impl Contester {
         let params = decode_payload::<LocalExecutionParameters>(request)?;
 
         let sandbox = find_sandbox(&self.sandboxes, &params)?;
-        let _guard = sandbox.lock().unwrap();
+        let guard = sandbox.lock().unwrap();
 
-        let sub = self.setup_subprocess(&params, true)?;
+        let sub = self.setup_subprocess(&params, &guard, true)?;
         let result = tokio::task::spawn_blocking(move || sub.execute()).await??;
 
         let mut response = LocalExecutionResult::default();
@@ -188,11 +229,11 @@ impl Contester {
         let first_sandbox = find_sandbox(&self.sandboxes, first_params)?;
         let second_sandbox = find_sandbox(&self.sandboxes, second_params)?;
 
-        let _guard1 = first_sandbox.lock().unwrap();
-        let _guard2 = second_sandbox.lock().unwrap();
+        let guard1 = first_sandbox.lock().unwrap();
+        let guard2 = second_sandbox.lock().unwrap();
 
-        let mut first = self.setup_subprocess(first_params, false)?;
-        let mut second = self.setup_subprocess(second_params, false)?;
+        let mut first = self.setup_subprocess(first_params, &guard1, false)?;
+        let mut second = self.setup_subprocess(second_params, &guard2, false)?;
 
         contester_subprocess::interconnect::interconnect(
             &mut first,
@@ -360,6 +401,7 @@ impl Contester {
     fn setup_subprocess(
         &self,
         params: &LocalExecutionParameters,
+        sandbox: &Sandbox,
         do_redirects: bool,
     ) -> Result<Subprocess> {
         let mut sub = Subprocess::default();
@@ -395,6 +437,12 @@ impl Contester {
             sub.join_stdout_stderr = true;
         } else {
             sub.stderr = fill_redirect(params.std_err.as_ref());
+        }
+
+        // Set login credentials from sandbox (for user impersonation)
+        #[cfg(windows)]
+        if let Some(ref session) = sandbox.login {
+            sub.login = Some(session.to_login_info());
         }
 
         Ok(sub)
@@ -603,4 +651,131 @@ fn find_sandbox<'a>(
     } else {
         get_sandbox_by_path(sandboxes, &params.current_directory)
     }
+}
+
+// ── Windows user management ─────────────────────────────────────────────────
+
+#[cfg(windows)]
+fn to_wide(s: &str) -> Vec<u16> {
+    s.encode_utf16().chain(std::iter::once(0)).collect()
+}
+
+/// Ensure a restricted local user exists. Creates the user if needed.
+#[cfg(windows)]
+fn ensure_restricted_user(username: &str, password: &str) -> Result<()> {
+    #[repr(C)]
+    struct UserInfo1 {
+        usri1_name: *mut u16,
+        usri1_password: *mut u16,
+        usri1_password_age: u32,
+        usri1_priv: u32,
+        usri1_home_dir: *mut u16,
+        usri1_comment: *mut u16,
+        usri1_flags: u32,
+        usri1_script_path: *mut u16,
+    }
+
+    const USER_PRIV_USER: u32 = 1;
+    const UF_SCRIPT: u32 = 0x0001;
+    const UF_DONT_EXPIRE_PASSWD: u32 = 0x10000;
+    const NERR_SUCCESS: u32 = 0;
+    const NERR_USER_EXISTS: u32 = 2224;
+
+    #[link(name = "netapi32")]
+    unsafe extern "system" {
+        fn NetUserAdd(
+            servername: *const u16,
+            level: u32,
+            buf: *const u8,
+            parm_err: *mut u32,
+        ) -> u32;
+    }
+
+    let mut name_wide = to_wide(username);
+    let mut password_wide = to_wide(password);
+
+    let info = UserInfo1 {
+        usri1_name: name_wide.as_mut_ptr(),
+        usri1_password: password_wide.as_mut_ptr(),
+        usri1_password_age: 0,
+        usri1_priv: USER_PRIV_USER,
+        usri1_home_dir: std::ptr::null_mut(),
+        usri1_comment: std::ptr::null_mut(),
+        usri1_flags: UF_SCRIPT | UF_DONT_EXPIRE_PASSWD,
+        usri1_script_path: std::ptr::null_mut(),
+    };
+
+    let mut parm_err: u32 = 0;
+    let result = unsafe {
+        NetUserAdd(
+            std::ptr::null(),
+            1,
+            &info as *const _ as *const u8,
+            &mut parm_err,
+        )
+    };
+
+    match result {
+        NERR_SUCCESS | NERR_USER_EXISTS => Ok(()),
+        other => Err(anyhow::anyhow!(
+            "NetUserAdd({:?}): error code {}",
+            username,
+            other
+        )),
+    }
+}
+
+/// Set ACL on a sandbox path using subinacl.exe (best-effort).
+#[cfg(windows)]
+fn set_acl(path: &str, username: &str) {
+    let _ = std::process::Command::new("subinacl.exe")
+        .args(["/file", path, &format!("/grant={}=RWC", username)])
+        .output();
+}
+
+/// Reset a local user's password using NetUserSetInfo.
+#[cfg(windows)]
+fn set_local_user_password(username: &str, password: &str) -> Result<()> {
+    #[repr(C)]
+    struct UserInfo1003 {
+        usri1003_password: *mut u16,
+    }
+
+    #[link(name = "netapi32")]
+    unsafe extern "system" {
+        fn NetUserSetInfo(
+            servername: *const u16,
+            username: *const u16,
+            level: u32,
+            buf: *const u8,
+            parm_err: *mut u32,
+        ) -> u32;
+    }
+
+    let name_wide = to_wide(username);
+    let mut password_wide = to_wide(password);
+
+    let info = UserInfo1003 {
+        usri1003_password: password_wide.as_mut_ptr(),
+    };
+
+    let mut parm_err: u32 = 0;
+    let result = unsafe {
+        NetUserSetInfo(
+            std::ptr::null(),
+            name_wide.as_ptr(),
+            1003,
+            &info as *const _ as *const u8,
+            &mut parm_err,
+        )
+    };
+
+    if result != 0 {
+        return Err(anyhow::anyhow!(
+            "NetUserSetInfo({:?}): error code {}",
+            username,
+            result
+        ));
+    }
+    Ok(())
 }

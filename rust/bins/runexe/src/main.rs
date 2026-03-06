@@ -11,7 +11,7 @@ use anyhow::{bail, Result};
 use clap::Parser;
 
 use contester_subprocess::{
-    Redirect, RedirectMode, Subprocess,
+    LoginInfo, Redirect, RedirectMode, Subprocess,
     du_from_micros, is_user_error,
 };
 use contester_subprocess::interconnect::OrderedRecorder;
@@ -91,6 +91,14 @@ fn setup_subprocess(args: &RunexeArgs) -> Result<Subprocess> {
         sub.join_stdout_stderr = true;
     } else {
         sub.stderr = fill_redirect(args.stderr_file.as_deref(), args.stderr_max_size.unwrap_or(0));
+    }
+
+    // Login (user impersonation)
+    if let Some(ref login_name) = args.login_name {
+        sub.login = Some(LoginInfo {
+            username: login_name.clone(),
+            password: args.password.as_deref().unwrap_or("").to_string(),
+        });
     }
 
     Ok(sub)

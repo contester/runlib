@@ -402,10 +402,10 @@ impl Contester {
     ) -> Result<Subprocess> {
         let mut sub = Subprocess::default();
 
-        sub.cmd.application_name = params.application_name.clone();
-        sub.cmd.command_line = params.command_line.clone();
+        sub.cmd.application_name = if params.application_name.is_empty() { None } else { Some(params.application_name.clone()) };
+        sub.cmd.command_line = if params.command_line.is_empty() { None } else { Some(params.command_line.clone()) };
         sub.cmd.parameters = params.command_line_parameters.clone();
-        sub.current_directory = params.current_directory.clone();
+        sub.current_directory = if params.current_directory.is_empty() { None } else { Some(params.current_directory.clone()) };
 
         sub.time_limit = du_from_micros(params.time_limit_micros);
         sub.kernel_time_limit = du_from_micros(params.kernel_time_limit_micros);
@@ -451,7 +451,7 @@ fn fill_redirect(r: Option<&RedirectParameters>) -> Option<Redirect> {
     let r = r?;
     if !r.filename.is_empty() {
         Some(Redirect {
-            filename: r.filename.clone(),
+            filename: Some(r.filename.clone()),
             mode: RedirectMode::File,
             ..Default::default()
         })

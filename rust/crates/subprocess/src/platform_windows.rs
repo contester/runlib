@@ -405,31 +405,23 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
     setup_all_redirects(sub, &mut d, &mut si)?;
 
     // Build command line
-    let command_line = if !sub.cmd.command_line.is_empty() {
-        sub.cmd.command_line.clone()
+    let command_line = if let Some(ref cl) = sub.cmd.command_line {
+        cl.clone()
     } else if !sub.cmd.parameters.is_empty() {
         let mut parts = Vec::new();
-        if !sub.cmd.application_name.is_empty() {
-            parts.push(sub.cmd.application_name.clone());
+        if let Some(ref app) = sub.cmd.application_name {
+            parts.push(app.clone());
         }
         parts.extend(sub.cmd.parameters.iter().cloned());
         parts.join(" ")
     } else {
-        sub.cmd.application_name.clone()
+        sub.cmd.application_name.clone().unwrap_or_default()
     };
 
-    let app_name_wide = if !sub.cmd.application_name.is_empty() {
-        Some(to_wide(&sub.cmd.application_name))
-    } else {
-        None
-    };
+    let app_name_wide = sub.cmd.application_name.as_ref().map(|app| to_wide(app));
     let mut cmd_line_wide = to_wide(&command_line);
 
-    let current_dir_wide = if !sub.current_directory.is_empty() {
-        Some(to_wide(&sub.current_directory))
-    } else {
-        None
-    };
+    let current_dir_wide = sub.current_directory.as_ref().map(|d| to_wide(d));
 
     let env_block = if sub.no_inherit_environment {
         Some(build_environment_block(&sub.environment))
@@ -898,11 +890,11 @@ static LOAD_LIBRARY_W_32: OnceLock<Result<usize, String>> = OnceLock::new();
 /// Extract the executable path from a `CommandLine`.
 /// Prefers `application_name`; falls back to the first token of `command_line`.
 fn get_image_name(cmd: &CommandLine) -> Option<&str> {
-    if !cmd.application_name.is_empty() {
-        return Some(&cmd.application_name);
+    if let Some(ref app) = cmd.application_name {
+        return Some(app);
     }
-    if !cmd.command_line.is_empty() {
-        let s = cmd.command_line.trim();
+    if let Some(ref cl) = cmd.command_line {
+        let s = cl.trim();
         if s.starts_with('"') {
             // Quoted path: extract up to the closing quote.
             if let Some(end) = s[1..].find('"') {

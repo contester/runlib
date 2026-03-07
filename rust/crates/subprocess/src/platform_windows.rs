@@ -224,21 +224,67 @@ impl Drop for WindowsLoginSession {
     }
 }
 
+// ── RAII handle wrapper ──────────────────────────────────────────────────────
+
+/// RAII wrapper around a Win32 HANDLE. Calls `CloseHandle` on drop.
+/// Uses `INVALID_HANDLE_VALUE` as the sentinel for "no handle".
+pub struct SafeHandle(HANDLE);
+
+impl SafeHandle {
+    /// Wrap a raw HANDLE, taking ownership. The caller must not close it.
+    pub fn new(h: HANDLE) -> Self {
+        Self(h)
+    }
+
+    /// Create an empty (invalid) handle — no-op on drop.
+    pub fn invalid() -> Self {
+        Self(INVALID_HANDLE_VALUE)
+    }
+
+    /// Get the raw HANDLE value for passing to Win32 APIs.
+    pub fn raw(&self) -> HANDLE {
+        self.0
+    }
+
+    /// Return `true` if this handle is neither `INVALID_HANDLE_VALUE` nor null.
+    pub fn is_valid(&self) -> bool {
+        self.0 != INVALID_HANDLE_VALUE && !self.0.is_null()
+    }
+}
+
+impl Drop for SafeHandle {
+    fn drop(&mut self) {
+        if self.is_valid() {
+            unsafe { CloseHandle(self.0) };
+        }
+    }
+}
+
+impl std::fmt::Debug for SafeHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SafeHandle({:?})", self.0)
+    }
+}
+
+// SAFETY: HANDLE is a pointer-sized integer. The wrapped handle is
+// single-owner; synchronization is the caller's responsibility.
+unsafe impl Send for SafeHandle {}
+
 // ── Platform data ────────────────────────────────────────────────────────────
 
 /// Windows-specific runtime data for a subprocess.
 pub struct PlatformData {
-    pub process: HANDLE,
-    pub thread: HANDLE,
-    pub job: HANDLE,
+    pub process: SafeHandle,
+    pub thread: SafeHandle,
+    pub job: SafeHandle,
 }
 
 impl PlatformData {
     pub fn new() -> Self {
         Self {
-            process: INVALID_HANDLE_VALUE,
-            thread: INVALID_HANDLE_VALUE,
-            job: INVALID_HANDLE_VALUE,
+            process: SafeHandle::invalid(),
+            thread: SafeHandle::invalid(),
+            job: SafeHandle::invalid(),
         }
     }
 }
@@ -480,14 +526,13 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
         ));
     }
 
-    d.platform.process = pi.hProcess;
-    d.platform.thread = pi.hThread;
-    d.platform.job = INVALID_HANDLE_VALUE;
+    d.platform.process = SafeHandle::new(pi.hProcess);
+    d.platform.thread = SafeHandle::new(pi.hThread);
 
     // Set process affinity if requested
     if sub.process_affinity_mask != 0 {
         let ok =
-            unsafe { SetProcessAffinityMask(d.platform.process, sub.process_affinity_mask as usize) };
+            unsafe { SetProcessAffinityMask(d.platform.process.raw(), sub.process_affinity_mask as usize) };
         if ok == 0 {
             let err = std::io::Error::last_os_error();
             terminate_and_close(&mut d.platform);
@@ -504,7 +549,7 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
         match create_job(sub) {
             Ok(job_handle) => {
                 let assign_ok =
-                    unsafe { AssignProcessToJobObject(job_handle, d.platform.process) };
+                    unsafe { AssignProcessToJobObject(job_handle.raw(), d.platform.process.raw()) };
                 if assign_ok == 0 {
                     let err = std::io::Error::last_os_error();
                     tracing::error!(
@@ -513,9 +558,7 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
                         job_handle,
                         d.platform.process
                     );
-                    unsafe {
-                        CloseHandle(job_handle);
-                    }
+                    // job_handle drops here automatically (SafeHandle)
                     if sub.fail_on_job_creation_failure {
                         terminate_and_close(&mut d.platform);
                         return Err(anyhow::anyhow!("AssignProcessToJobObject: {}", err));
@@ -538,9 +581,9 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
 }
 
 /// Create and configure a Job Object with limits.
-fn create_job(sub: &Subprocess) -> Result<HANDLE> {
-    let job = unsafe { CreateJobObjectW(ptr::null(), ptr::null()) };
-    if job.is_null() {
+fn create_job(sub: &Subprocess) -> Result<SafeHandle> {
+    let job = SafeHandle::new(unsafe { CreateJobObjectW(ptr::null(), ptr::null()) });
+    if !job.is_valid() {
         return Err(anyhow::anyhow!(
             "CreateJobObjectW: {}",
             std::io::Error::last_os_error()
@@ -561,18 +604,16 @@ fn create_job(sub: &Subprocess) -> Result<HANDLE> {
 
         let ok = unsafe {
             SetInformationJobObject(
-                job,
+                job.raw(),
                 JobObjectBasicUIRestrictions,
                 &info as *const _ as *const _,
                 mem::size_of::<JOBOBJECT_BASIC_UI_RESTRICTIONS>() as u32,
             )
         };
         if ok == 0 {
-            let err = std::io::Error::last_os_error();
-            unsafe { CloseHandle(job) };
             return Err(anyhow::anyhow!(
                 "SetInformationJobObject(UIRestrictions): {}",
-                err
+                std::io::Error::last_os_error()
             ));
         }
     }
@@ -614,18 +655,16 @@ fn create_job(sub: &Subprocess) -> Result<HANDLE> {
 
     let ok = unsafe {
         SetInformationJobObject(
-            job,
+            job.raw(),
             JobObjectExtendedLimitInformation,
             &einfo as *const _ as *const _,
             mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
         )
     };
     if ok == 0 {
-        let err = std::io::Error::last_os_error();
-        unsafe { CloseHandle(job) };
         return Err(anyhow::anyhow!(
             "SetInformationJobObject(ExtendedLimits): {}",
-            err
+            std::io::Error::last_os_error()
         ));
     }
 
@@ -636,13 +675,12 @@ fn create_job(sub: &Subprocess) -> Result<HANDLE> {
 
 /// Resume the suspended process thread.
 pub fn unfreeze(d: &mut SubprocessData) {
-    let thread = d.platform.thread;
-    if thread == INVALID_HANDLE_VALUE {
+    if !d.platform.thread.is_valid() {
         return;
     }
 
     for retry in 0..10 {
-        let count = unsafe { ResumeThread(thread) };
+        let count = unsafe { ResumeThread(d.platform.thread.raw()) };
         if count == u32::MAX {
             let err = std::io::Error::last_os_error();
             tracing::error!("ResumeThread failed: {}", err);
@@ -661,10 +699,7 @@ pub fn unfreeze(d: &mut SubprocessData) {
         }
     }
 
-    unsafe {
-        CloseHandle(thread);
-    }
-    d.platform.thread = INVALID_HANDLE_VALUE;
+    d.platform.thread = SafeHandle::invalid(); // closes via Drop
 }
 
 // ── Resource measurement ─────────────────────────────────────────────────────
@@ -677,7 +712,7 @@ fn update_process_times(pdata: &PlatformData, result: &mut SubprocessResult, fin
     let mut user: FILETIME = unsafe { zeroed() };
 
     let ok =
-        unsafe { GetProcessTimes(pdata.process, &mut creation, &mut exit, &mut kernel, &mut user) };
+        unsafe { GetProcessTimes(pdata.process.raw(), &mut creation, &mut exit, &mut kernel, &mut user) };
     if ok == 0 {
         tracing::error!(
             "GetProcessTimes failed: {}",
@@ -697,12 +732,12 @@ fn update_process_times(pdata: &PlatformData, result: &mut SubprocessResult, fin
         .unwrap_or(Duration::ZERO);
 
     // Try Job Object accounting (more accurate for multi-process)
-    if pdata.job != INVALID_HANDLE_VALUE {
+    if pdata.job.is_valid() {
         let mut jinfo: JOBOBJECT_BASIC_ACCOUNTING_INFORMATION = unsafe { zeroed() };
         let mut ret_len: u32 = 0;
         let ok = unsafe {
             QueryInformationJobObject(
-                pdata.job,
+                pdata.job.raw(),
                 JobObjectBasicAccountingInformation,
                 &mut jinfo as *mut _ as *mut _,
                 mem::size_of::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>() as u32,
@@ -727,12 +762,12 @@ fn update_process_times(pdata: &PlatformData, result: &mut SubprocessResult, fin
 
 /// Update peak memory usage.
 fn update_process_memory(pdata: &PlatformData, result: &mut SubprocessResult) {
-    if pdata.job != INVALID_HANDLE_VALUE {
+    if pdata.job.is_valid() {
         let mut jinfo: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = unsafe { zeroed() };
         let mut ret_len: u32 = 0;
         let ok = unsafe {
             QueryInformationJobObject(
-                pdata.job,
+                pdata.job.raw(),
                 JobObjectExtendedLimitInformation,
                 &mut jinfo as *mut _ as *mut _,
                 mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
@@ -749,7 +784,7 @@ fn update_process_memory(pdata: &PlatformData, result: &mut SubprocessResult) {
         );
     }
 
-    result.peak_memory = get_process_memory_usage(pdata.process);
+    result.peak_memory = get_process_memory_usage(pdata.process.raw());
 }
 
 /// Get memory usage for a single process.
@@ -788,29 +823,18 @@ fn loop_terminate(process: HANDLE) {
 
 /// Terminate process and close process/thread handles.
 fn terminate_and_close(pdata: &mut PlatformData) {
-    if pdata.process != INVALID_HANDLE_VALUE {
-        loop_terminate(pdata.process);
-        unsafe {
-            CloseHandle(pdata.process);
-        }
-        pdata.process = INVALID_HANDLE_VALUE;
+    if pdata.process.is_valid() {
+        loop_terminate(pdata.process.raw());
+        pdata.process = SafeHandle::invalid(); // closes via Drop
     }
-    if pdata.thread != INVALID_HANDLE_VALUE {
-        unsafe {
-            CloseHandle(pdata.thread);
-        }
-        pdata.thread = INVALID_HANDLE_VALUE;
-    }
+    pdata.thread = SafeHandle::invalid(); // closes via Drop
 }
 
 /// Terminate a frozen (suspended) process and clean up all handles.
 /// Called when DLL injection or other post-creation setup fails.
 pub fn terminate_frozen(d: &mut SubprocessData) {
     terminate_and_close(&mut d.platform);
-    if d.platform.job != INVALID_HANDLE_VALUE {
-        unsafe { CloseHandle(d.platform.job) };
-        d.platform.job = INVALID_HANDLE_VALUE;
-    }
+    d.platform.job = SafeHandle::invalid(); // closes via Drop
 }
 
 // ── DLL Injection ────────────────────────────────────────────────────────────
@@ -994,7 +1018,7 @@ pub fn resolve_load_library_for_target(cmd: &CommandLine) -> Result<usize> {
 /// that calls LoadLibraryW with the DLL path.
 /// `load_library_addr` must be pre-resolved via `resolve_load_library_for_target`.
 pub fn inject_dll(d: &SubprocessData, dll: &str, load_library_addr: usize) -> Result<()> {
-    let process = d.platform.process;
+    let process = d.platform.process.raw();
 
     tracing::debug!(
         "InjectDll: injecting {:?} via LoadLibraryW at {:#x}",
@@ -1065,7 +1089,8 @@ fn inject_dll_inner(
             &mut thread_id,
         )
     };
-    if thread.is_null() || thread == INVALID_HANDLE_VALUE {
+    let thread = SafeHandle::new(thread);
+    if !thread.is_valid() {
         return Err(anyhow::anyhow!(
             "CreateRemoteThread: {}",
             std::io::Error::last_os_error()
@@ -1073,8 +1098,8 @@ fn inject_dll_inner(
     }
 
     // Wait for the remote thread to finish loading the DLL
-    let wait_result = unsafe { WaitForSingleObject(thread, INFINITE) };
-    unsafe { CloseHandle(thread) };
+    let wait_result = unsafe { WaitForSingleObject(thread.raw(), INFINITE) };
+    // thread closes via Drop
 
     if wait_result != WAIT_OBJECT_0 {
         return Err(anyhow::anyhow!(
@@ -1090,7 +1115,7 @@ fn inject_dll_inner(
 
 /// Monitor the process until it exits or limits are exceeded.
 pub fn bottom_half(sub: &Subprocess, d: &mut SubprocessData) -> SubprocessResult {
-    let process = d.platform.process;
+    let process = d.platform.process.raw();
     let mut result = SubprocessResult::default();
     let mut running = RunningState::new();
     let quantum_ms = sub.time_quantum.as_millis() as u32;
@@ -1144,18 +1169,9 @@ pub fn bottom_half(sub: &Subprocess, d: &mut SubprocessData) -> SubprocessResult
     update_process_times(&d.platform, &mut result, true);
     update_process_memory(&d.platform, &mut result);
 
-    // Cleanup handles
-    unsafe {
-        CloseHandle(process);
-    }
-    d.platform.process = INVALID_HANDLE_VALUE;
-
-    if d.platform.job != INVALID_HANDLE_VALUE {
-        unsafe {
-            CloseHandle(d.platform.job);
-        }
-        d.platform.job = INVALID_HANDLE_VALUE;
-    }
+    // Cleanup handles — SafeHandle Drop closes them
+    d.platform.process = SafeHandle::invalid();
+    d.platform.job = SafeHandle::invalid();
 
     // Post-exit limit check
     result.set_post_limits(sub);

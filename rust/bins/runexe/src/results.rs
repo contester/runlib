@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use contester_subprocess::{ExecutionFlags, SubprocessResult, Subprocess};
+use contester_subprocess::{SubprocessResult, Subprocess};
 use quick_xml::se::to_string as xml_to_string;
 use serde::Serialize;
 
@@ -10,20 +10,20 @@ use crate::flags::{ProcessType, Verdict};
 
 /// Determine the verdict from a SubprocessResult.
 pub fn get_verdict(r: &SubprocessResult) -> Verdict {
+    let f = &r.flags;
     if r.output_limit_exceeded || r.error_limit_exceeded {
         Verdict::OutputLimitExceeded
-    } else if r.success_code.is_empty() {
+    } else if f.is_clean() {
         Verdict::Success
-    } else if r.success_code.intersects(ExecutionFlags::PROCESS_LIMIT_HIT | ExecutionFlags::PROCESS_LIMIT_HIT_POST) {
+    } else if f.process_limit_hit || f.process_limit_hit_post {
         Verdict::SecurityViolation
-    } else if r.success_code.intersects(ExecutionFlags::INACTIVE | ExecutionFlags::WALL_TIME_LIMIT_HIT) {
+    } else if f.inactive || f.wall_time_limit_hit {
         Verdict::Idle
-    } else if r.success_code.intersects(
-        ExecutionFlags::TIME_LIMIT_HIT | ExecutionFlags::TIME_LIMIT_HIT_POST
-            | ExecutionFlags::KERNEL_TIME_LIMIT_HIT | ExecutionFlags::KERNEL_TIME_LIMIT_HIT_POST,
-    ) {
+    } else if f.time_limit_hit || f.time_limit_hit_post
+        || f.kernel_time_limit_hit || f.kernel_time_limit_hit_post
+    {
         Verdict::TimeLimitExceeded
-    } else if r.success_code.intersects(ExecutionFlags::MEMORY_LIMIT_HIT | ExecutionFlags::MEMORY_LIMIT_HIT_POST) {
+    } else if f.memory_limit_hit || f.memory_limit_hit_post {
         Verdict::MemoryLimitExceeded
     } else {
         Verdict::Crash

@@ -14,7 +14,7 @@ use serde::Deserialize;
 use contester_proto::*;
 use contester_rpc4::{RpcRequest, ServerCodec};
 use contester_subprocess::{
-    ExecutionFlags, Redirect, RedirectMode, Subprocess, SubprocessResult,
+    Redirect, RedirectMode, Subprocess, SubprocessResult,
     du_from_micros, get_micros,
 };
 #[cfg(windows)]
@@ -484,31 +484,31 @@ fn fill_redirect(r: Option<&RedirectParameters>) -> Option<Redirect> {
 fn fill_result(result: &SubprocessResult, response: &mut LocalExecutionResult) {
     response.total_processes = result.total_processes;
     response.return_code = result.exit_code;
-    response.flags = parse_success_code(result.success_code);
+    response.flags = to_proto_flags(&result.flags);
     response.time = parse_time(result);
     response.memory = result.peak_memory;
     response.std_out = Blob::new(&result.output).ok().flatten();
     response.std_err = Blob::new(&result.error).ok().flatten();
 }
 
-fn parse_success_code(succ: ExecutionFlags) -> Option<ExecutionResultFlags> {
-    if succ.is_empty() {
+fn to_proto_flags(f: &contester_subprocess::ExecutionFlags) -> Option<ExecutionResultFlags> {
+    if f.is_clean() {
         return None;
     }
     Some(ExecutionResultFlags {
-        killed: succ.contains(ExecutionFlags::KILLED),
-        time_limit_hit: succ.contains(ExecutionFlags::TIME_LIMIT_HIT),
-        kernel_time_limit_hit: succ.contains(ExecutionFlags::KERNEL_TIME_LIMIT_HIT),
-        wall_time_limit_hit: succ.contains(ExecutionFlags::WALL_TIME_LIMIT_HIT),
-        memory_limit_hit: succ.contains(ExecutionFlags::MEMORY_LIMIT_HIT),
-        inactive: succ.contains(ExecutionFlags::INACTIVE),
-        time_limit_hit_post: succ.contains(ExecutionFlags::TIME_LIMIT_HIT_POST),
-        kernel_time_limit_hit_post: succ.contains(ExecutionFlags::KERNEL_TIME_LIMIT_HIT_POST),
-        memory_limit_hit_post: succ.contains(ExecutionFlags::MEMORY_LIMIT_HIT_POST),
-        process_limit_hit: succ.contains(ExecutionFlags::PROCESS_LIMIT_HIT),
-        stdout_overflow: false,
-        stderr_overflow: false,
-        stdpipe_timeout: false,
+        killed: f.killed,
+        time_limit_hit: f.time_limit_hit,
+        kernel_time_limit_hit: f.kernel_time_limit_hit,
+        wall_time_limit_hit: f.wall_time_limit_hit,
+        memory_limit_hit: f.memory_limit_hit,
+        inactive: f.inactive,
+        time_limit_hit_post: f.time_limit_hit_post,
+        kernel_time_limit_hit_post: f.kernel_time_limit_hit_post,
+        memory_limit_hit_post: f.memory_limit_hit_post,
+        process_limit_hit: f.process_limit_hit,
+        stdout_overflow: f.stdout_overflow,
+        stderr_overflow: f.stderr_overflow,
+        stdpipe_timeout: f.stdpipe_timeout,
         stopped_by_signal: false,
         killed_by_signal: false,
     })

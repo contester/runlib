@@ -14,6 +14,7 @@ mod platform_linux;
 use std::time::Duration;
 
 use anyhow::Result;
+use bitflags::bitflags;
 
 /// Convert a Duration to microseconds.
 pub fn get_micros(d: Duration) -> u64 {
@@ -25,24 +26,29 @@ pub fn du_from_micros(us: u64) -> Duration {
     Duration::from_micros(us)
 }
 
-// Execution result flags (bitmask).
-pub const EF_INACTIVE: u32 = 1 << 0;
-pub const EF_TIME_LIMIT_HIT: u32 = 1 << 1;
-pub const EF_WALL_TIME_LIMIT_HIT: u32 = 1 << 2;
-pub const EF_MEMORY_LIMIT_HIT: u32 = 1 << 3;
-pub const EF_KILLED: u32 = 1 << 4;
-pub const EF_STDOUT_OVERFLOW: u32 = 1 << 5;
-pub const EF_STDERR_OVERFLOW: u32 = 1 << 6;
-pub const EF_STDPIPE_TIMEOUT: u32 = 1 << 7;
-pub const EF_TIME_LIMIT_HIT_POST: u32 = 1 << 8;
-pub const EF_MEMORY_LIMIT_HIT_POST: u32 = 1 << 9;
-pub const EF_PROCESS_LIMIT_HIT: u32 = 1 << 10;
-pub const EF_PROCESS_LIMIT_HIT_POST: u32 = 1 << 11;
-pub const EF_STOPPED: u32 = 1 << 12;
-pub const EF_KILLED_BY_OTHER: u32 = 1 << 13;
-pub const EF_WALL_TIME_LIMIT_HIT_POST: u32 = 1 << 14;
-pub const EF_KERNEL_TIME_LIMIT_HIT: u32 = 1 << 15;
-pub const EF_KERNEL_TIME_LIMIT_HIT_POST: u32 = 1 << 16;
+bitflags! {
+    /// Execution result flags (bitmask).
+    #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+    pub struct ExecutionFlags: u32 {
+        const INACTIVE                  = 1 << 0;
+        const TIME_LIMIT_HIT            = 1 << 1;
+        const WALL_TIME_LIMIT_HIT       = 1 << 2;
+        const MEMORY_LIMIT_HIT          = 1 << 3;
+        const KILLED                    = 1 << 4;
+        const STDOUT_OVERFLOW           = 1 << 5;
+        const STDERR_OVERFLOW           = 1 << 6;
+        const STDPIPE_TIMEOUT           = 1 << 7;
+        const TIME_LIMIT_HIT_POST       = 1 << 8;
+        const MEMORY_LIMIT_HIT_POST     = 1 << 9;
+        const PROCESS_LIMIT_HIT         = 1 << 10;
+        const PROCESS_LIMIT_HIT_POST    = 1 << 11;
+        const STOPPED                   = 1 << 12;
+        const KILLED_BY_OTHER           = 1 << 13;
+        const WALL_TIME_LIMIT_HIT_POST  = 1 << 14;
+        const KERNEL_TIME_LIMIT_HIT     = 1 << 15;
+        const KERNEL_TIME_LIMIT_HIT_POST = 1 << 16;
+    }
+}
 
 /// I/O redirect mode.
 #[derive(Debug, Clone, Default)]
@@ -155,7 +161,7 @@ pub struct TimeStats {
 /// Result of a subprocess execution.
 #[derive(Debug, Clone, Default)]
 pub struct SubprocessResult {
-    pub success_code: u32,
+    pub success_code: ExecutionFlags,
     pub exit_code: u32,
     pub time: TimeStats,
     pub peak_memory: u64,
@@ -170,16 +176,16 @@ impl SubprocessResult {
     /// Check limits after process exits (post-execution check).
     pub fn set_post_limits(&mut self, sub: &Subprocess) {
         if sub.time_limit > Duration::ZERO && self.time.user_time > sub.time_limit {
-            self.success_code |= EF_TIME_LIMIT_HIT_POST;
+            self.success_code |= ExecutionFlags::TIME_LIMIT_HIT_POST;
         }
         if sub.memory_limit > 0 && self.peak_memory > sub.memory_limit {
-            self.success_code |= EF_MEMORY_LIMIT_HIT_POST;
+            self.success_code |= ExecutionFlags::MEMORY_LIMIT_HIT_POST;
         }
         if sub.kernel_time_limit > Duration::ZERO && self.time.kernel_time > sub.kernel_time_limit {
-            self.success_code |= EF_KERNEL_TIME_LIMIT_HIT_POST;
+            self.success_code |= ExecutionFlags::KERNEL_TIME_LIMIT_HIT_POST;
         }
         if sub.wall_time_limit > Duration::ZERO && self.time.wall_time > sub.wall_time_limit {
-            self.success_code |= EF_WALL_TIME_LIMIT_HIT_POST;
+            self.success_code |= ExecutionFlags::WALL_TIME_LIMIT_HIT_POST;
         }
     }
 }
@@ -212,27 +218,27 @@ impl RunningState {
             && self.no_time_used_count >= 6
             && result.time.wall_time > sub.time_limit
         {
-            result.success_code |= EF_INACTIVE;
+            result.success_code |= ExecutionFlags::INACTIVE;
         }
 
         if sub.time_limit > Duration::ZERO && result.time.user_time > sub.time_limit {
-            result.success_code |= EF_TIME_LIMIT_HIT;
+            result.success_code |= ExecutionFlags::TIME_LIMIT_HIT;
         }
 
         if sub.kernel_time_limit > Duration::ZERO
             && result.time.kernel_time > sub.kernel_time_limit
         {
-            result.success_code |= EF_KERNEL_TIME_LIMIT_HIT;
+            result.success_code |= ExecutionFlags::KERNEL_TIME_LIMIT_HIT;
         }
 
         if sub.wall_time_limit > Duration::ZERO && result.time.wall_time > sub.wall_time_limit {
-            result.success_code |= EF_WALL_TIME_LIMIT_HIT;
+            result.success_code |= ExecutionFlags::WALL_TIME_LIMIT_HIT;
         }
 
         self.last_time_used = total;
 
         if sub.memory_limit > 0 && result.peak_memory > sub.memory_limit {
-            result.success_code |= EF_MEMORY_LIMIT_HIT;
+            result.success_code |= ExecutionFlags::MEMORY_LIMIT_HIT;
         }
     }
 }

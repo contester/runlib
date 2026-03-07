@@ -14,12 +14,8 @@ use serde::Deserialize;
 use contester_proto::*;
 use contester_rpc4::{RpcRequest, ServerCodec};
 use contester_subprocess::{
-    Redirect, RedirectMode, Subprocess, SubprocessResult,
+    ExecutionFlags, Redirect, RedirectMode, Subprocess, SubprocessResult,
     du_from_micros, get_micros,
-    EF_INACTIVE, EF_KILLED, EF_MEMORY_LIMIT_HIT, EF_MEMORY_LIMIT_HIT_POST,
-    EF_PROCESS_LIMIT_HIT, EF_TIME_LIMIT_HIT, EF_TIME_LIMIT_HIT_POST,
-    EF_KERNEL_TIME_LIMIT_HIT, EF_KERNEL_TIME_LIMIT_HIT_POST,
-    EF_WALL_TIME_LIMIT_HIT,
 };
 #[cfg(windows)]
 use contester_subprocess::WindowsLoginSession;
@@ -485,21 +481,21 @@ fn fill_result(result: &SubprocessResult, response: &mut LocalExecutionResult) {
     response.std_err = Blob::new(&result.error).ok().flatten();
 }
 
-fn parse_success_code(succ: u32) -> Option<ExecutionResultFlags> {
-    if succ == 0 {
+fn parse_success_code(succ: ExecutionFlags) -> Option<ExecutionResultFlags> {
+    if succ.is_empty() {
         return None;
     }
     Some(ExecutionResultFlags {
-        killed: succ & EF_KILLED != 0,
-        time_limit_hit: succ & EF_TIME_LIMIT_HIT != 0,
-        kernel_time_limit_hit: succ & EF_KERNEL_TIME_LIMIT_HIT != 0,
-        wall_time_limit_hit: succ & EF_WALL_TIME_LIMIT_HIT != 0,
-        memory_limit_hit: succ & EF_MEMORY_LIMIT_HIT != 0,
-        inactive: succ & EF_INACTIVE != 0,
-        time_limit_hit_post: succ & EF_TIME_LIMIT_HIT_POST != 0,
-        kernel_time_limit_hit_post: succ & EF_KERNEL_TIME_LIMIT_HIT_POST != 0,
-        memory_limit_hit_post: succ & EF_MEMORY_LIMIT_HIT_POST != 0,
-        process_limit_hit: succ & EF_PROCESS_LIMIT_HIT != 0,
+        killed: succ.contains(ExecutionFlags::KILLED),
+        time_limit_hit: succ.contains(ExecutionFlags::TIME_LIMIT_HIT),
+        kernel_time_limit_hit: succ.contains(ExecutionFlags::KERNEL_TIME_LIMIT_HIT),
+        wall_time_limit_hit: succ.contains(ExecutionFlags::WALL_TIME_LIMIT_HIT),
+        memory_limit_hit: succ.contains(ExecutionFlags::MEMORY_LIMIT_HIT),
+        inactive: succ.contains(ExecutionFlags::INACTIVE),
+        time_limit_hit_post: succ.contains(ExecutionFlags::TIME_LIMIT_HIT_POST),
+        kernel_time_limit_hit_post: succ.contains(ExecutionFlags::KERNEL_TIME_LIMIT_HIT_POST),
+        memory_limit_hit_post: succ.contains(ExecutionFlags::MEMORY_LIMIT_HIT_POST),
+        process_limit_hit: succ.contains(ExecutionFlags::PROCESS_LIMIT_HIT),
         stdout_overflow: false,
         stderr_overflow: false,
         stdpipe_timeout: false,

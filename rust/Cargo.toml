@@ -51,6 +51,9 @@ byteorder = "1"
 anyhow = "1"
 thiserror = "2"
 
+# Bit flags
+bitflags = "2"
+
 # Internal crates
 contester-proto = { path = "crates/contester-proto" }
 contester-tools = { path = "crates/tools" }

@@ -153,9 +153,9 @@ impl Contester {
                 self.handle_local_execute_connected(&request).await
             }
             "Contester.Put" => self.handle_put(&request).await,
-            "Contester.Get" => self.handle_get(&request),
-            "Contester.Stat" => self.handle_stat(&request),
-            "Contester.Clear" => self.handle_clear(&request),
+            "Contester.Get" => self.handle_get(&request).await,
+            "Contester.Stat" => self.handle_stat(&request).await,
+            "Contester.Clear" => self.handle_clear(&request).await,
             "Contester.GridfsCopy" => self.handle_gridfs_copy(&request).await,
             _ => Err(anyhow::anyhow!("unknown method: {method}")),
         };
@@ -280,20 +280,23 @@ impl Contester {
 
         tokio::fs::write(&resolved, &data).await?;
 
-        let stat = contester_tools::stat_file(Path::new(&resolved), true)?;
+        let resolved_clone = resolved.clone();
+        let stat = tokio::task::spawn_blocking(move || {
+            contester_tools::stat_file(Path::new(&resolved_clone), true)
+        }).await??;
         let response = tools_stat_to_proto(&stat);
         Ok(response.encode_to_vec())
     }
 
     // ── Get ─────────────────────────────────────────────────────────────
 
-    fn handle_get(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+    async fn handle_get(&self, request: &RpcRequest) -> Result<Vec<u8>> {
         let params = decode_payload::<GetRequest>(request)?;
 
         let (resolved, sandbox) = resolve_path(&self.sandboxes, &params.name, false)?;
         let _guard = sandbox.map(|s| s.lock().unwrap());
 
-        let data = std::fs::read(&resolved)?;
+        let data = tokio::fs::read(&resolved).await?;
         let blob = Blob::new(&data)?;
 
         let response = FileBlob {
@@ -305,26 +308,32 @@ impl Contester {
 
     // ── Stat ────────────────────────────────────────────────────────────
 
-    fn handle_stat(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+    async fn handle_stat(&self, request: &RpcRequest) -> Result<Vec<u8>> {
         let params = decode_payload::<StatRequest>(request)?;
 
-        let mut entries = Vec::new();
+        // Resolve and expand all paths (cheap, sync-safe).
+        let mut all_paths = Vec::new();
         for name in &params.name {
             let (resolved, _) = resolve_path(&self.sandboxes, name, false)?;
-
-            let expanded = if params.expand {
-                glob_paths(&resolved)?
+            if params.expand {
+                all_paths.extend(glob_paths(&resolved)?);
             } else {
-                vec![resolved]
-            };
+                all_paths.push(resolved);
+            }
+        }
 
-            for path in expanded {
-                match contester_tools::stat_file(Path::new(&path), params.calculate_checksum) {
+        // stat_file reads files + computes SHA-1 — run on blocking threadpool.
+        let calculate_checksum = params.calculate_checksum;
+        let entries = tokio::task::spawn_blocking(move || {
+            let mut entries = Vec::new();
+            for path in all_paths {
+                match contester_tools::stat_file(Path::new(&path), calculate_checksum) {
                     Ok(stat) => entries.push(tools_stat_to_proto(&stat)),
                     Err(_) => {} // file may not exist after glob
                 }
             }
-        }
+            entries
+        }).await?;
 
         let response = FileStats { entries };
         Ok(response.encode_to_vec())
@@ -332,14 +341,15 @@ impl Contester {
 
     // ── Clear ───────────────────────────────────────────────────────────
 
-    fn handle_clear(&self, request: &RpcRequest) -> Result<Vec<u8>> {
+    async fn handle_clear(&self, request: &RpcRequest) -> Result<Vec<u8>> {
         let params = decode_payload::<ClearSandboxRequest>(request)?;
 
         let sandbox = get_sandbox_by_id(&self.sandboxes, &params.sandbox)?;
-        let guard = sandbox.lock().unwrap();
+        let path = sandbox.lock().unwrap().path.clone();
 
         for retry in 0..10 {
-            match try_clear_path(&guard.path) {
+            let p = path.clone();
+            match tokio::task::spawn_blocking(move || try_clear_path(&p)).await? {
                 Ok(false) => break, // already empty
                 Ok(true) => break,  // cleared
                 Err(e) => {
@@ -347,7 +357,7 @@ impl Contester {
                         return Err(e);
                     }
                     tracing::error!("clear retry {}: {}", retry, e);
-                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                 }
             }
         }

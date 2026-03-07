@@ -35,7 +35,10 @@ async fn filer_upload(
     module_type: &str,
     auth_token: &str,
 ) -> Result<Option<FileStat>> {
-    let stat = contester_tools::stat_file(Path::new(local_name), true)?;
+    let local = local_name.to_string();
+    let stat = tokio::task::spawn_blocking(move || {
+        contester_tools::stat_file(Path::new(&local), true)
+    }).await??;
 
     if !checksum.is_empty() && stat.checksum.as_deref() != Some(checksum) {
         bail!(
@@ -96,5 +99,9 @@ async fn filer_download(
 
     tokio::fs::write(local_name, &bytes).await?;
 
-    Ok(Some(contester_tools::stat_file(Path::new(local_name), true)?))
+    let local = local_name.to_string();
+    let stat = tokio::task::spawn_blocking(move || {
+        contester_tools::stat_file(Path::new(&local), true)
+    }).await??;
+    Ok(Some(stat))
 }

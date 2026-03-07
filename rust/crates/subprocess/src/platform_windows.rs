@@ -7,6 +7,7 @@ use std::fs::File;
 use std::mem::{self, zeroed};
 use std::os::windows::io::AsRawHandle;
 use std::ptr;
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use anyhow::Result;
@@ -18,7 +19,7 @@ use windows_sys::Win32::System::SystemInformation::GetSystemTimeAsFileTime;
 use windows_sys::Win32::System::Threading::*;
 
 use crate::redirects::SubprocessData;
-use crate::{LoginInfo, RunningState, Subprocess, SubprocessResult, EF_STDERR_OVERFLOW, EF_STDOUT_OVERFLOW};
+use crate::{CommandLine, LoginInfo, RunningState, Subprocess, SubprocessResult, EF_STDERR_OVERFLOW, EF_STDOUT_OVERFLOW};
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -853,20 +854,109 @@ unsafe extern "system" {
     fn GetModuleHandleW(lpModuleName: *const u16) -> HANDLE;
 
     fn GetProcAddress(hModule: HANDLE, lpProcName: *const u8) -> usize;
+
+    fn GetBinaryTypeW(lpApplicationName: *const u16, lpBinaryType: *mut u32) -> i32;
 }
 
 const MEM_COMMIT: u32 = 0x1000;
 const MEM_RELEASE: u32 = 0x8000;
 const PAGE_READWRITE: u32 = 0x04;
+const SCS_32BIT_BINARY: u32 = 0;
 
-/// Inject a DLL into a suspended process by creating a remote thread
-/// that calls LoadLibraryW with the DLL path.
-pub fn inject_dll(d: &SubprocessData, dll: &str) -> Result<()> {
-    let process = d.platform.process;
+/// Embedded 32-bit detector binary.  When run on a 64-bit host, this tiny
+/// 32-bit exe prints the decimal address of LoadLibraryW as seen from WOW64
+/// (i.e. the 32-bit kernel32.dll) to stdout.
+static DETECT_32BIT_EXE: &[u8] = include_bytes!("detect32bit.exe.embed");
 
-    // 1. Resolve LoadLibraryW address in our process.
-    //    Since kernel32.dll is loaded at the same base address in all processes
-    //    (ASLR is per-boot, not per-process), this address is valid in the target too.
+/// Cached 32-bit LoadLibraryW address (resolved at most once per process).
+static LOAD_LIBRARY_W_32: OnceLock<Result<usize, String>> = OnceLock::new();
+
+/// Extract the executable path from a `CommandLine`.
+/// Prefers `application_name`; falls back to the first token of `command_line`.
+fn get_image_name(cmd: &CommandLine) -> Option<&str> {
+    if !cmd.application_name.is_empty() {
+        return Some(&cmd.application_name);
+    }
+    if !cmd.command_line.is_empty() {
+        let s = cmd.command_line.trim();
+        if s.starts_with('"') {
+            // Quoted path: extract up to the closing quote.
+            if let Some(end) = s[1..].find('"') {
+                return Some(&s[1..1 + end]);
+            }
+        }
+        // Unquoted: first whitespace-delimited token.
+        return Some(s.split_whitespace().next().unwrap_or(s));
+    }
+    None
+}
+
+/// Check whether the target binary is a 32-bit PE on this 64-bit host.
+fn is_32bit_binary(cmd: &CommandLine) -> bool {
+    let image = match get_image_name(cmd) {
+        Some(name) => name,
+        None => return false,
+    };
+    let wide = to_wide(image);
+    let mut binary_type: u32 = 0;
+    let ok = unsafe { GetBinaryTypeW(wide.as_ptr(), &mut binary_type) };
+    if ok == 0 {
+        return false; // can't determine → assume native (64-bit)
+    }
+    binary_type == SCS_32BIT_BINARY
+}
+
+/// Run the embedded 32-bit detector exe, parse stdout → usize address.
+fn resolve_32bit_load_library() -> Result<usize> {
+    use std::io::Write;
+
+    // Write embedded binary to a temp file.
+    let mut tmp = tempfile::Builder::new()
+        .prefix("detect32bit")
+        .suffix(".exe")
+        .tempfile()
+        .map_err(|e| anyhow::anyhow!("creating temp file for 32-bit detector: {}", e))?;
+    tmp.write_all(DETECT_32BIT_EXE)
+        .map_err(|e| anyhow::anyhow!("writing 32-bit detector: {}", e))?;
+    tmp.flush()?;
+
+    let path = tmp.path().to_path_buf();
+
+    // Run detector, capture stdout.
+    let output = std::process::Command::new(&path)
+        .output()
+        .map_err(|e| anyhow::anyhow!("running 32-bit detector {:?}: {}", path, e))?;
+
+    if !output.status.success() {
+        return Err(anyhow::anyhow!(
+            "32-bit detector exited with {}",
+            output.status
+        ));
+    }
+
+    let txt = String::from_utf8_lossy(&output.stdout);
+    let txt = txt.trim();
+    let addr: usize = txt
+        .parse()
+        .map_err(|e| anyhow::anyhow!("parsing 32-bit LoadLibraryW address {:?}: {}", txt, e))?;
+
+    tracing::debug!("32-bit LoadLibraryW address: {:#x} ({})", addr, addr);
+    Ok(addr)
+}
+
+/// Return the cached 32-bit LoadLibraryW address, resolving on first call.
+fn get_load_library_w_32() -> Result<usize> {
+    let result = LOAD_LIBRARY_W_32.get_or_init(|| {
+        resolve_32bit_load_library().map_err(|e| format!("{:#}", e))
+    });
+    match result {
+        Ok(addr) => Ok(*addr),
+        Err(e) => Err(anyhow::anyhow!("{}", e)),
+    }
+}
+
+/// Resolve the 64-bit LoadLibraryW address from our own process.
+fn get_load_library_w_native() -> Result<usize> {
     let kernel32_name = to_wide("kernel32.dll");
     let kernel32 = unsafe { GetModuleHandleW(kernel32_name.as_ptr()) };
     if kernel32.is_null() {
@@ -876,15 +966,35 @@ pub fn inject_dll(d: &SubprocessData, dll: &str) -> Result<()> {
         ));
     }
 
-    let load_library_name = b"LoadLibraryW\0";
-    let load_library_addr =
-        unsafe { GetProcAddress(kernel32, load_library_name.as_ptr()) };
-    if load_library_addr == 0 {
+    let name = b"LoadLibraryW\0";
+    let addr = unsafe { GetProcAddress(kernel32, name.as_ptr()) };
+    if addr == 0 {
         return Err(anyhow::anyhow!(
             "GetProcAddress(LoadLibraryW): {}",
             std::io::Error::last_os_error()
         ));
     }
+    Ok(addr)
+}
+
+/// Resolve the correct LoadLibraryW address for the target binary.
+/// If the target is a 32-bit PE on this 64-bit host, uses the embedded
+/// detector to find the WOW64 LoadLibraryW address (cached per process).
+/// Otherwise resolves the native 64-bit address.
+pub fn resolve_load_library_for_target(cmd: &CommandLine) -> Result<usize> {
+    if is_32bit_binary(cmd) {
+        tracing::debug!("Target is 32-bit binary, resolving 32-bit LoadLibraryW");
+        get_load_library_w_32()
+    } else {
+        get_load_library_w_native()
+    }
+}
+
+/// Inject a DLL into a suspended process by creating a remote thread
+/// that calls LoadLibraryW with the DLL path.
+/// `load_library_addr` must be pre-resolved via `resolve_load_library_for_target`.
+pub fn inject_dll(d: &SubprocessData, dll: &str, load_library_addr: usize) -> Result<()> {
+    let process = d.platform.process;
 
     tracing::debug!(
         "InjectDll: injecting {:?} via LoadLibraryW at {:#x}",
@@ -892,7 +1002,7 @@ pub fn inject_dll(d: &SubprocessData, dll: &str) -> Result<()> {
         load_library_addr
     );
 
-    // 2. Write the DLL path (UTF-16) into the target process
+    // Write the DLL path (UTF-16) into the target process
     let dll_wide = to_wide(dll);
     let dll_bytes_len = dll_wide.len() * 2; // size in bytes
 

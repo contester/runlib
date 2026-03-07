@@ -254,11 +254,21 @@ impl Subprocess {
             e
         })?;
 
-        // Inject DLLs while the process is still suspended
-        for dll in &self.inject_dll {
-            if let Err(e) = platform_windows::inject_dll(&d, dll) {
-                platform_windows::terminate_frozen(&mut d);
-                return Err(e.context(format!("InjectDll({:?})", dll)));
+        // Inject DLLs while the process is still suspended.
+        // Resolve the correct LoadLibraryW address once (handles 32-bit targets on 64-bit host).
+        if !self.inject_dll.is_empty() {
+            let load_library_addr =
+                platform_windows::resolve_load_library_for_target(&self.cmd)
+                    .map_err(|e| {
+                        platform_windows::terminate_frozen(&mut d);
+                        e.context("resolving LoadLibraryW for DLL injection")
+                    })?;
+
+            for dll in &self.inject_dll {
+                if let Err(e) = platform_windows::inject_dll(&d, dll, load_library_addr) {
+                    platform_windows::terminate_frozen(&mut d);
+                    return Err(e.context(format!("InjectDll({:?})", dll)));
+                }
             }
         }
 

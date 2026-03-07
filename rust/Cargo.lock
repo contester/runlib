@@ -255,6 +255,7 @@ dependencies = [
  "contester-proto",
  "contester-tools",
  "os_pipe",
+ "tempfile",
  "thiserror",
  "tokio",
  "tracing",

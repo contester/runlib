@@ -11,6 +11,7 @@ tracing = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 os_pipe = "1"
+tempfile = "3"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = ">=0.59", features = [

@@ -14,7 +14,6 @@ mod platform_linux;
 use std::time::Duration;
 
 use anyhow::Result;
-use bitflags::bitflags;
 
 // ── Structured error type ────────────────────────────────────────────────────
 
@@ -84,27 +83,33 @@ pub fn du_from_micros(us: u64) -> Duration {
     Duration::from_micros(us)
 }
 
-bitflags! {
-    /// Execution result flags (bitmask).
-    #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-    pub struct ExecutionFlags: u32 {
-        const INACTIVE                  = 1 << 0;
-        const TIME_LIMIT_HIT            = 1 << 1;
-        const WALL_TIME_LIMIT_HIT       = 1 << 2;
-        const MEMORY_LIMIT_HIT          = 1 << 3;
-        const KILLED                    = 1 << 4;
-        const STDOUT_OVERFLOW           = 1 << 5;
-        const STDERR_OVERFLOW           = 1 << 6;
-        const STDPIPE_TIMEOUT           = 1 << 7;
-        const TIME_LIMIT_HIT_POST       = 1 << 8;
-        const MEMORY_LIMIT_HIT_POST     = 1 << 9;
-        const PROCESS_LIMIT_HIT         = 1 << 10;
-        const PROCESS_LIMIT_HIT_POST    = 1 << 11;
-        const STOPPED                   = 1 << 12;
-        const KILLED_BY_OTHER           = 1 << 13;
-        const WALL_TIME_LIMIT_HIT_POST  = 1 << 14;
-        const KERNEL_TIME_LIMIT_HIT     = 1 << 15;
-        const KERNEL_TIME_LIMIT_HIT_POST = 1 << 16;
+/// Execution result flags — each field indicates a specific condition
+/// that was detected during or after subprocess execution.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ExecutionFlags {
+    pub inactive: bool,
+    pub time_limit_hit: bool,
+    pub wall_time_limit_hit: bool,
+    pub memory_limit_hit: bool,
+    pub killed: bool,
+    pub stdout_overflow: bool,
+    pub stderr_overflow: bool,
+    pub stdpipe_timeout: bool,
+    pub time_limit_hit_post: bool,
+    pub memory_limit_hit_post: bool,
+    pub process_limit_hit: bool,
+    pub process_limit_hit_post: bool,
+    pub stopped: bool,
+    pub killed_by_other: bool,
+    pub wall_time_limit_hit_post: bool,
+    pub kernel_time_limit_hit: bool,
+    pub kernel_time_limit_hit_post: bool,
+}
+
+impl ExecutionFlags {
+    /// Returns `true` if no flags are set (clean execution).
+    pub fn is_clean(&self) -> bool {
+        *self == Self::default()
     }
 }
 
@@ -219,7 +224,7 @@ pub struct TimeStats {
 /// Result of a subprocess execution.
 #[derive(Debug, Clone, Default)]
 pub struct SubprocessResult {
-    pub success_code: ExecutionFlags,
+    pub flags: ExecutionFlags,
     pub exit_code: u32,
     pub time: TimeStats,
     pub peak_memory: u64,
@@ -234,16 +239,16 @@ impl SubprocessResult {
     /// Check limits after process exits (post-execution check).
     pub fn set_post_limits(&mut self, sub: &Subprocess) {
         if sub.time_limit > Duration::ZERO && self.time.user_time > sub.time_limit {
-            self.success_code |= ExecutionFlags::TIME_LIMIT_HIT_POST;
+            self.flags.time_limit_hit_post = true;
         }
         if sub.memory_limit > 0 && self.peak_memory > sub.memory_limit {
-            self.success_code |= ExecutionFlags::MEMORY_LIMIT_HIT_POST;
+            self.flags.memory_limit_hit_post = true;
         }
         if sub.kernel_time_limit > Duration::ZERO && self.time.kernel_time > sub.kernel_time_limit {
-            self.success_code |= ExecutionFlags::KERNEL_TIME_LIMIT_HIT_POST;
+            self.flags.kernel_time_limit_hit_post = true;
         }
         if sub.wall_time_limit > Duration::ZERO && self.time.wall_time > sub.wall_time_limit {
-            self.success_code |= ExecutionFlags::WALL_TIME_LIMIT_HIT_POST;
+            self.flags.wall_time_limit_hit_post = true;
         }
     }
 }
@@ -262,7 +267,7 @@ impl RunningState {
         }
     }
 
-    /// Update state and check soft limits. Sets flags in result.success_code.
+    /// Update state and check soft limits. Sets flags in result.
     pub fn update(&mut self, sub: &Subprocess, result: &mut SubprocessResult) {
         let total = result.time.kernel_time + result.time.user_time;
 
@@ -276,27 +281,27 @@ impl RunningState {
             && self.no_time_used_count >= 6
             && result.time.wall_time > sub.time_limit
         {
-            result.success_code |= ExecutionFlags::INACTIVE;
+            result.flags.inactive = true;
         }
 
         if sub.time_limit > Duration::ZERO && result.time.user_time > sub.time_limit {
-            result.success_code |= ExecutionFlags::TIME_LIMIT_HIT;
+            result.flags.time_limit_hit = true;
         }
 
         if sub.kernel_time_limit > Duration::ZERO
             && result.time.kernel_time > sub.kernel_time_limit
         {
-            result.success_code |= ExecutionFlags::KERNEL_TIME_LIMIT_HIT;
+            result.flags.kernel_time_limit_hit = true;
         }
 
         if sub.wall_time_limit > Duration::ZERO && result.time.wall_time > sub.wall_time_limit {
-            result.success_code |= ExecutionFlags::WALL_TIME_LIMIT_HIT;
+            result.flags.wall_time_limit_hit = true;
         }
 
         self.last_time_used = total;
 
         if sub.memory_limit > 0 && result.peak_memory > sub.memory_limit {
-            result.success_code |= ExecutionFlags::MEMORY_LIMIT_HIT;
+            result.flags.memory_limit_hit = true;
         }
     }
 }

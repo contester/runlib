@@ -19,7 +19,7 @@ use windows_sys::Win32::System::SystemInformation::GetSystemTimeAsFileTime;
 use windows_sys::Win32::System::Threading::*;
 
 use crate::redirects::SubprocessData;
-use crate::{CommandLine, ExecutionFlags, LoginInfo, RunningState, Subprocess, SubprocessError, SubprocessResult};
+use crate::{CommandLine, LoginInfo, RunningState, Subprocess, SubprocessError, SubprocessResult};
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -1090,7 +1090,7 @@ pub fn bottom_half(sub: &Subprocess, d: &mut SubprocessData) -> SubprocessResult
     let quantum_ms = sub.time_quantum.as_millis() as u32;
 
     loop {
-        if !result.success_code.is_empty() {
+        if !result.flags.is_clean() {
             break;
         }
 
@@ -1110,14 +1110,14 @@ pub fn bottom_half(sub: &Subprocess, d: &mut SubprocessData) -> SubprocessResult
         if let Some(ref check) = d.out_check {
             if check.check().is_err() {
                 result.output_limit_exceeded = true;
-                result.success_code |= ExecutionFlags::STDOUT_OVERFLOW;
+                result.flags.stdout_overflow = true;
                 break;
             }
         }
         if let Some(ref check) = d.err_check {
             if check.check().is_err() {
                 result.error_limit_exceeded = true;
-                result.success_code |= ExecutionFlags::STDERR_OVERFLOW;
+                result.flags.stderr_overflow = true;
                 break;
             }
         }

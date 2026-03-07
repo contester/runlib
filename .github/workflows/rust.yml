@@ -1,0 +1,46 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust stable
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install protoc
+      uses: arduino/setup-protoc@v3
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build release
+      working-directory: rust
+      run: cargo build --release
+
+    - name: Rename binaries
+      shell: pwsh
+      run: |
+        Copy-Item rust/target/release/runexe.exe rust-runexe.exe
+        Copy-Item rust/target/release/runner.exe rust-runner.exe
+
+    - name: Upload rust-runexe
+      uses: actions/upload-artifact@v4
+      with:
+        name: rust-runexe.exe
+        path: rust-runexe.exe
+        if-no-files-found: error
+
+    - name: Upload rust-runner
+      uses: actions/upload-artifact@v4
+      with:
+        name: rust-runner.exe
+        path: rust-runner.exe
+        if-no-files-found: error

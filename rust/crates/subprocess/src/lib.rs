@@ -65,7 +65,7 @@ pub enum RedirectMode {
 #[derive(Debug, Default)]
 pub struct Redirect {
     pub mode: RedirectMode,
-    pub filename: String,
+    pub filename: Option<String>,
     pub data: Vec<u8>,
     pub max_output_size: i64,
     /// Pipe handle for REDIRECT_PIPE mode (set up externally, e.g. by Interconnect).
@@ -82,8 +82,8 @@ pub struct LoginInfo {
 /// Command specification.
 #[derive(Debug, Clone, Default)]
 pub struct CommandLine {
-    pub application_name: String,
-    pub command_line: String,
+    pub application_name: Option<String>,
+    pub command_line: Option<String>,
     pub parameters: Vec<String>,
 }
 
@@ -91,7 +91,7 @@ pub struct CommandLine {
 #[derive(Debug)]
 pub struct Subprocess {
     pub cmd: CommandLine,
-    pub current_directory: String,
+    pub current_directory: Option<String>,
     pub environment: Vec<String>,
 
     pub no_inherit_environment: bool,
@@ -125,7 +125,7 @@ impl Default for Subprocess {
     fn default() -> Self {
         Self {
             cmd: CommandLine::default(),
-            current_directory: String::new(),
+            current_directory: None,
             environment: Vec::new(),
             no_inherit_environment: false,
             no_job: false,

@@ -220,7 +220,8 @@ impl SubprocessData {
                 Ok(Some(f))
             }
             RedirectMode::File => {
-                let f = self.setup_file(&r.filename, false, r.max_output_size, is_stderr)?;
+                let name = r.filename.as_deref().unwrap_or("");
+                let f = self.setup_file(name, false, r.max_output_size, is_stderr)?;
                 Ok(Some(f))
             }
             RedirectMode::Pipe => {
@@ -252,7 +253,8 @@ impl SubprocessData {
                 Ok(Some(f))
             }
             RedirectMode::File => {
-                let f = self.setup_file(&r.filename, true, 0, false)?;
+                let name = r.filename.as_deref().unwrap_or("");
+                let f = self.setup_file(name, true, 0, false)?;
                 Ok(Some(f))
             }
             RedirectMode::Pipe => {

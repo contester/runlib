@@ -30,22 +30,22 @@ fn setup_subprocess(args: &RunexeArgs) -> Result<Subprocess> {
     #[cfg(windows)]
     {
         let escaped: Vec<String> = args.program.iter().map(|a| escape_arg(a)).collect();
-        sub.cmd.command_line = escaped.join(" ");
+        sub.cmd.command_line = Some(escaped.join(" "));
     }
     #[cfg(not(windows))]
     {
         if !args.program.is_empty() {
-            sub.cmd.application_name = args.program[0].clone();
-            sub.cmd.command_line = args.program.join(" ");
+            sub.cmd.application_name = Some(args.program[0].clone());
+            sub.cmd.command_line = Some(args.program.join(" "));
         }
     }
     sub.cmd.parameters = args.program.clone();
 
     // Current directory
     if let Some(ref d) = args.current_directory {
-        sub.current_directory = d.clone();
+        sub.current_directory = Some(d.clone());
     } else if let Ok(cwd) = std::env::current_dir() {
-        sub.current_directory = cwd.to_string_lossy().into_owned();
+        sub.current_directory = Some(cwd.to_string_lossy().into_owned());
     }
 
     // Limits
@@ -115,7 +115,7 @@ fn fill_redirect(filename: Option<&str>, max_size: i64) -> Option<Redirect> {
         return None;
     }
     Some(Redirect {
-        filename: name.to_string(),
+        filename: Some(name.to_string()),
         mode: RedirectMode::File,
         max_output_size: max_size,
         ..Default::default()

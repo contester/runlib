@@ -2,14 +2,7 @@
 
 use std::time::Duration;
 
-use contester_subprocess::{
-    SubprocessResult, Subprocess,
-    EF_INACTIVE, EF_KERNEL_TIME_LIMIT_HIT, EF_KERNEL_TIME_LIMIT_HIT_POST,
-    EF_MEMORY_LIMIT_HIT, EF_MEMORY_LIMIT_HIT_POST,
-    EF_PROCESS_LIMIT_HIT, EF_PROCESS_LIMIT_HIT_POST,
-    EF_TIME_LIMIT_HIT, EF_TIME_LIMIT_HIT_POST,
-    EF_WALL_TIME_LIMIT_HIT,
-};
+use contester_subprocess::{ExecutionFlags, SubprocessResult, Subprocess};
 use quick_xml::se::to_string as xml_to_string;
 use serde::Serialize;
 
@@ -19,19 +12,18 @@ use crate::flags::{ProcessType, Verdict};
 pub fn get_verdict(r: &SubprocessResult) -> Verdict {
     if r.output_limit_exceeded || r.error_limit_exceeded {
         Verdict::OutputLimitExceeded
-    } else if r.success_code == 0 {
+    } else if r.success_code.is_empty() {
         Verdict::Success
-    } else if r.success_code & (EF_PROCESS_LIMIT_HIT | EF_PROCESS_LIMIT_HIT_POST) != 0 {
+    } else if r.success_code.intersects(ExecutionFlags::PROCESS_LIMIT_HIT | ExecutionFlags::PROCESS_LIMIT_HIT_POST) {
         Verdict::SecurityViolation
-    } else if r.success_code & (EF_INACTIVE | EF_WALL_TIME_LIMIT_HIT) != 0 {
+    } else if r.success_code.intersects(ExecutionFlags::INACTIVE | ExecutionFlags::WALL_TIME_LIMIT_HIT) {
         Verdict::Idle
-    } else if r.success_code
-        & (EF_TIME_LIMIT_HIT | EF_TIME_LIMIT_HIT_POST
-            | EF_KERNEL_TIME_LIMIT_HIT | EF_KERNEL_TIME_LIMIT_HIT_POST)
-        != 0
-    {
+    } else if r.success_code.intersects(
+        ExecutionFlags::TIME_LIMIT_HIT | ExecutionFlags::TIME_LIMIT_HIT_POST
+            | ExecutionFlags::KERNEL_TIME_LIMIT_HIT | ExecutionFlags::KERNEL_TIME_LIMIT_HIT_POST,
+    ) {
         Verdict::TimeLimitExceeded
-    } else if r.success_code & (EF_MEMORY_LIMIT_HIT | EF_MEMORY_LIMIT_HIT_POST) != 0 {
+    } else if r.success_code.intersects(ExecutionFlags::MEMORY_LIMIT_HIT | ExecutionFlags::MEMORY_LIMIT_HIT_POST) {
         Verdict::MemoryLimitExceeded
     } else {
         Verdict::Crash

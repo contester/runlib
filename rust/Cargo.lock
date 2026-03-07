@@ -252,6 +252,7 @@ name = "contester-subprocess"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bitflags",
  "contester-proto",
  "contester-tools",
  "os_pipe",

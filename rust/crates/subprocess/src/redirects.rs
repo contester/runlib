@@ -13,7 +13,7 @@ use std::os::windows::io::{FromRawHandle, IntoRawHandle};
 
 use anyhow::{Context, Result};
 
-use crate::{Redirect, RedirectMode};
+use crate::{Redirect, RedirectMode, SubprocessError};
 
 /// Maximum output size when none is specified (1 GiB).
 pub const MAX_MEM_OUTPUT: i64 = 1024 * 1024 * 1024;
@@ -30,7 +30,10 @@ impl OutputRedirectCheck {
     pub fn check(&self) -> Result<()> {
         let meta = self.file.metadata()?;
         if meta.len() as i64 > self.max_size {
-            anyhow::bail!("{:?}: output size {} exceeded", self.name, self.max_size);
+            return Err(SubprocessError::OutputOverflow {
+                name: self.name.clone(),
+                size: self.max_size,
+            }.into());
         }
         Ok(())
     }

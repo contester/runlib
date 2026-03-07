@@ -16,6 +16,64 @@ use std::time::Duration;
 use anyhow::Result;
 use bitflags::bitflags;
 
+// ── Structured error type ────────────────────────────────────────────────────
+
+/// Structured error type for subprocess operations.
+///
+/// Wraps into `anyhow::Error` via `.into()` so all public APIs can
+/// continue returning `anyhow::Result`.  Use `err.downcast_ref::<SubprocessError>()`
+/// (or the free function [`is_user_error`]) to inspect programmatically.
+#[derive(Debug, thiserror::Error)]
+pub enum SubprocessError {
+    /// A Win32 API call failed.  `api` includes any parenthesised context,
+    /// e.g. `"CreateProcessW(\"test.exe\")"`.
+    #[error("{api}: {source}")]
+    Win32 {
+        api: String,
+        source: std::io::Error,
+    },
+
+    /// Output redirect size limit exceeded.
+    #[error("{name}: output size limit {size} exceeded")]
+    OutputOverflow { name: String, size: i64 },
+
+    /// Platform not supported.
+    #[error("subprocess execution not implemented on this platform")]
+    NotImplemented,
+
+    /// Generic subprocess error.
+    #[error("{0}")]
+    Other(String),
+}
+
+impl SubprocessError {
+    /// Convenience constructor for Win32 errors using `last_os_error`.
+    pub(crate) fn last_os(api: impl Into<String>) -> Self {
+        Self::Win32 {
+            api: api.into(),
+            source: std::io::Error::last_os_error(),
+        }
+    }
+
+    /// Returns `true` if the error is a "user error" — e.g. the executable
+    /// was not found or access was denied during process creation, as opposed
+    /// to an internal / system error.
+    pub fn is_user_error(&self) -> bool {
+        match self {
+            Self::Win32 { api, source } => {
+                let is_create =
+                    api.starts_with("CreateProcessW") || api.starts_with("CreateProcessWithLogonW");
+                is_create
+                    && matches!(
+                        source.kind(),
+                        std::io::ErrorKind::NotFound | std::io::ErrorKind::PermissionDenied
+                    )
+            }
+            _ => false,
+        }
+    }
+}
+
 /// Convert a Duration to microseconds.
 pub fn get_micros(d: Duration) -> u64 {
     d.as_micros() as u64
@@ -243,10 +301,13 @@ impl RunningState {
     }
 }
 
-/// Check if an error is a user error (as opposed to system error).
-pub fn is_user_error(_err: &anyhow::Error) -> bool {
-    // TODO: implement proper error classification
-    false
+/// Check if an error is a user error (as opposed to a system/internal error).
+///
+/// User errors are things like "executable not found" or "access denied"
+/// from process creation — problems caused by the submission, not the system.
+pub fn is_user_error(err: &anyhow::Error) -> bool {
+    err.downcast_ref::<SubprocessError>()
+        .map_or(false, |e| e.is_user_error())
 }
 
 // ── Execute ──────────────────────────────────────────────────────────────────
@@ -285,6 +346,6 @@ impl Subprocess {
 
     #[cfg(unix)]
     pub fn execute(&self) -> Result<SubprocessResult> {
-        anyhow::bail!("subprocess execution not implemented on this platform")
+        Err(SubprocessError::NotImplemented.into())
     }
 }

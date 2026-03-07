@@ -19,7 +19,7 @@ use windows_sys::Win32::System::SystemInformation::GetSystemTimeAsFileTime;
 use windows_sys::Win32::System::Threading::*;
 
 use crate::redirects::SubprocessData;
-use crate::{CommandLine, ExecutionFlags, LoginInfo, RunningState, Subprocess, SubprocessResult};
+use crate::{CommandLine, ExecutionFlags, LoginInfo, RunningState, Subprocess, SubprocessError, SubprocessResult};
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -149,12 +149,9 @@ impl WindowsLoginSession {
         };
 
         if result == 0 {
-            let err = std::io::Error::last_os_error();
-            return Err(anyhow::anyhow!(
-                "LogonUserW({:?}): {}",
-                self.username,
-                err
-            ));
+            return Err(SubprocessError::last_os(
+                format!("LogonUserW({:?})", self.username),
+            ).into());
         }
 
         match self.load_profile() {
@@ -178,12 +175,9 @@ impl WindowsLoginSession {
         let result = unsafe { LoadUserProfileW(self.h_user, &mut pinfo) };
 
         if result == 0 {
-            let err = std::io::Error::last_os_error();
-            return Err(anyhow::anyhow!(
-                "LoadUserProfileW({:?}): {}",
-                self.username,
-                err
-            ));
+            return Err(SubprocessError::last_os(
+                format!("LoadUserProfileW({:?})", self.username),
+            ).into());
         }
 
         self.h_profile = pinfo.h_profile;
@@ -501,7 +495,7 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
     }
 
     if result == 0 {
-        let err = std::io::Error::last_os_error();
+        let source = std::io::Error::last_os_error();
         for cleanup in d.cleanup_if_failed.drain(..) {
             cleanup();
         }
@@ -510,12 +504,10 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
         } else {
             "CreateProcessW"
         };
-        return Err(anyhow::anyhow!(
-            "{}({:?}): {}",
-            api_name,
-            command_line,
-            err
-        ));
+        return Err(SubprocessError::Win32 {
+            api: format!("{api_name}({command_line:?})"),
+            source,
+        }.into());
     }
 
     d.platform.process = SafeHandle::new(pi.hProcess);
@@ -526,13 +518,12 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
         let ok =
             unsafe { SetProcessAffinityMask(d.platform.process.raw(), sub.process_affinity_mask as usize) };
         if ok == 0 {
-            let err = std::io::Error::last_os_error();
+            let source = std::io::Error::last_os_error();
             terminate_and_close(&mut d.platform);
-            return Err(anyhow::anyhow!(
-                "SetProcessAffinityMask(0b{:b}): {}",
-                sub.process_affinity_mask,
-                err
-            ));
+            return Err(SubprocessError::Win32 {
+                api: format!("SetProcessAffinityMask(0b{:b})", sub.process_affinity_mask),
+                source,
+            }.into());
         }
     }
 
@@ -553,7 +544,10 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
                     // job_handle drops here automatically (SafeHandle)
                     if sub.fail_on_job_creation_failure {
                         terminate_and_close(&mut d.platform);
-                        return Err(anyhow::anyhow!("AssignProcessToJobObject: {}", err));
+                        return Err(SubprocessError::Win32 {
+                            api: "AssignProcessToJobObject".into(),
+                            source: err,
+                        }.into());
                     }
                 } else {
                     d.platform.job = job_handle;
@@ -576,10 +570,7 @@ pub fn create_frozen(sub: &Subprocess) -> Result<SubprocessData> {
 fn create_job(sub: &Subprocess) -> Result<SafeHandle> {
     let job = SafeHandle::new(unsafe { CreateJobObjectW(ptr::null(), ptr::null()) });
     if !job.is_valid() {
-        return Err(anyhow::anyhow!(
-            "CreateJobObjectW: {}",
-            std::io::Error::last_os_error()
-        ));
+        return Err(SubprocessError::last_os("CreateJobObjectW").into());
     }
 
     // UI restrictions
@@ -603,10 +594,7 @@ fn create_job(sub: &Subprocess) -> Result<SafeHandle> {
             )
         };
         if ok == 0 {
-            return Err(anyhow::anyhow!(
-                "SetInformationJobObject(UIRestrictions): {}",
-                std::io::Error::last_os_error()
-            ));
+            return Err(SubprocessError::last_os("SetInformationJobObject(UIRestrictions)").into());
         }
     }
 
@@ -654,10 +642,7 @@ fn create_job(sub: &Subprocess) -> Result<SafeHandle> {
         )
     };
     if ok == 0 {
-        return Err(anyhow::anyhow!(
-            "SetInformationJobObject(ExtendedLimits): {}",
-            std::io::Error::last_os_error()
-        ));
+        return Err(SubprocessError::last_os("SetInformationJobObject(ExtendedLimits)").into());
     }
 
     Ok(job)
@@ -931,9 +916,13 @@ fn resolve_32bit_load_library() -> Result<usize> {
         .prefix("detect32bit")
         .suffix(".exe")
         .tempfile()
-        .map_err(|e| anyhow::anyhow!("creating temp file for 32-bit detector: {}", e))?;
+        .map_err(|e| SubprocessError::Other(
+            format!("creating temp file for 32-bit detector: {e}"),
+        ))?;
     tmp.write_all(DETECT_32BIT_EXE)
-        .map_err(|e| anyhow::anyhow!("writing 32-bit detector: {}", e))?;
+        .map_err(|e| SubprocessError::Other(
+            format!("writing 32-bit detector: {e}"),
+        ))?;
     tmp.flush()?;
 
     let path = tmp.path().to_path_buf();
@@ -941,20 +930,23 @@ fn resolve_32bit_load_library() -> Result<usize> {
     // Run detector, capture stdout.
     let output = std::process::Command::new(&path)
         .output()
-        .map_err(|e| anyhow::anyhow!("running 32-bit detector {:?}: {}", path, e))?;
+        .map_err(|e| SubprocessError::Other(
+            format!("running 32-bit detector {path:?}: {e}"),
+        ))?;
 
     if !output.status.success() {
-        return Err(anyhow::anyhow!(
-            "32-bit detector exited with {}",
-            output.status
-        ));
+        return Err(SubprocessError::Other(
+            format!("32-bit detector exited with {}", output.status),
+        ).into());
     }
 
     let txt = String::from_utf8_lossy(&output.stdout);
     let txt = txt.trim();
     let addr: usize = txt
         .parse()
-        .map_err(|e| anyhow::anyhow!("parsing 32-bit LoadLibraryW address {:?}: {}", txt, e))?;
+        .map_err(|e| SubprocessError::Other(
+            format!("parsing 32-bit LoadLibraryW address {txt:?}: {e}"),
+        ))?;
 
     tracing::debug!("32-bit LoadLibraryW address: {:#x} ({})", addr, addr);
     Ok(addr)
@@ -967,7 +959,7 @@ fn get_load_library_w_32() -> Result<usize> {
     });
     match result {
         Ok(addr) => Ok(*addr),
-        Err(e) => Err(anyhow::anyhow!("{}", e)),
+        Err(e) => Err(SubprocessError::Other(e.clone()).into()),
     }
 }
 
@@ -976,19 +968,13 @@ fn get_load_library_w_native() -> Result<usize> {
     let kernel32_name = to_wide("kernel32.dll");
     let kernel32 = unsafe { GetModuleHandleW(kernel32_name.as_ptr()) };
     if kernel32.is_null() {
-        return Err(anyhow::anyhow!(
-            "GetModuleHandleW(kernel32): {}",
-            std::io::Error::last_os_error()
-        ));
+        return Err(SubprocessError::last_os("GetModuleHandleW(kernel32)").into());
     }
 
     let name = b"LoadLibraryW\0";
     let addr = unsafe { GetProcAddress(kernel32, name.as_ptr()) };
     if addr == 0 {
-        return Err(anyhow::anyhow!(
-            "GetProcAddress(LoadLibraryW): {}",
-            std::io::Error::last_os_error()
-        ));
+        return Err(SubprocessError::last_os("GetProcAddress(LoadLibraryW)").into());
     }
     Ok(addr)
 }
@@ -1026,11 +1012,9 @@ pub fn inject_dll(d: &SubprocessData, dll: &str, load_library_addr: usize) -> Re
         VirtualAllocEx(process, 0, dll_bytes_len, MEM_COMMIT, PAGE_READWRITE)
     };
     if remote_buf == 0 {
-        return Err(anyhow::anyhow!(
-            "VirtualAllocEx({}): {}",
-            dll_bytes_len,
-            std::io::Error::last_os_error()
-        ));
+        return Err(SubprocessError::last_os(
+            format!("VirtualAllocEx({dll_bytes_len})"),
+        ).into());
     }
 
     let result = inject_dll_inner(process, remote_buf, &dll_wide, load_library_addr);
@@ -1062,10 +1046,7 @@ fn inject_dll_inner(
         )
     };
     if ok == 0 {
-        return Err(anyhow::anyhow!(
-            "WriteProcessMemory: {}",
-            std::io::Error::last_os_error()
-        ));
+        return Err(SubprocessError::last_os("WriteProcessMemory").into());
     }
 
     // Create a remote thread that calls LoadLibraryW(remote_buf)
@@ -1083,10 +1064,7 @@ fn inject_dll_inner(
     };
     let thread = SafeHandle::new(thread);
     if !thread.is_valid() {
-        return Err(anyhow::anyhow!(
-            "CreateRemoteThread: {}",
-            std::io::Error::last_os_error()
-        ));
+        return Err(SubprocessError::last_os("CreateRemoteThread").into());
     }
 
     // Wait for the remote thread to finish loading the DLL
@@ -1094,10 +1072,9 @@ fn inject_dll_inner(
     // thread closes via Drop
 
     if wait_result != WAIT_OBJECT_0 {
-        return Err(anyhow::anyhow!(
-            "WaitForSingleObject on DLL injection thread: unexpected result {}",
-            wait_result
-        ));
+        return Err(SubprocessError::Other(
+            format!("WaitForSingleObject on DLL injection thread: unexpected result {wait_result}"),
+        ).into());
     }
 
     Ok(())

@@ -4,7 +4,7 @@
 // 	protoc        v7.34.0
 // source: Execution.proto
 
-//go:build !protoopaque
+//go:build protoopaque
 
 package contester_proto
 
@@ -24,14 +24,14 @@ const (
 )
 
 type RedirectParameters struct {
-	state                    protoimpl.MessageState `protogen:"hybrid.v1"`
-	Filename                 string                 `protobuf:"bytes,1,opt,name=filename" json:"filename,omitempty"`
-	Memory                   bool                   `protobuf:"varint,2,opt,name=memory" json:"memory,omitempty"`
-	Buffer                   *Blob                  `protobuf:"bytes,3,opt,name=buffer" json:"buffer,omitempty"`
-	RemoteFilename           string                 `protobuf:"bytes,4,opt,name=remote_filename,json=remoteFilename" json:"remote_filename,omitempty"`
-	RemoteAuthorizationToken string                 `protobuf:"bytes,5,opt,name=remote_authorization_token,json=remoteAuthorizationToken" json:"remote_authorization_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Filename                 string                 `protobuf:"bytes,1,opt,name=filename"`
+	xxx_hidden_Memory                   bool                   `protobuf:"varint,2,opt,name=memory"`
+	xxx_hidden_Buffer                   *Blob                  `protobuf:"bytes,3,opt,name=buffer"`
+	xxx_hidden_RemoteFilename           string                 `protobuf:"bytes,4,opt,name=remote_filename,json=remoteFilename"`
+	xxx_hidden_RemoteAuthorizationToken string                 `protobuf:"bytes,5,opt,name=remote_authorization_token,json=remoteAuthorizationToken"`
+	unknownFields                       protoimpl.UnknownFields
+	sizeCache                           protoimpl.SizeCache
 }
 
 func (x *RedirectParameters) Reset() {
@@ -61,68 +61,68 @@ func (x *RedirectParameters) ProtoReflect() protoreflect.Message {
 
 func (x *RedirectParameters) GetFilename() string {
 	if x != nil {
-		return x.Filename
+		return x.xxx_hidden_Filename
 	}
 	return ""
 }
 
 func (x *RedirectParameters) GetMemory() bool {
 	if x != nil {
-		return x.Memory
+		return x.xxx_hidden_Memory
 	}
 	return false
 }
 
 func (x *RedirectParameters) GetBuffer() *Blob {
 	if x != nil {
-		return x.Buffer
+		return x.xxx_hidden_Buffer
 	}
 	return nil
 }
 
 func (x *RedirectParameters) GetRemoteFilename() string {
 	if x != nil {
-		return x.RemoteFilename
+		return x.xxx_hidden_RemoteFilename
 	}
 	return ""
 }
 
 func (x *RedirectParameters) GetRemoteAuthorizationToken() string {
 	if x != nil {
-		return x.RemoteAuthorizationToken
+		return x.xxx_hidden_RemoteAuthorizationToken
 	}
 	return ""
 }
 
 func (x *RedirectParameters) SetFilename(v string) {
-	x.Filename = v
+	x.xxx_hidden_Filename = v
 }
 
 func (x *RedirectParameters) SetMemory(v bool) {
-	x.Memory = v
+	x.xxx_hidden_Memory = v
 }
 
 func (x *RedirectParameters) SetBuffer(v *Blob) {
-	x.Buffer = v
+	x.xxx_hidden_Buffer = v
 }
 
 func (x *RedirectParameters) SetRemoteFilename(v string) {
-	x.RemoteFilename = v
+	x.xxx_hidden_RemoteFilename = v
 }
 
 func (x *RedirectParameters) SetRemoteAuthorizationToken(v string) {
-	x.RemoteAuthorizationToken = v
+	x.xxx_hidden_RemoteAuthorizationToken = v
 }
 
 func (x *RedirectParameters) HasBuffer() bool {
 	if x == nil {
 		return false
 	}
-	return x.Buffer != nil
+	return x.xxx_hidden_Buffer != nil
 }
 
 func (x *RedirectParameters) ClearBuffer() {
-	x.Buffer = nil
+	x.xxx_hidden_Buffer = nil
 }
 
 type RedirectParameters_builder struct {
@@ -139,33 +139,33 @@ func (b0 RedirectParameters_builder) Build() *RedirectParameters {
 	m0 := &RedirectParameters{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Filename = b.Filename
-	x.Memory = b.Memory
-	x.Buffer = b.Buffer
-	x.RemoteFilename = b.RemoteFilename
-	x.RemoteAuthorizationToken = b.RemoteAuthorizationToken
+	x.xxx_hidden_Filename = b.Filename
+	x.xxx_hidden_Memory = b.Memory
+	x.xxx_hidden_Buffer = b.Buffer
+	x.xxx_hidden_RemoteFilename = b.RemoteFilename
+	x.xxx_hidden_RemoteAuthorizationToken = b.RemoteAuthorizationToken
 	return m0
 }
 
 type ExecutionResultFlags struct {
-	state                  protoimpl.MessageState `protogen:"hybrid.v1"`
-	Killed                 bool                   `protobuf:"varint,1,opt,name=killed" json:"killed,omitempty"`
-	TimeLimitHit           bool                   `protobuf:"varint,2,opt,name=time_limit_hit,json=timeLimitHit" json:"time_limit_hit,omitempty"`
-	MemoryLimitHit         bool                   `protobuf:"varint,3,opt,name=memory_limit_hit,json=memoryLimitHit" json:"memory_limit_hit,omitempty"`
-	Inactive               bool                   `protobuf:"varint,4,opt,name=inactive" json:"inactive,omitempty"`
-	StdoutOverflow         bool                   `protobuf:"varint,6,opt,name=stdout_overflow,json=stdoutOverflow" json:"stdout_overflow,omitempty"`
-	StderrOverflow         bool                   `protobuf:"varint,7,opt,name=stderr_overflow,json=stderrOverflow" json:"stderr_overflow,omitempty"`
-	StdpipeTimeout         bool                   `protobuf:"varint,8,opt,name=stdpipe_timeout,json=stdpipeTimeout" json:"stdpipe_timeout,omitempty"`
-	TimeLimitHitPost       bool                   `protobuf:"varint,9,opt,name=time_limit_hit_post,json=timeLimitHitPost" json:"time_limit_hit_post,omitempty"`
-	MemoryLimitHitPost     bool                   `protobuf:"varint,10,opt,name=memory_limit_hit_post,json=memoryLimitHitPost" json:"memory_limit_hit_post,omitempty"`
-	ProcessLimitHit        bool                   `protobuf:"varint,11,opt,name=process_limit_hit,json=processLimitHit" json:"process_limit_hit,omitempty"`
-	StoppedBySignal        bool                   `protobuf:"varint,12,opt,name=stopped_by_signal,json=stoppedBySignal" json:"stopped_by_signal,omitempty"` // linux: SIGSTOP/PTRACE
-	KilledBySignal         bool                   `protobuf:"varint,13,opt,name=killed_by_signal,json=killedBySignal" json:"killed_by_signal,omitempty"`    // linux: WTERMSIG
-	KernelTimeLimitHit     bool                   `protobuf:"varint,14,opt,name=kernel_time_limit_hit,json=kernelTimeLimitHit" json:"kernel_time_limit_hit,omitempty"`
-	KernelTimeLimitHitPost bool                   `protobuf:"varint,15,opt,name=kernel_time_limit_hit_post,json=kernelTimeLimitHitPost" json:"kernel_time_limit_hit_post,omitempty"`
-	WallTimeLimitHit       bool                   `protobuf:"varint,16,opt,name=wall_time_limit_hit,json=wallTimeLimitHit" json:"wall_time_limit_hit,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Killed                 bool                   `protobuf:"varint,1,opt,name=killed"`
+	xxx_hidden_TimeLimitHit           bool                   `protobuf:"varint,2,opt,name=time_limit_hit,json=timeLimitHit"`
+	xxx_hidden_MemoryLimitHit         bool                   `protobuf:"varint,3,opt,name=memory_limit_hit,json=memoryLimitHit"`
+	xxx_hidden_Inactive               bool                   `protobuf:"varint,4,opt,name=inactive"`
+	xxx_hidden_StdoutOverflow         bool                   `protobuf:"varint,6,opt,name=stdout_overflow,json=stdoutOverflow"`
+	xxx_hidden_StderrOverflow         bool                   `protobuf:"varint,7,opt,name=stderr_overflow,json=stderrOverflow"`
+	xxx_hidden_StdpipeTimeout         bool                   `protobuf:"varint,8,opt,name=stdpipe_timeout,json=stdpipeTimeout"`
+	xxx_hidden_TimeLimitHitPost       bool                   `protobuf:"varint,9,opt,name=time_limit_hit_post,json=timeLimitHitPost"`
+	xxx_hidden_MemoryLimitHitPost     bool                   `protobuf:"varint,10,opt,name=memory_limit_hit_post,json=memoryLimitHitPost"`
+	xxx_hidden_ProcessLimitHit        bool                   `protobuf:"varint,11,opt,name=process_limit_hit,json=processLimitHit"`
+	xxx_hidden_StoppedBySignal        bool                   `protobuf:"varint,12,opt,name=stopped_by_signal,json=stoppedBySignal"`
+	xxx_hidden_KilledBySignal         bool                   `protobuf:"varint,13,opt,name=killed_by_signal,json=killedBySignal"`
+	xxx_hidden_KernelTimeLimitHit     bool                   `protobuf:"varint,14,opt,name=kernel_time_limit_hit,json=kernelTimeLimitHit"`
+	xxx_hidden_KernelTimeLimitHitPost bool                   `protobuf:"varint,15,opt,name=kernel_time_limit_hit_post,json=kernelTimeLimitHitPost"`
+	xxx_hidden_WallTimeLimitHit       bool                   `protobuf:"varint,16,opt,name=wall_time_limit_hit,json=wallTimeLimitHit"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *ExecutionResultFlags) Reset() {
@@ -195,167 +195,167 @@ func (x *ExecutionResultFlags) ProtoReflect() protoreflect.Message {
 
 func (x *ExecutionResultFlags) GetKilled() bool {
 	if x != nil {
-		return x.Killed
+		return x.xxx_hidden_Killed
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetTimeLimitHit() bool {
 	if x != nil {
-		return x.TimeLimitHit
+		return x.xxx_hidden_TimeLimitHit
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetMemoryLimitHit() bool {
 	if x != nil {
-		return x.MemoryLimitHit
+		return x.xxx_hidden_MemoryLimitHit
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetInactive() bool {
 	if x != nil {
-		return x.Inactive
+		return x.xxx_hidden_Inactive
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetStdoutOverflow() bool {
 	if x != nil {
-		return x.StdoutOverflow
+		return x.xxx_hidden_StdoutOverflow
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetStderrOverflow() bool {
 	if x != nil {
-		return x.StderrOverflow
+		return x.xxx_hidden_StderrOverflow
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetStdpipeTimeout() bool {
 	if x != nil {
-		return x.StdpipeTimeout
+		return x.xxx_hidden_StdpipeTimeout
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetTimeLimitHitPost() bool {
 	if x != nil {
-		return x.TimeLimitHitPost
+		return x.xxx_hidden_TimeLimitHitPost
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetMemoryLimitHitPost() bool {
 	if x != nil {
-		return x.MemoryLimitHitPost
+		return x.xxx_hidden_MemoryLimitHitPost
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetProcessLimitHit() bool {
 	if x != nil {
-		return x.ProcessLimitHit
+		return x.xxx_hidden_ProcessLimitHit
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetStoppedBySignal() bool {
 	if x != nil {
-		return x.StoppedBySignal
+		return x.xxx_hidden_StoppedBySignal
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetKilledBySignal() bool {
 	if x != nil {
-		return x.KilledBySignal
+		return x.xxx_hidden_KilledBySignal
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetKernelTimeLimitHit() bool {
 	if x != nil {
-		return x.KernelTimeLimitHit
+		return x.xxx_hidden_KernelTimeLimitHit
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetKernelTimeLimitHitPost() bool {
 	if x != nil {
-		return x.KernelTimeLimitHitPost
+		return x.xxx_hidden_KernelTimeLimitHitPost
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) GetWallTimeLimitHit() bool {
 	if x != nil {
-		return x.WallTimeLimitHit
+		return x.xxx_hidden_WallTimeLimitHit
 	}
 	return false
 }
 
 func (x *ExecutionResultFlags) SetKilled(v bool) {
-	x.Killed = v
+	x.xxx_hidden_Killed = v
 }
 
 func (x *ExecutionResultFlags) SetTimeLimitHit(v bool) {
-	x.TimeLimitHit = v
+	x.xxx_hidden_TimeLimitHit = v
 }
 
 func (x *ExecutionResultFlags) SetMemoryLimitHit(v bool) {
-	x.MemoryLimitHit = v
+	x.xxx_hidden_MemoryLimitHit = v
 }
 
 func (x *ExecutionResultFlags) SetInactive(v bool) {
-	x.Inactive = v
+	x.xxx_hidden_Inactive = v
 }
 
 func (x *ExecutionResultFlags) SetStdoutOverflow(v bool) {
-	x.StdoutOverflow = v
+	x.xxx_hidden_StdoutOverflow = v
 }
 
 func (x *ExecutionResultFlags) SetStderrOverflow(v bool) {
-	x.StderrOverflow = v
+	x.xxx_hidden_StderrOverflow = v
 }
 
 func (x *ExecutionResultFlags) SetStdpipeTimeout(v bool) {
-	x.StdpipeTimeout = v
+	x.xxx_hidden_StdpipeTimeout = v
 }
 
 func (x *ExecutionResultFlags) SetTimeLimitHitPost(v bool) {
-	x.TimeLimitHitPost = v
+	x.xxx_hidden_TimeLimitHitPost = v
 }
 
 func (x *ExecutionResultFlags) SetMemoryLimitHitPost(v bool) {
-	x.MemoryLimitHitPost = v
+	x.xxx_hidden_MemoryLimitHitPost = v
 }
 
 func (x *ExecutionResultFlags) SetProcessLimitHit(v bool) {
-	x.ProcessLimitHit = v
+	x.xxx_hidden_ProcessLimitHit = v
 }
 
 func (x *ExecutionResultFlags) SetStoppedBySignal(v bool) {
-	x.StoppedBySignal = v
+	x.xxx_hidden_StoppedBySignal = v
 }
 
 func (x *ExecutionResultFlags) SetKilledBySignal(v bool) {
-	x.KilledBySignal = v
+	x.xxx_hidden_KilledBySignal = v
 }
 
 func (x *ExecutionResultFlags) SetKernelTimeLimitHit(v bool) {
-	x.KernelTimeLimitHit = v
+	x.xxx_hidden_KernelTimeLimitHit = v
 }
 
 func (x *ExecutionResultFlags) SetKernelTimeLimitHitPost(v bool) {
-	x.KernelTimeLimitHitPost = v
+	x.xxx_hidden_KernelTimeLimitHitPost = v
 }
 
 func (x *ExecutionResultFlags) SetWallTimeLimitHit(v bool) {
-	x.WallTimeLimitHit = v
+	x.xxx_hidden_WallTimeLimitHit = v
 }
 
 type ExecutionResultFlags_builder struct {
@@ -382,31 +382,31 @@ func (b0 ExecutionResultFlags_builder) Build() *ExecutionResultFlags {
 	m0 := &ExecutionResultFlags{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Killed = b.Killed
-	x.TimeLimitHit = b.TimeLimitHit
-	x.MemoryLimitHit = b.MemoryLimitHit
-	x.Inactive = b.Inactive
-	x.StdoutOverflow = b.StdoutOverflow
-	x.StderrOverflow = b.StderrOverflow
-	x.StdpipeTimeout = b.StdpipeTimeout
-	x.TimeLimitHitPost = b.TimeLimitHitPost
-	x.MemoryLimitHitPost = b.MemoryLimitHitPost
-	x.ProcessLimitHit = b.ProcessLimitHit
-	x.StoppedBySignal = b.StoppedBySignal
-	x.KilledBySignal = b.KilledBySignal
-	x.KernelTimeLimitHit = b.KernelTimeLimitHit
-	x.KernelTimeLimitHitPost = b.KernelTimeLimitHitPost
-	x.WallTimeLimitHit = b.WallTimeLimitHit
+	x.xxx_hidden_Killed = b.Killed
+	x.xxx_hidden_TimeLimitHit = b.TimeLimitHit
+	x.xxx_hidden_MemoryLimitHit = b.MemoryLimitHit
+	x.xxx_hidden_Inactive = b.Inactive
+	x.xxx_hidden_StdoutOverflow = b.StdoutOverflow
+	x.xxx_hidden_StderrOverflow = b.StderrOverflow
+	x.xxx_hidden_StdpipeTimeout = b.StdpipeTimeout
+	x.xxx_hidden_TimeLimitHitPost = b.TimeLimitHitPost
+	x.xxx_hidden_MemoryLimitHitPost = b.MemoryLimitHitPost
+	x.xxx_hidden_ProcessLimitHit = b.ProcessLimitHit
+	x.xxx_hidden_StoppedBySignal = b.StoppedBySignal
+	x.xxx_hidden_KilledBySignal = b.KilledBySignal
+	x.xxx_hidden_KernelTimeLimitHit = b.KernelTimeLimitHit
+	x.xxx_hidden_KernelTimeLimitHitPost = b.KernelTimeLimitHitPost
+	x.xxx_hidden_WallTimeLimitHit = b.WallTimeLimitHit
 	return m0
 }
 
 type ExecutionResultTime struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	UserTimeMicros   uint64                 `protobuf:"varint,1,opt,name=user_time_micros,json=userTimeMicros" json:"user_time_micros,omitempty"`
-	KernelTimeMicros uint64                 `protobuf:"varint,2,opt,name=kernel_time_micros,json=kernelTimeMicros" json:"kernel_time_micros,omitempty"`
-	WallTimeMicros   uint64                 `protobuf:"varint,3,opt,name=wall_time_micros,json=wallTimeMicros" json:"wall_time_micros,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserTimeMicros   uint64                 `protobuf:"varint,1,opt,name=user_time_micros,json=userTimeMicros"`
+	xxx_hidden_KernelTimeMicros uint64                 `protobuf:"varint,2,opt,name=kernel_time_micros,json=kernelTimeMicros"`
+	xxx_hidden_WallTimeMicros   uint64                 `protobuf:"varint,3,opt,name=wall_time_micros,json=wallTimeMicros"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *ExecutionResultTime) Reset() {
@@ -436,35 +436,35 @@ func (x *ExecutionResultTime) ProtoReflect() protoreflect.Message {
 
 func (x *ExecutionResultTime) GetUserTimeMicros() uint64 {
 	if x != nil {
-		return x.UserTimeMicros
+		return x.xxx_hidden_UserTimeMicros
 	}
 	return 0
 }
 
 func (x *ExecutionResultTime) GetKernelTimeMicros() uint64 {
 	if x != nil {
-		return x.KernelTimeMicros
+		return x.xxx_hidden_KernelTimeMicros
 	}
 	return 0
 }
 
 func (x *ExecutionResultTime) GetWallTimeMicros() uint64 {
 	if x != nil {
-		return x.WallTimeMicros
+		return x.xxx_hidden_WallTimeMicros
 	}
 	return 0
 }
 
 func (x *ExecutionResultTime) SetUserTimeMicros(v uint64) {
-	x.UserTimeMicros = v
+	x.xxx_hidden_UserTimeMicros = v
 }
 
 func (x *ExecutionResultTime) SetKernelTimeMicros(v uint64) {
-	x.KernelTimeMicros = v
+	x.xxx_hidden_KernelTimeMicros = v
 }
 
 func (x *ExecutionResultTime) SetWallTimeMicros(v uint64) {
-	x.WallTimeMicros = v
+	x.xxx_hidden_WallTimeMicros = v
 }
 
 type ExecutionResultTime_builder struct {
@@ -479,9 +479,9 @@ func (b0 ExecutionResultTime_builder) Build() *ExecutionResultTime {
 	m0 := &ExecutionResultTime{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.UserTimeMicros = b.UserTimeMicros
-	x.KernelTimeMicros = b.KernelTimeMicros
-	x.WallTimeMicros = b.WallTimeMicros
+	x.xxx_hidden_UserTimeMicros = b.UserTimeMicros
+	x.xxx_hidden_KernelTimeMicros = b.KernelTimeMicros
+	x.xxx_hidden_WallTimeMicros = b.WallTimeMicros
 	return m0
 }
 

@@ -4,7 +4,7 @@ require (
 	github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237
 	github.com/sirupsen/logrus v1.9.1
 	golang.org/x/sys v0.5.0
-	google.golang.org/protobuf v1.33.0
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -14,4 +14,4 @@ require (
 	github.com/stretchr/testify v1.8.2 // indirect
 )
 
-go 1.20
+go 1.23

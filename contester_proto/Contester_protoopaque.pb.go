@@ -4,7 +4,7 @@
 // 	protoc        v7.34.0
 // source: Contester.proto
 
-//go:build !protoopaque
+//go:build protoopaque
 
 package contester_proto
 
@@ -68,11 +68,11 @@ func (x Compilation_Code) Number() protoreflect.EnumNumber {
 }
 
 type Compilation struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Failure       bool                   `protobuf:"varint,1,opt,name=failure" json:"failure,omitempty"`
-	ResultSteps   []*Compilation_Result  `protobuf:"bytes,2,rep,name=result_steps,json=resultSteps" json:"result_steps,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Failure     bool                   `protobuf:"varint,1,opt,name=failure"`
+	xxx_hidden_ResultSteps *[]*Compilation_Result `protobuf:"bytes,2,rep,name=result_steps,json=resultSteps"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Compilation) Reset() {
@@ -102,24 +102,26 @@ func (x *Compilation) ProtoReflect() protoreflect.Message {
 
 func (x *Compilation) GetFailure() bool {
 	if x != nil {
-		return x.Failure
+		return x.xxx_hidden_Failure
 	}
 	return false
 }
 
 func (x *Compilation) GetResultSteps() []*Compilation_Result {
 	if x != nil {
-		return x.ResultSteps
+		if x.xxx_hidden_ResultSteps != nil {
+			return *x.xxx_hidden_ResultSteps
+		}
 	}
 	return nil
 }
 
 func (x *Compilation) SetFailure(v bool) {
-	x.Failure = v
+	x.xxx_hidden_Failure = v
 }
 
 func (x *Compilation) SetResultSteps(v []*Compilation_Result) {
-	x.ResultSteps = v
+	x.xxx_hidden_ResultSteps = &v
 }
 
 type Compilation_builder struct {
@@ -133,18 +135,18 @@ func (b0 Compilation_builder) Build() *Compilation {
 	m0 := &Compilation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Failure = b.Failure
-	x.ResultSteps = b.ResultSteps
+	x.xxx_hidden_Failure = b.Failure
+	x.xxx_hidden_ResultSteps = &b.ResultSteps
 	return m0
 }
 
 type Compilation_Result struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	StepName      string                 `protobuf:"bytes,1,opt,name=step_name,json=stepName" json:"step_name,omitempty"`
-	Execution     *LocalExecution        `protobuf:"bytes,2,opt,name=execution" json:"execution,omitempty"`
-	Failure       bool                   `protobuf:"varint,3,opt,name=failure" json:"failure,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_StepName  string                 `protobuf:"bytes,1,opt,name=step_name,json=stepName"`
+	xxx_hidden_Execution *LocalExecution        `protobuf:"bytes,2,opt,name=execution"`
+	xxx_hidden_Failure   bool                   `protobuf:"varint,3,opt,name=failure"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *Compilation_Result) Reset() {
@@ -174,46 +176,46 @@ func (x *Compilation_Result) ProtoReflect() protoreflect.Message {
 
 func (x *Compilation_Result) GetStepName() string {
 	if x != nil {
-		return x.StepName
+		return x.xxx_hidden_StepName
 	}
 	return ""
 }
 
 func (x *Compilation_Result) GetExecution() *LocalExecution {
 	if x != nil {
-		return x.Execution
+		return x.xxx_hidden_Execution
 	}
 	return nil
 }
 
 func (x *Compilation_Result) GetFailure() bool {
 	if x != nil {
-		return x.Failure
+		return x.xxx_hidden_Failure
 	}
 	return false
 }
 
 func (x *Compilation_Result) SetStepName(v string) {
-	x.StepName = v
+	x.xxx_hidden_StepName = v
 }
 
 func (x *Compilation_Result) SetExecution(v *LocalExecution) {
-	x.Execution = v
+	x.xxx_hidden_Execution = v
 }
 
 func (x *Compilation_Result) SetFailure(v bool) {
-	x.Failure = v
+	x.xxx_hidden_Failure = v
 }
 
 func (x *Compilation_Result) HasExecution() bool {
 	if x == nil {
 		return false
 	}
-	return x.Execution != nil
+	return x.xxx_hidden_Execution != nil
 }
 
 func (x *Compilation_Result) ClearExecution() {
-	x.Execution = nil
+	x.xxx_hidden_Execution = nil
 }
 
 type Compilation_Result_builder struct {
@@ -228,9 +230,9 @@ func (b0 Compilation_Result_builder) Build() *Compilation_Result {
 	m0 := &Compilation_Result{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.StepName = b.StepName
-	x.Execution = b.Execution
-	x.Failure = b.Failure
+	x.xxx_hidden_StepName = b.StepName
+	x.xxx_hidden_Execution = b.Execution
+	x.xxx_hidden_Failure = b.Failure
 	return m0
 }
 

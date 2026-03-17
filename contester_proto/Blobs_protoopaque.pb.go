@@ -4,7 +4,7 @@
 // 	protoc        v7.34.0
 // source: Blobs.proto
 
-//go:build !protoopaque
+//go:build protoopaque
 
 package contester_proto
 
@@ -65,12 +65,12 @@ func (x Blob_CompressionInfo_CompressionType) Number() protoreflect.EnumNumber {
 }
 
 type Blob struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Data          []byte                 `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
-	Compression   *Blob_CompressionInfo  `protobuf:"bytes,2,opt,name=compression" json:"compression,omitempty"`
-	Sha1          []byte                 `protobuf:"bytes,3,opt,name=sha1" json:"sha1,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Data        []byte                 `protobuf:"bytes,1,opt,name=data"`
+	xxx_hidden_Compression *Blob_CompressionInfo  `protobuf:"bytes,2,opt,name=compression"`
+	xxx_hidden_Sha1        []byte                 `protobuf:"bytes,3,opt,name=sha1"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Blob) Reset() {
@@ -100,21 +100,21 @@ func (x *Blob) ProtoReflect() protoreflect.Message {
 
 func (x *Blob) GetData() []byte {
 	if x != nil {
-		return x.Data
+		return x.xxx_hidden_Data
 	}
 	return nil
 }
 
 func (x *Blob) GetCompression() *Blob_CompressionInfo {
 	if x != nil {
-		return x.Compression
+		return x.xxx_hidden_Compression
 	}
 	return nil
 }
 
 func (x *Blob) GetSha1() []byte {
 	if x != nil {
-		return x.Sha1
+		return x.xxx_hidden_Sha1
 	}
 	return nil
 }
@@ -123,29 +123,29 @@ func (x *Blob) SetData(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Data = v
+	x.xxx_hidden_Data = v
 }
 
 func (x *Blob) SetCompression(v *Blob_CompressionInfo) {
-	x.Compression = v
+	x.xxx_hidden_Compression = v
 }
 
 func (x *Blob) SetSha1(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Sha1 = v
+	x.xxx_hidden_Sha1 = v
 }
 
 func (x *Blob) HasCompression() bool {
 	if x == nil {
 		return false
 	}
-	return x.Compression != nil
+	return x.xxx_hidden_Compression != nil
 }
 
 func (x *Blob) ClearCompression() {
-	x.Compression = nil
+	x.xxx_hidden_Compression = nil
 }
 
 type Blob_builder struct {
@@ -160,19 +160,19 @@ func (b0 Blob_builder) Build() *Blob {
 	m0 := &Blob{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Data = b.Data
-	x.Compression = b.Compression
-	x.Sha1 = b.Sha1
+	x.xxx_hidden_Data = b.Data
+	x.xxx_hidden_Compression = b.Compression
+	x.xxx_hidden_Sha1 = b.Sha1
 	return m0
 }
 
 type Module struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Data          *Blob                  `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
-	Type          string                 `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,3,opt,name=name"`
+	xxx_hidden_Data *Blob                  `protobuf:"bytes,2,opt,name=data"`
+	xxx_hidden_Type string                 `protobuf:"bytes,1,opt,name=type"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Module) Reset() {
@@ -202,46 +202,46 @@ func (x *Module) ProtoReflect() protoreflect.Message {
 
 func (x *Module) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *Module) GetData() *Blob {
 	if x != nil {
-		return x.Data
+		return x.xxx_hidden_Data
 	}
 	return nil
 }
 
 func (x *Module) GetType() string {
 	if x != nil {
-		return x.Type
+		return x.xxx_hidden_Type
 	}
 	return ""
 }
 
 func (x *Module) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *Module) SetData(v *Blob) {
-	x.Data = v
+	x.xxx_hidden_Data = v
 }
 
 func (x *Module) SetType(v string) {
-	x.Type = v
+	x.xxx_hidden_Type = v
 }
 
 func (x *Module) HasData() bool {
 	if x == nil {
 		return false
 	}
-	return x.Data != nil
+	return x.xxx_hidden_Data != nil
 }
 
 func (x *Module) ClearData() {
-	x.Data = nil
+	x.xxx_hidden_Data = nil
 }
 
 type Module_builder struct {
@@ -256,18 +256,18 @@ func (b0 Module_builder) Build() *Module {
 	m0 := &Module{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Data = b.Data
-	x.Type = b.Type
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Data = b.Data
+	x.xxx_hidden_Type = b.Type
 	return m0
 }
 
 type FileBlob struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Data          *Blob                  `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Data *Blob                  `protobuf:"bytes,2,opt,name=data"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *FileBlob) Reset() {
@@ -297,35 +297,35 @@ func (x *FileBlob) ProtoReflect() protoreflect.Message {
 
 func (x *FileBlob) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *FileBlob) GetData() *Blob {
 	if x != nil {
-		return x.Data
+		return x.xxx_hidden_Data
 	}
 	return nil
 }
 
 func (x *FileBlob) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *FileBlob) SetData(v *Blob) {
-	x.Data = v
+	x.xxx_hidden_Data = v
 }
 
 func (x *FileBlob) HasData() bool {
 	if x == nil {
 		return false
 	}
-	return x.Data != nil
+	return x.xxx_hidden_Data != nil
 }
 
 func (x *FileBlob) ClearData() {
-	x.Data = nil
+	x.xxx_hidden_Data = nil
 }
 
 type FileBlob_builder struct {
@@ -339,17 +339,17 @@ func (b0 FileBlob_builder) Build() *FileBlob {
 	m0 := &FileBlob{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Data = b.Data
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Data = b.Data
 	return m0
 }
 
 type Blob_CompressionInfo struct {
-	state         protoimpl.MessageState               `protogen:"hybrid.v1"`
-	Method        Blob_CompressionInfo_CompressionType `protobuf:"varint,1,opt,name=method,enum=contester.proto.Blob_CompressionInfo_CompressionType" json:"method,omitempty"`
-	OriginalSize  uint32                               `protobuf:"varint,2,opt,name=original_size,json=originalSize" json:"original_size,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState               `protogen:"opaque.v1"`
+	xxx_hidden_Method       Blob_CompressionInfo_CompressionType `protobuf:"varint,1,opt,name=method,enum=contester.proto.Blob_CompressionInfo_CompressionType"`
+	xxx_hidden_OriginalSize uint32                               `protobuf:"varint,2,opt,name=original_size,json=originalSize"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Blob_CompressionInfo) Reset() {
@@ -379,24 +379,24 @@ func (x *Blob_CompressionInfo) ProtoReflect() protoreflect.Message {
 
 func (x *Blob_CompressionInfo) GetMethod() Blob_CompressionInfo_CompressionType {
 	if x != nil {
-		return x.Method
+		return x.xxx_hidden_Method
 	}
 	return Blob_CompressionInfo_METHOD_NONE
 }
 
 func (x *Blob_CompressionInfo) GetOriginalSize() uint32 {
 	if x != nil {
-		return x.OriginalSize
+		return x.xxx_hidden_OriginalSize
 	}
 	return 0
 }
 
 func (x *Blob_CompressionInfo) SetMethod(v Blob_CompressionInfo_CompressionType) {
-	x.Method = v
+	x.xxx_hidden_Method = v
 }
 
 func (x *Blob_CompressionInfo) SetOriginalSize(v uint32) {
-	x.OriginalSize = v
+	x.xxx_hidden_OriginalSize = v
 }
 
 type Blob_CompressionInfo_builder struct {
@@ -410,8 +410,8 @@ func (b0 Blob_CompressionInfo_builder) Build() *Blob_CompressionInfo {
 	m0 := &Blob_CompressionInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Method = b.Method
-	x.OriginalSize = b.OriginalSize
+	x.xxx_hidden_Method = b.Method
+	x.xxx_hidden_OriginalSize = b.OriginalSize
 	return m0
 }
 

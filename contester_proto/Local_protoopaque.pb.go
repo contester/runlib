@@ -4,7 +4,7 @@
 // 	protoc        v7.34.0
 // source: Local.proto
 
-//go:build !protoopaque
+//go:build protoopaque
 
 package contester_proto
 
@@ -80,11 +80,11 @@ func (x BinaryTypeResponse_Win32BinaryType) Number() protoreflect.EnumNumber {
 }
 
 type LocalEnvironment struct {
-	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
-	Empty         bool                         `protobuf:"varint,1,opt,name=empty" json:"empty,omitempty"`
-	Variable      []*LocalEnvironment_Variable `protobuf:"bytes,2,rep,name=variable" json:"variable,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Empty    bool                          `protobuf:"varint,1,opt,name=empty"`
+	xxx_hidden_Variable *[]*LocalEnvironment_Variable `protobuf:"bytes,2,rep,name=variable"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *LocalEnvironment) Reset() {
@@ -114,24 +114,26 @@ func (x *LocalEnvironment) ProtoReflect() protoreflect.Message {
 
 func (x *LocalEnvironment) GetEmpty() bool {
 	if x != nil {
-		return x.Empty
+		return x.xxx_hidden_Empty
 	}
 	return false
 }
 
 func (x *LocalEnvironment) GetVariable() []*LocalEnvironment_Variable {
 	if x != nil {
-		return x.Variable
+		if x.xxx_hidden_Variable != nil {
+			return *x.xxx_hidden_Variable
+		}
 	}
 	return nil
 }
 
 func (x *LocalEnvironment) SetEmpty(v bool) {
-	x.Empty = v
+	x.xxx_hidden_Empty = v
 }
 
 func (x *LocalEnvironment) SetVariable(v []*LocalEnvironment_Variable) {
-	x.Variable = v
+	x.xxx_hidden_Variable = &v
 }
 
 type LocalEnvironment_builder struct {
@@ -145,33 +147,33 @@ func (b0 LocalEnvironment_builder) Build() *LocalEnvironment {
 	m0 := &LocalEnvironment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Empty = b.Empty
-	x.Variable = b.Variable
+	x.xxx_hidden_Empty = b.Empty
+	x.xxx_hidden_Variable = &b.Variable
 	return m0
 }
 
 type LocalExecutionParameters struct {
-	state                 protoimpl.MessageState `protogen:"hybrid.v1"`
-	ApplicationName       string                 `protobuf:"bytes,1,opt,name=application_name,json=applicationName" json:"application_name,omitempty"`
-	CommandLine           string                 `protobuf:"bytes,2,opt,name=command_line,json=commandLine" json:"command_line,omitempty"`
-	CurrentDirectory      string                 `protobuf:"bytes,3,opt,name=current_directory,json=currentDirectory" json:"current_directory,omitempty"`
-	TimeLimitMicros       uint64                 `protobuf:"varint,4,opt,name=time_limit_micros,json=timeLimitMicros" json:"time_limit_micros,omitempty"`
-	MemoryLimit           uint64                 `protobuf:"varint,5,opt,name=memory_limit,json=memoryLimit" json:"memory_limit,omitempty"`
-	CheckIdleness         bool                   `protobuf:"varint,6,opt,name=check_idleness,json=checkIdleness" json:"check_idleness,omitempty"`
-	Environment           *LocalEnvironment      `protobuf:"bytes,7,opt,name=environment" json:"environment,omitempty"`
-	RestrictUi            bool                   `protobuf:"varint,8,opt,name=restrict_ui,json=restrictUi" json:"restrict_ui,omitempty"`
-	NoJob                 bool                   `protobuf:"varint,9,opt,name=no_job,json=noJob" json:"no_job,omitempty"`
-	ProcessLimit          uint32                 `protobuf:"varint,10,opt,name=process_limit,json=processLimit" json:"process_limit,omitempty"`
-	KernelTimeLimitMicros uint64                 `protobuf:"varint,19,opt,name=kernel_time_limit_micros,json=kernelTimeLimitMicros" json:"kernel_time_limit_micros,omitempty"`
-	WallTimeLimitMicros   uint64                 `protobuf:"varint,20,opt,name=wall_time_limit_micros,json=wallTimeLimitMicros" json:"wall_time_limit_micros,omitempty"`
-	StdIn                 *RedirectParameters    `protobuf:"bytes,12,opt,name=std_in,json=stdIn" json:"std_in,omitempty"`
-	StdOut                *RedirectParameters    `protobuf:"bytes,13,opt,name=std_out,json=stdOut" json:"std_out,omitempty"`
-	StdErr                *RedirectParameters    `protobuf:"bytes,14,opt,name=std_err,json=stdErr" json:"std_err,omitempty"`
-	CommandLineParameters []string               `protobuf:"bytes,16,rep,name=command_line_parameters,json=commandLineParameters" json:"command_line_parameters,omitempty"`
-	SandboxId             string                 `protobuf:"bytes,17,opt,name=sandbox_id,json=sandboxId" json:"sandbox_id,omitempty"`
-	JoinStdoutStderr      bool                   `protobuf:"varint,18,opt,name=join_stdout_stderr,json=joinStdoutStderr" json:"join_stdout_stderr,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ApplicationName       string                 `protobuf:"bytes,1,opt,name=application_name,json=applicationName"`
+	xxx_hidden_CommandLine           string                 `protobuf:"bytes,2,opt,name=command_line,json=commandLine"`
+	xxx_hidden_CurrentDirectory      string                 `protobuf:"bytes,3,opt,name=current_directory,json=currentDirectory"`
+	xxx_hidden_TimeLimitMicros       uint64                 `protobuf:"varint,4,opt,name=time_limit_micros,json=timeLimitMicros"`
+	xxx_hidden_MemoryLimit           uint64                 `protobuf:"varint,5,opt,name=memory_limit,json=memoryLimit"`
+	xxx_hidden_CheckIdleness         bool                   `protobuf:"varint,6,opt,name=check_idleness,json=checkIdleness"`
+	xxx_hidden_Environment           *LocalEnvironment      `protobuf:"bytes,7,opt,name=environment"`
+	xxx_hidden_RestrictUi            bool                   `protobuf:"varint,8,opt,name=restrict_ui,json=restrictUi"`
+	xxx_hidden_NoJob                 bool                   `protobuf:"varint,9,opt,name=no_job,json=noJob"`
+	xxx_hidden_ProcessLimit          uint32                 `protobuf:"varint,10,opt,name=process_limit,json=processLimit"`
+	xxx_hidden_KernelTimeLimitMicros uint64                 `protobuf:"varint,19,opt,name=kernel_time_limit_micros,json=kernelTimeLimitMicros"`
+	xxx_hidden_WallTimeLimitMicros   uint64                 `protobuf:"varint,20,opt,name=wall_time_limit_micros,json=wallTimeLimitMicros"`
+	xxx_hidden_StdIn                 *RedirectParameters    `protobuf:"bytes,12,opt,name=std_in,json=stdIn"`
+	xxx_hidden_StdOut                *RedirectParameters    `protobuf:"bytes,13,opt,name=std_out,json=stdOut"`
+	xxx_hidden_StdErr                *RedirectParameters    `protobuf:"bytes,14,opt,name=std_err,json=stdErr"`
+	xxx_hidden_CommandLineParameters []string               `protobuf:"bytes,16,rep,name=command_line_parameters,json=commandLineParameters"`
+	xxx_hidden_SandboxId             string                 `protobuf:"bytes,17,opt,name=sandbox_id,json=sandboxId"`
+	xxx_hidden_JoinStdoutStderr      bool                   `protobuf:"varint,18,opt,name=join_stdout_stderr,json=joinStdoutStderr"`
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *LocalExecutionParameters) Reset() {
@@ -201,244 +203,244 @@ func (x *LocalExecutionParameters) ProtoReflect() protoreflect.Message {
 
 func (x *LocalExecutionParameters) GetApplicationName() string {
 	if x != nil {
-		return x.ApplicationName
+		return x.xxx_hidden_ApplicationName
 	}
 	return ""
 }
 
 func (x *LocalExecutionParameters) GetCommandLine() string {
 	if x != nil {
-		return x.CommandLine
+		return x.xxx_hidden_CommandLine
 	}
 	return ""
 }
 
 func (x *LocalExecutionParameters) GetCurrentDirectory() string {
 	if x != nil {
-		return x.CurrentDirectory
+		return x.xxx_hidden_CurrentDirectory
 	}
 	return ""
 }
 
 func (x *LocalExecutionParameters) GetTimeLimitMicros() uint64 {
 	if x != nil {
-		return x.TimeLimitMicros
+		return x.xxx_hidden_TimeLimitMicros
 	}
 	return 0
 }
 
 func (x *LocalExecutionParameters) GetMemoryLimit() uint64 {
 	if x != nil {
-		return x.MemoryLimit
+		return x.xxx_hidden_MemoryLimit
 	}
 	return 0
 }
 
 func (x *LocalExecutionParameters) GetCheckIdleness() bool {
 	if x != nil {
-		return x.CheckIdleness
+		return x.xxx_hidden_CheckIdleness
 	}
 	return false
 }
 
 func (x *LocalExecutionParameters) GetEnvironment() *LocalEnvironment {
 	if x != nil {
-		return x.Environment
+		return x.xxx_hidden_Environment
 	}
 	return nil
 }
 
 func (x *LocalExecutionParameters) GetRestrictUi() bool {
 	if x != nil {
-		return x.RestrictUi
+		return x.xxx_hidden_RestrictUi
 	}
 	return false
 }
 
 func (x *LocalExecutionParameters) GetNoJob() bool {
 	if x != nil {
-		return x.NoJob
+		return x.xxx_hidden_NoJob
 	}
 	return false
 }
 
 func (x *LocalExecutionParameters) GetProcessLimit() uint32 {
 	if x != nil {
-		return x.ProcessLimit
+		return x.xxx_hidden_ProcessLimit
 	}
 	return 0
 }
 
 func (x *LocalExecutionParameters) GetKernelTimeLimitMicros() uint64 {
 	if x != nil {
-		return x.KernelTimeLimitMicros
+		return x.xxx_hidden_KernelTimeLimitMicros
 	}
 	return 0
 }
 
 func (x *LocalExecutionParameters) GetWallTimeLimitMicros() uint64 {
 	if x != nil {
-		return x.WallTimeLimitMicros
+		return x.xxx_hidden_WallTimeLimitMicros
 	}
 	return 0
 }
 
 func (x *LocalExecutionParameters) GetStdIn() *RedirectParameters {
 	if x != nil {
-		return x.StdIn
+		return x.xxx_hidden_StdIn
 	}
 	return nil
 }
 
 func (x *LocalExecutionParameters) GetStdOut() *RedirectParameters {
 	if x != nil {
-		return x.StdOut
+		return x.xxx_hidden_StdOut
 	}
 	return nil
 }
 
 func (x *LocalExecutionParameters) GetStdErr() *RedirectParameters {
 	if x != nil {
-		return x.StdErr
+		return x.xxx_hidden_StdErr
 	}
 	return nil
 }
 
 func (x *LocalExecutionParameters) GetCommandLineParameters() []string {
 	if x != nil {
-		return x.CommandLineParameters
+		return x.xxx_hidden_CommandLineParameters
 	}
 	return nil
 }
 
 func (x *LocalExecutionParameters) GetSandboxId() string {
 	if x != nil {
-		return x.SandboxId
+		return x.xxx_hidden_SandboxId
 	}
 	return ""
 }
 
 func (x *LocalExecutionParameters) GetJoinStdoutStderr() bool {
 	if x != nil {
-		return x.JoinStdoutStderr
+		return x.xxx_hidden_JoinStdoutStderr
 	}
 	return false
 }
 
 func (x *LocalExecutionParameters) SetApplicationName(v string) {
-	x.ApplicationName = v
+	x.xxx_hidden_ApplicationName = v
 }
 
 func (x *LocalExecutionParameters) SetCommandLine(v string) {
-	x.CommandLine = v
+	x.xxx_hidden_CommandLine = v
 }
 
 func (x *LocalExecutionParameters) SetCurrentDirectory(v string) {
-	x.CurrentDirectory = v
+	x.xxx_hidden_CurrentDirectory = v
 }
 
 func (x *LocalExecutionParameters) SetTimeLimitMicros(v uint64) {
-	x.TimeLimitMicros = v
+	x.xxx_hidden_TimeLimitMicros = v
 }
 
 func (x *LocalExecutionParameters) SetMemoryLimit(v uint64) {
-	x.MemoryLimit = v
+	x.xxx_hidden_MemoryLimit = v
 }
 
 func (x *LocalExecutionParameters) SetCheckIdleness(v bool) {
-	x.CheckIdleness = v
+	x.xxx_hidden_CheckIdleness = v
 }
 
 func (x *LocalExecutionParameters) SetEnvironment(v *LocalEnvironment) {
-	x.Environment = v
+	x.xxx_hidden_Environment = v
 }
 
 func (x *LocalExecutionParameters) SetRestrictUi(v bool) {
-	x.RestrictUi = v
+	x.xxx_hidden_RestrictUi = v
 }
 
 func (x *LocalExecutionParameters) SetNoJob(v bool) {
-	x.NoJob = v
+	x.xxx_hidden_NoJob = v
 }
 
 func (x *LocalExecutionParameters) SetProcessLimit(v uint32) {
-	x.ProcessLimit = v
+	x.xxx_hidden_ProcessLimit = v
 }
 
 func (x *LocalExecutionParameters) SetKernelTimeLimitMicros(v uint64) {
-	x.KernelTimeLimitMicros = v
+	x.xxx_hidden_KernelTimeLimitMicros = v
 }
 
 func (x *LocalExecutionParameters) SetWallTimeLimitMicros(v uint64) {
-	x.WallTimeLimitMicros = v
+	x.xxx_hidden_WallTimeLimitMicros = v
 }
 
 func (x *LocalExecutionParameters) SetStdIn(v *RedirectParameters) {
-	x.StdIn = v
+	x.xxx_hidden_StdIn = v
 }
 
 func (x *LocalExecutionParameters) SetStdOut(v *RedirectParameters) {
-	x.StdOut = v
+	x.xxx_hidden_StdOut = v
 }
 
 func (x *LocalExecutionParameters) SetStdErr(v *RedirectParameters) {
-	x.StdErr = v
+	x.xxx_hidden_StdErr = v
 }
 
 func (x *LocalExecutionParameters) SetCommandLineParameters(v []string) {
-	x.CommandLineParameters = v
+	x.xxx_hidden_CommandLineParameters = v
 }
 
 func (x *LocalExecutionParameters) SetSandboxId(v string) {
-	x.SandboxId = v
+	x.xxx_hidden_SandboxId = v
 }
 
 func (x *LocalExecutionParameters) SetJoinStdoutStderr(v bool) {
-	x.JoinStdoutStderr = v
+	x.xxx_hidden_JoinStdoutStderr = v
 }
 
 func (x *LocalExecutionParameters) HasEnvironment() bool {
 	if x == nil {
 		return false
 	}
-	return x.Environment != nil
+	return x.xxx_hidden_Environment != nil
 }
 
 func (x *LocalExecutionParameters) HasStdIn() bool {
 	if x == nil {
 		return false
 	}
-	return x.StdIn != nil
+	return x.xxx_hidden_StdIn != nil
 }
 
 func (x *LocalExecutionParameters) HasStdOut() bool {
 	if x == nil {
 		return false
 	}
-	return x.StdOut != nil
+	return x.xxx_hidden_StdOut != nil
 }
 
 func (x *LocalExecutionParameters) HasStdErr() bool {
 	if x == nil {
 		return false
 	}
-	return x.StdErr != nil
+	return x.xxx_hidden_StdErr != nil
 }
 
 func (x *LocalExecutionParameters) ClearEnvironment() {
-	x.Environment = nil
+	x.xxx_hidden_Environment = nil
 }
 
 func (x *LocalExecutionParameters) ClearStdIn() {
-	x.StdIn = nil
+	x.xxx_hidden_StdIn = nil
 }
 
 func (x *LocalExecutionParameters) ClearStdOut() {
-	x.StdOut = nil
+	x.xxx_hidden_StdOut = nil
 }
 
 func (x *LocalExecutionParameters) ClearStdErr() {
-	x.StdErr = nil
+	x.xxx_hidden_StdErr = nil
 }
 
 type LocalExecutionParameters_builder struct {
@@ -468,33 +470,33 @@ func (b0 LocalExecutionParameters_builder) Build() *LocalExecutionParameters {
 	m0 := &LocalExecutionParameters{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ApplicationName = b.ApplicationName
-	x.CommandLine = b.CommandLine
-	x.CurrentDirectory = b.CurrentDirectory
-	x.TimeLimitMicros = b.TimeLimitMicros
-	x.MemoryLimit = b.MemoryLimit
-	x.CheckIdleness = b.CheckIdleness
-	x.Environment = b.Environment
-	x.RestrictUi = b.RestrictUi
-	x.NoJob = b.NoJob
-	x.ProcessLimit = b.ProcessLimit
-	x.KernelTimeLimitMicros = b.KernelTimeLimitMicros
-	x.WallTimeLimitMicros = b.WallTimeLimitMicros
-	x.StdIn = b.StdIn
-	x.StdOut = b.StdOut
-	x.StdErr = b.StdErr
-	x.CommandLineParameters = b.CommandLineParameters
-	x.SandboxId = b.SandboxId
-	x.JoinStdoutStderr = b.JoinStdoutStderr
+	x.xxx_hidden_ApplicationName = b.ApplicationName
+	x.xxx_hidden_CommandLine = b.CommandLine
+	x.xxx_hidden_CurrentDirectory = b.CurrentDirectory
+	x.xxx_hidden_TimeLimitMicros = b.TimeLimitMicros
+	x.xxx_hidden_MemoryLimit = b.MemoryLimit
+	x.xxx_hidden_CheckIdleness = b.CheckIdleness
+	x.xxx_hidden_Environment = b.Environment
+	x.xxx_hidden_RestrictUi = b.RestrictUi
+	x.xxx_hidden_NoJob = b.NoJob
+	x.xxx_hidden_ProcessLimit = b.ProcessLimit
+	x.xxx_hidden_KernelTimeLimitMicros = b.KernelTimeLimitMicros
+	x.xxx_hidden_WallTimeLimitMicros = b.WallTimeLimitMicros
+	x.xxx_hidden_StdIn = b.StdIn
+	x.xxx_hidden_StdOut = b.StdOut
+	x.xxx_hidden_StdErr = b.StdErr
+	x.xxx_hidden_CommandLineParameters = b.CommandLineParameters
+	x.xxx_hidden_SandboxId = b.SandboxId
+	x.xxx_hidden_JoinStdoutStderr = b.JoinStdoutStderr
 	return m0
 }
 
 type LocalExecuteConnected struct {
-	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
-	First         *LocalExecutionParameters `protobuf:"bytes,1,opt,name=first" json:"first,omitempty"`
-	Second        *LocalExecutionParameters `protobuf:"bytes,2,opt,name=second" json:"second,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_First  *LocalExecutionParameters `protobuf:"bytes,1,opt,name=first"`
+	xxx_hidden_Second *LocalExecutionParameters `protobuf:"bytes,2,opt,name=second"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *LocalExecuteConnected) Reset() {
@@ -524,46 +526,46 @@ func (x *LocalExecuteConnected) ProtoReflect() protoreflect.Message {
 
 func (x *LocalExecuteConnected) GetFirst() *LocalExecutionParameters {
 	if x != nil {
-		return x.First
+		return x.xxx_hidden_First
 	}
 	return nil
 }
 
 func (x *LocalExecuteConnected) GetSecond() *LocalExecutionParameters {
 	if x != nil {
-		return x.Second
+		return x.xxx_hidden_Second
 	}
 	return nil
 }
 
 func (x *LocalExecuteConnected) SetFirst(v *LocalExecutionParameters) {
-	x.First = v
+	x.xxx_hidden_First = v
 }
 
 func (x *LocalExecuteConnected) SetSecond(v *LocalExecutionParameters) {
-	x.Second = v
+	x.xxx_hidden_Second = v
 }
 
 func (x *LocalExecuteConnected) HasFirst() bool {
 	if x == nil {
 		return false
 	}
-	return x.First != nil
+	return x.xxx_hidden_First != nil
 }
 
 func (x *LocalExecuteConnected) HasSecond() bool {
 	if x == nil {
 		return false
 	}
-	return x.Second != nil
+	return x.xxx_hidden_Second != nil
 }
 
 func (x *LocalExecuteConnected) ClearFirst() {
-	x.First = nil
+	x.xxx_hidden_First = nil
 }
 
 func (x *LocalExecuteConnected) ClearSecond() {
-	x.Second = nil
+	x.xxx_hidden_Second = nil
 }
 
 type LocalExecuteConnected_builder struct {
@@ -577,25 +579,25 @@ func (b0 LocalExecuteConnected_builder) Build() *LocalExecuteConnected {
 	m0 := &LocalExecuteConnected{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.First = b.First
-	x.Second = b.Second
+	x.xxx_hidden_First = b.First
+	x.xxx_hidden_Second = b.Second
 	return m0
 }
 
 type LocalExecutionResult struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	Flags          *ExecutionResultFlags  `protobuf:"bytes,1,opt,name=flags" json:"flags,omitempty"`
-	Time           *ExecutionResultTime   `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
-	Memory         uint64                 `protobuf:"varint,3,opt,name=memory" json:"memory,omitempty"`
-	ReturnCode     uint32                 `protobuf:"varint,4,opt,name=return_code,json=returnCode" json:"return_code,omitempty"`
-	StdOut         *Blob                  `protobuf:"bytes,5,opt,name=std_out,json=stdOut" json:"std_out,omitempty"`
-	StdErr         *Blob                  `protobuf:"bytes,6,opt,name=std_err,json=stdErr" json:"std_err,omitempty"`
-	TotalProcesses uint64                 `protobuf:"varint,7,opt,name=total_processes,json=totalProcesses" json:"total_processes,omitempty"`
-	KillSignal     int32                  `protobuf:"varint,8,opt,name=kill_signal,json=killSignal" json:"kill_signal,omitempty"`
-	StopSignal     int32                  `protobuf:"varint,9,opt,name=stop_signal,json=stopSignal" json:"stop_signal,omitempty"`
-	Error          string                 `protobuf:"bytes,10,opt,name=error" json:"error,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Flags          *ExecutionResultFlags  `protobuf:"bytes,1,opt,name=flags"`
+	xxx_hidden_Time           *ExecutionResultTime   `protobuf:"bytes,2,opt,name=time"`
+	xxx_hidden_Memory         uint64                 `protobuf:"varint,3,opt,name=memory"`
+	xxx_hidden_ReturnCode     uint32                 `protobuf:"varint,4,opt,name=return_code,json=returnCode"`
+	xxx_hidden_StdOut         *Blob                  `protobuf:"bytes,5,opt,name=std_out,json=stdOut"`
+	xxx_hidden_StdErr         *Blob                  `protobuf:"bytes,6,opt,name=std_err,json=stdErr"`
+	xxx_hidden_TotalProcesses uint64                 `protobuf:"varint,7,opt,name=total_processes,json=totalProcesses"`
+	xxx_hidden_KillSignal     int32                  `protobuf:"varint,8,opt,name=kill_signal,json=killSignal"`
+	xxx_hidden_StopSignal     int32                  `protobuf:"varint,9,opt,name=stop_signal,json=stopSignal"`
+	xxx_hidden_Error          string                 `protobuf:"bytes,10,opt,name=error"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *LocalExecutionResult) Reset() {
@@ -625,156 +627,156 @@ func (x *LocalExecutionResult) ProtoReflect() protoreflect.Message {
 
 func (x *LocalExecutionResult) GetFlags() *ExecutionResultFlags {
 	if x != nil {
-		return x.Flags
+		return x.xxx_hidden_Flags
 	}
 	return nil
 }
 
 func (x *LocalExecutionResult) GetTime() *ExecutionResultTime {
 	if x != nil {
-		return x.Time
+		return x.xxx_hidden_Time
 	}
 	return nil
 }
 
 func (x *LocalExecutionResult) GetMemory() uint64 {
 	if x != nil {
-		return x.Memory
+		return x.xxx_hidden_Memory
 	}
 	return 0
 }
 
 func (x *LocalExecutionResult) GetReturnCode() uint32 {
 	if x != nil {
-		return x.ReturnCode
+		return x.xxx_hidden_ReturnCode
 	}
 	return 0
 }
 
 func (x *LocalExecutionResult) GetStdOut() *Blob {
 	if x != nil {
-		return x.StdOut
+		return x.xxx_hidden_StdOut
 	}
 	return nil
 }
 
 func (x *LocalExecutionResult) GetStdErr() *Blob {
 	if x != nil {
-		return x.StdErr
+		return x.xxx_hidden_StdErr
 	}
 	return nil
 }
 
 func (x *LocalExecutionResult) GetTotalProcesses() uint64 {
 	if x != nil {
-		return x.TotalProcesses
+		return x.xxx_hidden_TotalProcesses
 	}
 	return 0
 }
 
 func (x *LocalExecutionResult) GetKillSignal() int32 {
 	if x != nil {
-		return x.KillSignal
+		return x.xxx_hidden_KillSignal
 	}
 	return 0
 }
 
 func (x *LocalExecutionResult) GetStopSignal() int32 {
 	if x != nil {
-		return x.StopSignal
+		return x.xxx_hidden_StopSignal
 	}
 	return 0
 }
 
 func (x *LocalExecutionResult) GetError() string {
 	if x != nil {
-		return x.Error
+		return x.xxx_hidden_Error
 	}
 	return ""
 }
 
 func (x *LocalExecutionResult) SetFlags(v *ExecutionResultFlags) {
-	x.Flags = v
+	x.xxx_hidden_Flags = v
 }
 
 func (x *LocalExecutionResult) SetTime(v *ExecutionResultTime) {
-	x.Time = v
+	x.xxx_hidden_Time = v
 }
 
 func (x *LocalExecutionResult) SetMemory(v uint64) {
-	x.Memory = v
+	x.xxx_hidden_Memory = v
 }
 
 func (x *LocalExecutionResult) SetReturnCode(v uint32) {
-	x.ReturnCode = v
+	x.xxx_hidden_ReturnCode = v
 }
 
 func (x *LocalExecutionResult) SetStdOut(v *Blob) {
-	x.StdOut = v
+	x.xxx_hidden_StdOut = v
 }
 
 func (x *LocalExecutionResult) SetStdErr(v *Blob) {
-	x.StdErr = v
+	x.xxx_hidden_StdErr = v
 }
 
 func (x *LocalExecutionResult) SetTotalProcesses(v uint64) {
-	x.TotalProcesses = v
+	x.xxx_hidden_TotalProcesses = v
 }
 
 func (x *LocalExecutionResult) SetKillSignal(v int32) {
-	x.KillSignal = v
+	x.xxx_hidden_KillSignal = v
 }
 
 func (x *LocalExecutionResult) SetStopSignal(v int32) {
-	x.StopSignal = v
+	x.xxx_hidden_StopSignal = v
 }
 
 func (x *LocalExecutionResult) SetError(v string) {
-	x.Error = v
+	x.xxx_hidden_Error = v
 }
 
 func (x *LocalExecutionResult) HasFlags() bool {
 	if x == nil {
 		return false
 	}
-	return x.Flags != nil
+	return x.xxx_hidden_Flags != nil
 }
 
 func (x *LocalExecutionResult) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return x.xxx_hidden_Time != nil
 }
 
 func (x *LocalExecutionResult) HasStdOut() bool {
 	if x == nil {
 		return false
 	}
-	return x.StdOut != nil
+	return x.xxx_hidden_StdOut != nil
 }
 
 func (x *LocalExecutionResult) HasStdErr() bool {
 	if x == nil {
 		return false
 	}
-	return x.StdErr != nil
+	return x.xxx_hidden_StdErr != nil
 }
 
 func (x *LocalExecutionResult) ClearFlags() {
-	x.Flags = nil
+	x.xxx_hidden_Flags = nil
 }
 
 func (x *LocalExecutionResult) ClearTime() {
-	x.Time = nil
+	x.xxx_hidden_Time = nil
 }
 
 func (x *LocalExecutionResult) ClearStdOut() {
-	x.StdOut = nil
+	x.xxx_hidden_StdOut = nil
 }
 
 func (x *LocalExecutionResult) ClearStdErr() {
-	x.StdErr = nil
+	x.xxx_hidden_StdErr = nil
 }
 
 type LocalExecutionResult_builder struct {
@@ -796,25 +798,25 @@ func (b0 LocalExecutionResult_builder) Build() *LocalExecutionResult {
 	m0 := &LocalExecutionResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Flags = b.Flags
-	x.Time = b.Time
-	x.Memory = b.Memory
-	x.ReturnCode = b.ReturnCode
-	x.StdOut = b.StdOut
-	x.StdErr = b.StdErr
-	x.TotalProcesses = b.TotalProcesses
-	x.KillSignal = b.KillSignal
-	x.StopSignal = b.StopSignal
-	x.Error = b.Error
+	x.xxx_hidden_Flags = b.Flags
+	x.xxx_hidden_Time = b.Time
+	x.xxx_hidden_Memory = b.Memory
+	x.xxx_hidden_ReturnCode = b.ReturnCode
+	x.xxx_hidden_StdOut = b.StdOut
+	x.xxx_hidden_StdErr = b.StdErr
+	x.xxx_hidden_TotalProcesses = b.TotalProcesses
+	x.xxx_hidden_KillSignal = b.KillSignal
+	x.xxx_hidden_StopSignal = b.StopSignal
+	x.xxx_hidden_Error = b.Error
 	return m0
 }
 
 type LocalExecuteConnectedResult struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	First         *LocalExecutionResult  `protobuf:"bytes,1,opt,name=first" json:"first,omitempty"`
-	Second        *LocalExecutionResult  `protobuf:"bytes,2,opt,name=second" json:"second,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_First  *LocalExecutionResult  `protobuf:"bytes,1,opt,name=first"`
+	xxx_hidden_Second *LocalExecutionResult  `protobuf:"bytes,2,opt,name=second"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *LocalExecuteConnectedResult) Reset() {
@@ -844,46 +846,46 @@ func (x *LocalExecuteConnectedResult) ProtoReflect() protoreflect.Message {
 
 func (x *LocalExecuteConnectedResult) GetFirst() *LocalExecutionResult {
 	if x != nil {
-		return x.First
+		return x.xxx_hidden_First
 	}
 	return nil
 }
 
 func (x *LocalExecuteConnectedResult) GetSecond() *LocalExecutionResult {
 	if x != nil {
-		return x.Second
+		return x.xxx_hidden_Second
 	}
 	return nil
 }
 
 func (x *LocalExecuteConnectedResult) SetFirst(v *LocalExecutionResult) {
-	x.First = v
+	x.xxx_hidden_First = v
 }
 
 func (x *LocalExecuteConnectedResult) SetSecond(v *LocalExecutionResult) {
-	x.Second = v
+	x.xxx_hidden_Second = v
 }
 
 func (x *LocalExecuteConnectedResult) HasFirst() bool {
 	if x == nil {
 		return false
 	}
-	return x.First != nil
+	return x.xxx_hidden_First != nil
 }
 
 func (x *LocalExecuteConnectedResult) HasSecond() bool {
 	if x == nil {
 		return false
 	}
-	return x.Second != nil
+	return x.xxx_hidden_Second != nil
 }
 
 func (x *LocalExecuteConnectedResult) ClearFirst() {
-	x.First = nil
+	x.xxx_hidden_First = nil
 }
 
 func (x *LocalExecuteConnectedResult) ClearSecond() {
-	x.Second = nil
+	x.xxx_hidden_Second = nil
 }
 
 type LocalExecuteConnectedResult_builder struct {
@@ -897,17 +899,17 @@ func (b0 LocalExecuteConnectedResult_builder) Build() *LocalExecuteConnectedResu
 	m0 := &LocalExecuteConnectedResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.First = b.First
-	x.Second = b.Second
+	x.xxx_hidden_First = b.First
+	x.xxx_hidden_Second = b.Second
 	return m0
 }
 
 type LocalExecution struct {
-	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
-	Parameters    *LocalExecutionParameters `protobuf:"bytes,1,opt,name=parameters" json:"parameters,omitempty"`
-	Result        *LocalExecutionResult     `protobuf:"bytes,2,opt,name=result" json:"result,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Parameters *LocalExecutionParameters `protobuf:"bytes,1,opt,name=parameters"`
+	xxx_hidden_Result     *LocalExecutionResult     `protobuf:"bytes,2,opt,name=result"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *LocalExecution) Reset() {
@@ -937,46 +939,46 @@ func (x *LocalExecution) ProtoReflect() protoreflect.Message {
 
 func (x *LocalExecution) GetParameters() *LocalExecutionParameters {
 	if x != nil {
-		return x.Parameters
+		return x.xxx_hidden_Parameters
 	}
 	return nil
 }
 
 func (x *LocalExecution) GetResult() *LocalExecutionResult {
 	if x != nil {
-		return x.Result
+		return x.xxx_hidden_Result
 	}
 	return nil
 }
 
 func (x *LocalExecution) SetParameters(v *LocalExecutionParameters) {
-	x.Parameters = v
+	x.xxx_hidden_Parameters = v
 }
 
 func (x *LocalExecution) SetResult(v *LocalExecutionResult) {
-	x.Result = v
+	x.xxx_hidden_Result = v
 }
 
 func (x *LocalExecution) HasParameters() bool {
 	if x == nil {
 		return false
 	}
-	return x.Parameters != nil
+	return x.xxx_hidden_Parameters != nil
 }
 
 func (x *LocalExecution) HasResult() bool {
 	if x == nil {
 		return false
 	}
-	return x.Result != nil
+	return x.xxx_hidden_Result != nil
 }
 
 func (x *LocalExecution) ClearParameters() {
-	x.Parameters = nil
+	x.xxx_hidden_Parameters = nil
 }
 
 func (x *LocalExecution) ClearResult() {
-	x.Result = nil
+	x.xxx_hidden_Result = nil
 }
 
 type LocalExecution_builder struct {
@@ -990,16 +992,16 @@ func (b0 LocalExecution_builder) Build() *LocalExecution {
 	m0 := &LocalExecution{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Parameters = b.Parameters
-	x.Result = b.Result
+	x.xxx_hidden_Parameters = b.Parameters
+	x.xxx_hidden_Result = b.Result
 	return m0
 }
 
 type BinaryTypeRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Pathname      string                 `protobuf:"bytes,1,opt,name=pathname" json:"pathname,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Pathname string                 `protobuf:"bytes,1,opt,name=pathname"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *BinaryTypeRequest) Reset() {
@@ -1029,13 +1031,13 @@ func (x *BinaryTypeRequest) ProtoReflect() protoreflect.Message {
 
 func (x *BinaryTypeRequest) GetPathname() string {
 	if x != nil {
-		return x.Pathname
+		return x.xxx_hidden_Pathname
 	}
 	return ""
 }
 
 func (x *BinaryTypeRequest) SetPathname(v string) {
-	x.Pathname = v
+	x.xxx_hidden_Pathname = v
 }
 
 type BinaryTypeRequest_builder struct {
@@ -1048,16 +1050,16 @@ func (b0 BinaryTypeRequest_builder) Build() *BinaryTypeRequest {
 	m0 := &BinaryTypeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Pathname = b.Pathname
+	x.xxx_hidden_Pathname = b.Pathname
 	return m0
 }
 
 type BinaryTypeResponse struct {
-	state         protoimpl.MessageState             `protogen:"hybrid.v1"`
-	Failure       bool                               `protobuf:"varint,1,opt,name=failure" json:"failure,omitempty"`
-	Result        BinaryTypeResponse_Win32BinaryType `protobuf:"varint,2,opt,name=result,enum=contester.proto.BinaryTypeResponse_Win32BinaryType" json:"result,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Failure bool                               `protobuf:"varint,1,opt,name=failure"`
+	xxx_hidden_Result  BinaryTypeResponse_Win32BinaryType `protobuf:"varint,2,opt,name=result,enum=contester.proto.BinaryTypeResponse_Win32BinaryType"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *BinaryTypeResponse) Reset() {
@@ -1087,24 +1089,24 @@ func (x *BinaryTypeResponse) ProtoReflect() protoreflect.Message {
 
 func (x *BinaryTypeResponse) GetFailure() bool {
 	if x != nil {
-		return x.Failure
+		return x.xxx_hidden_Failure
 	}
 	return false
 }
 
 func (x *BinaryTypeResponse) GetResult() BinaryTypeResponse_Win32BinaryType {
 	if x != nil {
-		return x.Result
+		return x.xxx_hidden_Result
 	}
 	return BinaryTypeResponse_SCS_32BIT_BINARY
 }
 
 func (x *BinaryTypeResponse) SetFailure(v bool) {
-	x.Failure = v
+	x.xxx_hidden_Failure = v
 }
 
 func (x *BinaryTypeResponse) SetResult(v BinaryTypeResponse_Win32BinaryType) {
-	x.Result = v
+	x.xxx_hidden_Result = v
 }
 
 type BinaryTypeResponse_builder struct {
@@ -1118,16 +1120,16 @@ func (b0 BinaryTypeResponse_builder) Build() *BinaryTypeResponse {
 	m0 := &BinaryTypeResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Failure = b.Failure
-	x.Result = b.Result
+	x.xxx_hidden_Failure = b.Failure
+	x.xxx_hidden_Result = b.Result
 	return m0
 }
 
 type ClearSandboxRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Sandbox       string                 `protobuf:"bytes,1,opt,name=sandbox" json:"sandbox,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Sandbox string                 `protobuf:"bytes,1,opt,name=sandbox"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ClearSandboxRequest) Reset() {
@@ -1157,13 +1159,13 @@ func (x *ClearSandboxRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ClearSandboxRequest) GetSandbox() string {
 	if x != nil {
-		return x.Sandbox
+		return x.xxx_hidden_Sandbox
 	}
 	return ""
 }
 
 func (x *ClearSandboxRequest) SetSandbox(v string) {
-	x.Sandbox = v
+	x.xxx_hidden_Sandbox = v
 }
 
 type ClearSandboxRequest_builder struct {
@@ -1176,15 +1178,15 @@ func (b0 ClearSandboxRequest_builder) Build() *ClearSandboxRequest {
 	m0 := &ClearSandboxRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Sandbox = b.Sandbox
+	x.xxx_hidden_Sandbox = b.Sandbox
 	return m0
 }
 
 type IdentifyRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ContesterId   string                 `protobuf:"bytes,1,opt,name=contester_id,json=contesterId" json:"contester_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ContesterId string                 `protobuf:"bytes,1,opt,name=contester_id,json=contesterId"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *IdentifyRequest) Reset() {
@@ -1214,13 +1216,13 @@ func (x *IdentifyRequest) ProtoReflect() protoreflect.Message {
 
 func (x *IdentifyRequest) GetContesterId() string {
 	if x != nil {
-		return x.ContesterId
+		return x.xxx_hidden_ContesterId
 	}
 	return ""
 }
 
 func (x *IdentifyRequest) SetContesterId(v string) {
-	x.ContesterId = v
+	x.xxx_hidden_ContesterId = v
 }
 
 type IdentifyRequest_builder struct {
@@ -1233,16 +1235,16 @@ func (b0 IdentifyRequest_builder) Build() *IdentifyRequest {
 	m0 := &IdentifyRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ContesterId = b.ContesterId
+	x.xxx_hidden_ContesterId = b.ContesterId
 	return m0
 }
 
 type SandboxLocations struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Compile       string                 `protobuf:"bytes,1,opt,name=compile" json:"compile,omitempty"`
-	Run           string                 `protobuf:"bytes,2,opt,name=run" json:"run,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Compile string                 `protobuf:"bytes,1,opt,name=compile"`
+	xxx_hidden_Run     string                 `protobuf:"bytes,2,opt,name=run"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SandboxLocations) Reset() {
@@ -1272,24 +1274,24 @@ func (x *SandboxLocations) ProtoReflect() protoreflect.Message {
 
 func (x *SandboxLocations) GetCompile() string {
 	if x != nil {
-		return x.Compile
+		return x.xxx_hidden_Compile
 	}
 	return ""
 }
 
 func (x *SandboxLocations) GetRun() string {
 	if x != nil {
-		return x.Run
+		return x.xxx_hidden_Run
 	}
 	return ""
 }
 
 func (x *SandboxLocations) SetCompile(v string) {
-	x.Compile = v
+	x.xxx_hidden_Compile = v
 }
 
 func (x *SandboxLocations) SetRun(v string) {
-	x.Run = v
+	x.xxx_hidden_Run = v
 }
 
 type SandboxLocations_builder struct {
@@ -1303,22 +1305,22 @@ func (b0 SandboxLocations_builder) Build() *SandboxLocations {
 	m0 := &SandboxLocations{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Compile = b.Compile
-	x.Run = b.Run
+	x.xxx_hidden_Compile = b.Compile
+	x.xxx_hidden_Run = b.Run
 	return m0
 }
 
 type IdentifyResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	InvokerId     string                 `protobuf:"bytes,1,opt,name=invoker_id,json=invokerId" json:"invoker_id,omitempty"`
-	Sandboxes     []*SandboxLocations    `protobuf:"bytes,2,rep,name=sandboxes" json:"sandboxes,omitempty"`
-	Environment   *LocalEnvironment      `protobuf:"bytes,3,opt,name=environment" json:"environment,omitempty"`
-	Platform      string                 `protobuf:"bytes,4,opt,name=platform" json:"platform,omitempty"`
-	PathSeparator string                 `protobuf:"bytes,5,opt,name=path_separator,json=pathSeparator" json:"path_separator,omitempty"`
-	Disks         []string               `protobuf:"bytes,6,rep,name=disks" json:"disks,omitempty"`
-	ProgramFiles  []string               `protobuf:"bytes,7,rep,name=programFiles" json:"programFiles,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_InvokerId     string                 `protobuf:"bytes,1,opt,name=invoker_id,json=invokerId"`
+	xxx_hidden_Sandboxes     *[]*SandboxLocations   `protobuf:"bytes,2,rep,name=sandboxes"`
+	xxx_hidden_Environment   *LocalEnvironment      `protobuf:"bytes,3,opt,name=environment"`
+	xxx_hidden_Platform      string                 `protobuf:"bytes,4,opt,name=platform"`
+	xxx_hidden_PathSeparator string                 `protobuf:"bytes,5,opt,name=path_separator,json=pathSeparator"`
+	xxx_hidden_Disks         []string               `protobuf:"bytes,6,rep,name=disks"`
+	xxx_hidden_ProgramFiles  []string               `protobuf:"bytes,7,rep,name=programFiles"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *IdentifyResponse) Reset() {
@@ -1348,90 +1350,92 @@ func (x *IdentifyResponse) ProtoReflect() protoreflect.Message {
 
 func (x *IdentifyResponse) GetInvokerId() string {
 	if x != nil {
-		return x.InvokerId
+		return x.xxx_hidden_InvokerId
 	}
 	return ""
 }
 
 func (x *IdentifyResponse) GetSandboxes() []*SandboxLocations {
 	if x != nil {
-		return x.Sandboxes
+		if x.xxx_hidden_Sandboxes != nil {
+			return *x.xxx_hidden_Sandboxes
+		}
 	}
 	return nil
 }
 
 func (x *IdentifyResponse) GetEnvironment() *LocalEnvironment {
 	if x != nil {
-		return x.Environment
+		return x.xxx_hidden_Environment
 	}
 	return nil
 }
 
 func (x *IdentifyResponse) GetPlatform() string {
 	if x != nil {
-		return x.Platform
+		return x.xxx_hidden_Platform
 	}
 	return ""
 }
 
 func (x *IdentifyResponse) GetPathSeparator() string {
 	if x != nil {
-		return x.PathSeparator
+		return x.xxx_hidden_PathSeparator
 	}
 	return ""
 }
 
 func (x *IdentifyResponse) GetDisks() []string {
 	if x != nil {
-		return x.Disks
+		return x.xxx_hidden_Disks
 	}
 	return nil
 }
 
 func (x *IdentifyResponse) GetProgramFiles() []string {
 	if x != nil {
-		return x.ProgramFiles
+		return x.xxx_hidden_ProgramFiles
 	}
 	return nil
 }
 
 func (x *IdentifyResponse) SetInvokerId(v string) {
-	x.InvokerId = v
+	x.xxx_hidden_InvokerId = v
 }
 
 func (x *IdentifyResponse) SetSandboxes(v []*SandboxLocations) {
-	x.Sandboxes = v
+	x.xxx_hidden_Sandboxes = &v
 }
 
 func (x *IdentifyResponse) SetEnvironment(v *LocalEnvironment) {
-	x.Environment = v
+	x.xxx_hidden_Environment = v
 }
 
 func (x *IdentifyResponse) SetPlatform(v string) {
-	x.Platform = v
+	x.xxx_hidden_Platform = v
 }
 
 func (x *IdentifyResponse) SetPathSeparator(v string) {
-	x.PathSeparator = v
+	x.xxx_hidden_PathSeparator = v
 }
 
 func (x *IdentifyResponse) SetDisks(v []string) {
-	x.Disks = v
+	x.xxx_hidden_Disks = v
 }
 
 func (x *IdentifyResponse) SetProgramFiles(v []string) {
-	x.ProgramFiles = v
+	x.xxx_hidden_ProgramFiles = v
 }
 
 func (x *IdentifyResponse) HasEnvironment() bool {
 	if x == nil {
 		return false
 	}
-	return x.Environment != nil
+	return x.xxx_hidden_Environment != nil
 }
 
 func (x *IdentifyResponse) ClearEnvironment() {
-	x.Environment = nil
+	x.xxx_hidden_Environment = nil
 }
 
 type IdentifyResponse_builder struct {
@@ -1450,24 +1454,24 @@ func (b0 IdentifyResponse_builder) Build() *IdentifyResponse {
 	m0 := &IdentifyResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.InvokerId = b.InvokerId
-	x.Sandboxes = b.Sandboxes
-	x.Environment = b.Environment
-	x.Platform = b.Platform
-	x.PathSeparator = b.PathSeparator
-	x.Disks = b.Disks
-	x.ProgramFiles = b.ProgramFiles
+	x.xxx_hidden_InvokerId = b.InvokerId
+	x.xxx_hidden_Sandboxes = &b.Sandboxes
+	x.xxx_hidden_Environment = b.Environment
+	x.xxx_hidden_Platform = b.Platform
+	x.xxx_hidden_PathSeparator = b.PathSeparator
+	x.xxx_hidden_Disks = b.Disks
+	x.xxx_hidden_ProgramFiles = b.ProgramFiles
 	return m0
 }
 
 type FileStat struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	IsDirectory   bool                   `protobuf:"varint,2,opt,name=is_directory,json=isDirectory" json:"is_directory,omitempty"`
-	Size          uint64                 `protobuf:"varint,3,opt,name=size" json:"size,omitempty"`
-	Checksum      string                 `protobuf:"bytes,4,opt,name=checksum" json:"checksum,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_IsDirectory bool                   `protobuf:"varint,2,opt,name=is_directory,json=isDirectory"`
+	xxx_hidden_Size        uint64                 `protobuf:"varint,3,opt,name=size"`
+	xxx_hidden_Checksum    string                 `protobuf:"bytes,4,opt,name=checksum"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FileStat) Reset() {
@@ -1497,46 +1501,46 @@ func (x *FileStat) ProtoReflect() protoreflect.Message {
 
 func (x *FileStat) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *FileStat) GetIsDirectory() bool {
 	if x != nil {
-		return x.IsDirectory
+		return x.xxx_hidden_IsDirectory
 	}
 	return false
 }
 
 func (x *FileStat) GetSize() uint64 {
 	if x != nil {
-		return x.Size
+		return x.xxx_hidden_Size
 	}
 	return 0
 }
 
 func (x *FileStat) GetChecksum() string {
 	if x != nil {
-		return x.Checksum
+		return x.xxx_hidden_Checksum
 	}
 	return ""
 }
 
 func (x *FileStat) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *FileStat) SetIsDirectory(v bool) {
-	x.IsDirectory = v
+	x.xxx_hidden_IsDirectory = v
 }
 
 func (x *FileStat) SetSize(v uint64) {
-	x.Size = v
+	x.xxx_hidden_Size = v
 }
 
 func (x *FileStat) SetChecksum(v string) {
-	x.Checksum = v
+	x.xxx_hidden_Checksum = v
 }
 
 type FileStat_builder struct {
@@ -1552,21 +1556,21 @@ func (b0 FileStat_builder) Build() *FileStat {
 	m0 := &FileStat{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.IsDirectory = b.IsDirectory
-	x.Size = b.Size
-	x.Checksum = b.Checksum
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_IsDirectory = b.IsDirectory
+	x.xxx_hidden_Size = b.Size
+	x.xxx_hidden_Checksum = b.Checksum
 	return m0
 }
 
 type StatRequest struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name              []string               `protobuf:"bytes,1,rep,name=name" json:"name,omitempty"`
-	SandboxId         string                 `protobuf:"bytes,2,opt,name=sandbox_id,json=sandboxId" json:"sandbox_id,omitempty"`
-	Expand            bool                   `protobuf:"varint,3,opt,name=expand" json:"expand,omitempty"`
-	CalculateChecksum bool                   `protobuf:"varint,4,opt,name=calculate_checksum,json=calculateChecksum" json:"calculate_checksum,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name              []string               `protobuf:"bytes,1,rep,name=name"`
+	xxx_hidden_SandboxId         string                 `protobuf:"bytes,2,opt,name=sandbox_id,json=sandboxId"`
+	xxx_hidden_Expand            bool                   `protobuf:"varint,3,opt,name=expand"`
+	xxx_hidden_CalculateChecksum bool                   `protobuf:"varint,4,opt,name=calculate_checksum,json=calculateChecksum"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *StatRequest) Reset() {
@@ -1596,46 +1600,46 @@ func (x *StatRequest) ProtoReflect() protoreflect.Message {
 
 func (x *StatRequest) GetName() []string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return nil
 }
 
 func (x *StatRequest) GetSandboxId() string {
 	if x != nil {
-		return x.SandboxId
+		return x.xxx_hidden_SandboxId
 	}
 	return ""
 }
 
 func (x *StatRequest) GetExpand() bool {
 	if x != nil {
-		return x.Expand
+		return x.xxx_hidden_Expand
 	}
 	return false
 }
 
 func (x *StatRequest) GetCalculateChecksum() bool {
 	if x != nil {
-		return x.CalculateChecksum
+		return x.xxx_hidden_CalculateChecksum
 	}
 	return false
 }
 
 func (x *StatRequest) SetName(v []string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *StatRequest) SetSandboxId(v string) {
-	x.SandboxId = v
+	x.xxx_hidden_SandboxId = v
 }
 
 func (x *StatRequest) SetExpand(v bool) {
-	x.Expand = v
+	x.xxx_hidden_Expand = v
 }
 
 func (x *StatRequest) SetCalculateChecksum(v bool) {
-	x.CalculateChecksum = v
+	x.xxx_hidden_CalculateChecksum = v
 }
 
 type StatRequest_builder struct {
@@ -1651,18 +1655,18 @@ func (b0 StatRequest_builder) Build() *StatRequest {
 	m0 := &StatRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.SandboxId = b.SandboxId
-	x.Expand = b.Expand
-	x.CalculateChecksum = b.CalculateChecksum
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_SandboxId = b.SandboxId
+	x.xxx_hidden_Expand = b.Expand
+	x.xxx_hidden_CalculateChecksum = b.CalculateChecksum
 	return m0
 }
 
 type FileStats struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Entries       []*FileStat            `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Entries *[]*FileStat           `protobuf:"bytes,1,rep,name=entries"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *FileStats) Reset() {
@@ -1692,13 +1696,15 @@ func (x *FileStats) ProtoReflect() protoreflect.Message {
 
 func (x *FileStats) GetEntries() []*FileStat {
 	if x != nil {
-		return x.Entries
+		if x.xxx_hidden_Entries != nil {
+			return *x.xxx_hidden_Entries
+		}
 	}
 	return nil
 }
 
 func (x *FileStats) SetEntries(v []*FileStat) {
-	x.Entries = v
+	x.xxx_hidden_Entries = &v
 }
 
 type FileStats_builder struct {
@@ -1711,15 +1717,15 @@ func (b0 FileStats_builder) Build() *FileStats {
 	m0 := &FileStats{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entries = b.Entries
+	x.xxx_hidden_Entries = &b.Entries
 	return m0
 }
 
 type GetRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetRequest) Reset() {
@@ -1749,13 +1755,13 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *GetRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 type GetRequest_builder struct {
@@ -1768,12 +1774,12 @@ func (b0 GetRequest_builder) Build() *GetRequest {
 	m0 := &GetRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	x.xxx_hidden_Name = b.Name
 	return m0
 }
 
 type EmptyMessage struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1816,15 +1822,15 @@ func (b0 EmptyMessage_builder) Build() *EmptyMessage {
 }
 
 type CopyOperation struct {
-	state              protoimpl.MessageState `protogen:"hybrid.v1"`
-	LocalFileName      string                 `protobuf:"bytes,1,opt,name=local_file_name,json=localFileName" json:"local_file_name,omitempty"`
-	RemoteLocation     string                 `protobuf:"bytes,2,opt,name=remote_location,json=remoteLocation" json:"remote_location,omitempty"`
-	Upload             bool                   `protobuf:"varint,3,opt,name=upload" json:"upload,omitempty"`
-	Checksum           string                 `protobuf:"bytes,4,opt,name=checksum" json:"checksum,omitempty"`
-	ModuleType         string                 `protobuf:"bytes,5,opt,name=module_type,json=moduleType" json:"module_type,omitempty"`
-	AuthorizationToken string                 `protobuf:"bytes,6,opt,name=authorization_token,json=authorizationToken" json:"authorization_token,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_LocalFileName      string                 `protobuf:"bytes,1,opt,name=local_file_name,json=localFileName"`
+	xxx_hidden_RemoteLocation     string                 `protobuf:"bytes,2,opt,name=remote_location,json=remoteLocation"`
+	xxx_hidden_Upload             bool                   `protobuf:"varint,3,opt,name=upload"`
+	xxx_hidden_Checksum           string                 `protobuf:"bytes,4,opt,name=checksum"`
+	xxx_hidden_ModuleType         string                 `protobuf:"bytes,5,opt,name=module_type,json=moduleType"`
+	xxx_hidden_AuthorizationToken string                 `protobuf:"bytes,6,opt,name=authorization_token,json=authorizationToken"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *CopyOperation) Reset() {
@@ -1854,68 +1860,68 @@ func (x *CopyOperation) ProtoReflect() protoreflect.Message {
 
 func (x *CopyOperation) GetLocalFileName() string {
 	if x != nil {
-		return x.LocalFileName
+		return x.xxx_hidden_LocalFileName
 	}
 	return ""
 }
 
 func (x *CopyOperation) GetRemoteLocation() string {
 	if x != nil {
-		return x.RemoteLocation
+		return x.xxx_hidden_RemoteLocation
 	}
 	return ""
 }
 
 func (x *CopyOperation) GetUpload() bool {
 	if x != nil {
-		return x.Upload
+		return x.xxx_hidden_Upload
 	}
 	return false
 }
 
 func (x *CopyOperation) GetChecksum() string {
 	if x != nil {
-		return x.Checksum
+		return x.xxx_hidden_Checksum
 	}
 	return ""
 }
 
 func (x *CopyOperation) GetModuleType() string {
 	if x != nil {
-		return x.ModuleType
+		return x.xxx_hidden_ModuleType
 	}
 	return ""
 }
 
 func (x *CopyOperation) GetAuthorizationToken() string {
 	if x != nil {
-		return x.AuthorizationToken
+		return x.xxx_hidden_AuthorizationToken
 	}
 	return ""
 }
 
 func (x *CopyOperation) SetLocalFileName(v string) {
-	x.LocalFileName = v
+	x.xxx_hidden_LocalFileName = v
 }
 
 func (x *CopyOperation) SetRemoteLocation(v string) {
-	x.RemoteLocation = v
+	x.xxx_hidden_RemoteLocation = v
 }
 
 func (x *CopyOperation) SetUpload(v bool) {
-	x.Upload = v
+	x.xxx_hidden_Upload = v
 }
 
 func (x *CopyOperation) SetChecksum(v string) {
-	x.Checksum = v
+	x.xxx_hidden_Checksum = v
 }
 
 func (x *CopyOperation) SetModuleType(v string) {
-	x.ModuleType = v
+	x.xxx_hidden_ModuleType = v
 }
 
 func (x *CopyOperation) SetAuthorizationToken(v string) {
-	x.AuthorizationToken = v
+	x.xxx_hidden_AuthorizationToken = v
 }
 
 type CopyOperation_builder struct {
@@ -1933,21 +1939,21 @@ func (b0 CopyOperation_builder) Build() *CopyOperation {
 	m0 := &CopyOperation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LocalFileName = b.LocalFileName
-	x.RemoteLocation = b.RemoteLocation
-	x.Upload = b.Upload
-	x.Checksum = b.Checksum
-	x.ModuleType = b.ModuleType
-	x.AuthorizationToken = b.AuthorizationToken
+	x.xxx_hidden_LocalFileName = b.LocalFileName
+	x.xxx_hidden_RemoteLocation = b.RemoteLocation
+	x.xxx_hidden_Upload = b.Upload
+	x.xxx_hidden_Checksum = b.Checksum
+	x.xxx_hidden_ModuleType = b.ModuleType
+	x.xxx_hidden_AuthorizationToken = b.AuthorizationToken
 	return m0
 }
 
 type CopyOperations struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Entries       []*CopyOperation       `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
-	SandboxId     string                 `protobuf:"bytes,2,opt,name=sandbox_id,json=sandboxId" json:"sandbox_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Entries   *[]*CopyOperation      `protobuf:"bytes,1,rep,name=entries"`
+	xxx_hidden_SandboxId string                 `protobuf:"bytes,2,opt,name=sandbox_id,json=sandboxId"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CopyOperations) Reset() {
@@ -1977,24 +1983,26 @@ func (x *CopyOperations) ProtoReflect() protoreflect.Message {
 
 func (x *CopyOperations) GetEntries() []*CopyOperation {
 	if x != nil {
-		return x.Entries
+		if x.xxx_hidden_Entries != nil {
+			return *x.xxx_hidden_Entries
+		}
 	}
 	return nil
 }
 
 func (x *CopyOperations) GetSandboxId() string {
 	if x != nil {
-		return x.SandboxId
+		return x.xxx_hidden_SandboxId
 	}
 	return ""
 }
 
 func (x *CopyOperations) SetEntries(v []*CopyOperation) {
-	x.Entries = v
+	x.xxx_hidden_Entries = &v
 }
 
 func (x *CopyOperations) SetSandboxId(v string) {
-	x.SandboxId = v
+	x.xxx_hidden_SandboxId = v
 }
 
 type CopyOperations_builder struct {
@@ -2008,17 +2016,17 @@ func (b0 CopyOperations_builder) Build() *CopyOperations {
 	m0 := &CopyOperations{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entries = b.Entries
-	x.SandboxId = b.SandboxId
+	x.xxx_hidden_Entries = &b.Entries
+	x.xxx_hidden_SandboxId = b.SandboxId
 	return m0
 }
 
 type NamePair struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Source        string                 `protobuf:"bytes,1,opt,name=source" json:"source,omitempty"`
-	Destination   string                 `protobuf:"bytes,2,opt,name=destination" json:"destination,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Source      string                 `protobuf:"bytes,1,opt,name=source"`
+	xxx_hidden_Destination string                 `protobuf:"bytes,2,opt,name=destination"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *NamePair) Reset() {
@@ -2048,24 +2056,24 @@ func (x *NamePair) ProtoReflect() protoreflect.Message {
 
 func (x *NamePair) GetSource() string {
 	if x != nil {
-		return x.Source
+		return x.xxx_hidden_Source
 	}
 	return ""
 }
 
 func (x *NamePair) GetDestination() string {
 	if x != nil {
-		return x.Destination
+		return x.xxx_hidden_Destination
 	}
 	return ""
 }
 
 func (x *NamePair) SetSource(v string) {
-	x.Source = v
+	x.xxx_hidden_Source = v
 }
 
 func (x *NamePair) SetDestination(v string) {
-	x.Destination = v
+	x.xxx_hidden_Destination = v
 }
 
 type NamePair_builder struct {
@@ -2079,17 +2087,17 @@ func (b0 NamePair_builder) Build() *NamePair {
 	m0 := &NamePair{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Source = b.Source
-	x.Destination = b.Destination
+	x.xxx_hidden_Source = b.Source
+	x.xxx_hidden_Destination = b.Destination
 	return m0
 }
 
 type RepeatedNamePairEntries struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Entries       []*NamePair            `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
-	SandboxId     string                 `protobuf:"bytes,2,opt,name=sandbox_id,json=sandboxId" json:"sandbox_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Entries   *[]*NamePair           `protobuf:"bytes,1,rep,name=entries"`
+	xxx_hidden_SandboxId string                 `protobuf:"bytes,2,opt,name=sandbox_id,json=sandboxId"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *RepeatedNamePairEntries) Reset() {
@@ -2119,24 +2127,26 @@ func (x *RepeatedNamePairEntries) ProtoReflect() protoreflect.Message {
 
 func (x *RepeatedNamePairEntries) GetEntries() []*NamePair {
 	if x != nil {
-		return x.Entries
+		if x.xxx_hidden_Entries != nil {
+			return *x.xxx_hidden_Entries
+		}
 	}
 	return nil
 }
 
 func (x *RepeatedNamePairEntries) GetSandboxId() string {
 	if x != nil {
-		return x.SandboxId
+		return x.xxx_hidden_SandboxId
 	}
 	return ""
 }
 
 func (x *RepeatedNamePairEntries) SetEntries(v []*NamePair) {
-	x.Entries = v
+	x.xxx_hidden_Entries = &v
 }
 
 func (x *RepeatedNamePairEntries) SetSandboxId(v string) {
-	x.SandboxId = v
+	x.xxx_hidden_SandboxId = v
 }
 
 type RepeatedNamePairEntries_builder struct {
@@ -2150,16 +2160,16 @@ func (b0 RepeatedNamePairEntries_builder) Build() *RepeatedNamePairEntries {
 	m0 := &RepeatedNamePairEntries{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entries = b.Entries
-	x.SandboxId = b.SandboxId
+	x.xxx_hidden_Entries = &b.Entries
+	x.xxx_hidden_SandboxId = b.SandboxId
 	return m0
 }
 
 type RepeatedStringEntries struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Entries       []string               `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Entries []string               `protobuf:"bytes,1,rep,name=entries"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *RepeatedStringEntries) Reset() {
@@ -2189,13 +2199,13 @@ func (x *RepeatedStringEntries) ProtoReflect() protoreflect.Message {
 
 func (x *RepeatedStringEntries) GetEntries() []string {
 	if x != nil {
-		return x.Entries
+		return x.xxx_hidden_Entries
 	}
 	return nil
 }
 
 func (x *RepeatedStringEntries) SetEntries(v []string) {
-	x.Entries = v
+	x.xxx_hidden_Entries = v
 }
 
 type RepeatedStringEntries_builder struct {
@@ -2208,17 +2218,17 @@ func (b0 RepeatedStringEntries_builder) Build() *RepeatedStringEntries {
 	m0 := &RepeatedStringEntries{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Entries = b.Entries
+	x.xxx_hidden_Entries = b.Entries
 	return m0
 }
 
 type LocalEnvironment_Variable struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
-	Expand        bool                   `protobuf:"varint,3,opt,name=expand" json:"expand,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name"`
+	xxx_hidden_Value  string                 `protobuf:"bytes,2,opt,name=value"`
+	xxx_hidden_Expand bool                   `protobuf:"varint,3,opt,name=expand"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *LocalEnvironment_Variable) Reset() {
@@ -2248,35 +2258,35 @@ func (x *LocalEnvironment_Variable) ProtoReflect() protoreflect.Message {
 
 func (x *LocalEnvironment_Variable) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *LocalEnvironment_Variable) GetValue() string {
 	if x != nil {
-		return x.Value
+		return x.xxx_hidden_Value
 	}
 	return ""
 }
 
 func (x *LocalEnvironment_Variable) GetExpand() bool {
 	if x != nil {
-		return x.Expand
+		return x.xxx_hidden_Expand
 	}
 	return false
 }
 
 func (x *LocalEnvironment_Variable) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *LocalEnvironment_Variable) SetValue(v string) {
-	x.Value = v
+	x.xxx_hidden_Value = v
 }
 
 func (x *LocalEnvironment_Variable) SetExpand(v bool) {
-	x.Expand = v
+	x.xxx_hidden_Expand = v
 }
 
 type LocalEnvironment_Variable_builder struct {
@@ -2291,9 +2301,9 @@ func (b0 LocalEnvironment_Variable_builder) Build() *LocalEnvironment_Variable {
 	m0 := &LocalEnvironment_Variable{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Value = b.Value
-	x.Expand = b.Expand
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Value = b.Value
+	x.xxx_hidden_Expand = b.Expand
 	return m0
 }
 

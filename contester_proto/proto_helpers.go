@@ -11,15 +11,15 @@ import (
 )
 
 func (blob *Blob) Reader() (io.Reader, error) {
-	if blob.Compression != nil && blob.GetCompression().GetMethod() == Blob_CompressionInfo_METHOD_ZLIB {
-		buf := bytes.NewReader(blob.Data)
+	if blob.HasCompression() && blob.GetCompression().GetMethod() == Blob_CompressionInfo_METHOD_ZLIB {
+		buf := bytes.NewReader(blob.GetData())
 		r, err := zlib.NewReader(buf)
 		if err != nil {
 			return nil, fmt.Errorf("zlib.NewReader(): %w", err)
 		}
 		return r, nil
 	}
-	return bytes.NewBuffer(blob.Data), nil
+	return bytes.NewBuffer(blob.GetData()), nil
 }
 
 func (blob *Blob) Bytes() ([]byte, error) {
@@ -67,19 +67,27 @@ func NewBlob(data []byte) (*Blob, error) {
 		return nil, err
 	}
 
-	result := Blob{
+	result := &Blob{
 		Sha1: sha1sum,
 	}
 	if len(compressed) < len(data)-8 {
-		result.Compression = &Blob_CompressionInfo{
+		result.SetCompression(&Blob_CompressionInfo{
 			Method:       Blob_CompressionInfo_METHOD_ZLIB,
 			OriginalSize: uint32(len(data)),
+		})
+		if compressed != nil {
+			result.SetData(compressed)
+		} else {
+			result.ClearData()
 		}
-		result.Data = compressed
 	} else {
-		result.Data = data
+		if data != nil {
+			result.SetData(data)
+		} else {
+			result.ClearData()
+		}
 	}
-	return &result, nil
+	return result, nil
 }
 
 func BlobFromStream(r io.Reader) (*Blob, error) {

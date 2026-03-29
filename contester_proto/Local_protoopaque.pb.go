@@ -1310,6 +1310,119 @@ func (b0 SandboxLocations_builder) Build() *SandboxLocations {
 	return m0
 }
 
+type HardwareInfo struct {
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CpuModel        string                 `protobuf:"bytes,1,opt,name=cpu_model,json=cpuModel"`
+	xxx_hidden_CpuFrequencyMhz uint32                 `protobuf:"varint,2,opt,name=cpu_frequency_mhz,json=cpuFrequencyMhz"`
+	xxx_hidden_CpuCores        uint32                 `protobuf:"varint,3,opt,name=cpu_cores,json=cpuCores"`
+	xxx_hidden_CpuThreads      uint32                 `protobuf:"varint,4,opt,name=cpu_threads,json=cpuThreads"`
+	xxx_hidden_RamBytes        uint64                 `protobuf:"varint,5,opt,name=ram_bytes,json=ramBytes"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *HardwareInfo) Reset() {
+	*x = HardwareInfo{}
+	mi := &file_Local_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HardwareInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HardwareInfo) ProtoMessage() {}
+
+func (x *HardwareInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_Local_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *HardwareInfo) GetCpuModel() string {
+	if x != nil {
+		return x.xxx_hidden_CpuModel
+	}
+	return ""
+}
+
+func (x *HardwareInfo) GetCpuFrequencyMhz() uint32 {
+	if x != nil {
+		return x.xxx_hidden_CpuFrequencyMhz
+	}
+	return 0
+}
+
+func (x *HardwareInfo) GetCpuCores() uint32 {
+	if x != nil {
+		return x.xxx_hidden_CpuCores
+	}
+	return 0
+}
+
+func (x *HardwareInfo) GetCpuThreads() uint32 {
+	if x != nil {
+		return x.xxx_hidden_CpuThreads
+	}
+	return 0
+}
+
+func (x *HardwareInfo) GetRamBytes() uint64 {
+	if x != nil {
+		return x.xxx_hidden_RamBytes
+	}
+	return 0
+}
+
+func (x *HardwareInfo) SetCpuModel(v string) {
+	x.xxx_hidden_CpuModel = v
+}
+
+func (x *HardwareInfo) SetCpuFrequencyMhz(v uint32) {
+	x.xxx_hidden_CpuFrequencyMhz = v
+}
+
+func (x *HardwareInfo) SetCpuCores(v uint32) {
+	x.xxx_hidden_CpuCores = v
+}
+
+func (x *HardwareInfo) SetCpuThreads(v uint32) {
+	x.xxx_hidden_CpuThreads = v
+}
+
+func (x *HardwareInfo) SetRamBytes(v uint64) {
+	x.xxx_hidden_RamBytes = v
+}
+
+type HardwareInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	CpuModel        string
+	CpuFrequencyMhz uint32
+	CpuCores        uint32
+	CpuThreads      uint32
+	RamBytes        uint64
+}
+
+func (b0 HardwareInfo_builder) Build() *HardwareInfo {
+	m0 := &HardwareInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CpuModel = b.CpuModel
+	x.xxx_hidden_CpuFrequencyMhz = b.CpuFrequencyMhz
+	x.xxx_hidden_CpuCores = b.CpuCores
+	x.xxx_hidden_CpuThreads = b.CpuThreads
+	x.xxx_hidden_RamBytes = b.RamBytes
+	return m0
+}
+
 type IdentifyResponse struct {
 	state                    protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_InvokerId     string                 `protobuf:"bytes,1,opt,name=invoker_id,json=invokerId"`
@@ -1319,13 +1432,14 @@ type IdentifyResponse struct {
 	xxx_hidden_PathSeparator string                 `protobuf:"bytes,5,opt,name=path_separator,json=pathSeparator"`
 	xxx_hidden_Disks         []string               `protobuf:"bytes,6,rep,name=disks"`
 	xxx_hidden_ProgramFiles  []string               `protobuf:"bytes,7,rep,name=programFiles"`
+	xxx_hidden_Hardware      *HardwareInfo          `protobuf:"bytes,8,opt,name=hardware"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
 
 func (x *IdentifyResponse) Reset() {
 	*x = IdentifyResponse{}
-	mi := &file_Local_proto_msgTypes[11]
+	mi := &file_Local_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1337,7 +1451,7 @@ func (x *IdentifyResponse) String() string {
 func (*IdentifyResponse) ProtoMessage() {}
 
 func (x *IdentifyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[11]
+	mi := &file_Local_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1399,6 +1513,13 @@ func (x *IdentifyResponse) GetProgramFiles() []string {
 	return nil
 }
 
+func (x *IdentifyResponse) GetHardware() *HardwareInfo {
+	if x != nil {
+		return x.xxx_hidden_Hardware
+	}
+	return nil
+}
+
 func (x *IdentifyResponse) SetInvokerId(v string) {
 	x.xxx_hidden_InvokerId = v
 }
@@ -1427,6 +1548,10 @@ func (x *IdentifyResponse) SetProgramFiles(v []string) {
 	x.xxx_hidden_ProgramFiles = v
 }
 
+func (x *IdentifyResponse) SetHardware(v *HardwareInfo) {
+	x.xxx_hidden_Hardware = v
+}
+
 func (x *IdentifyResponse) HasEnvironment() bool {
 	if x == nil {
 		return false
@@ -1434,8 +1559,19 @@ func (x *IdentifyResponse) HasEnvironment() bool {
 	return x.xxx_hidden_Environment != nil
 }
 
+func (x *IdentifyResponse) HasHardware() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Hardware != nil
+}
+
 func (x *IdentifyResponse) ClearEnvironment() {
 	x.xxx_hidden_Environment = nil
+}
+
+func (x *IdentifyResponse) ClearHardware() {
+	x.xxx_hidden_Hardware = nil
 }
 
 type IdentifyResponse_builder struct {
@@ -1448,6 +1584,7 @@ type IdentifyResponse_builder struct {
 	PathSeparator string
 	Disks         []string
 	ProgramFiles  []string
+	Hardware      *HardwareInfo
 }
 
 func (b0 IdentifyResponse_builder) Build() *IdentifyResponse {
@@ -1461,6 +1598,7 @@ func (b0 IdentifyResponse_builder) Build() *IdentifyResponse {
 	x.xxx_hidden_PathSeparator = b.PathSeparator
 	x.xxx_hidden_Disks = b.Disks
 	x.xxx_hidden_ProgramFiles = b.ProgramFiles
+	x.xxx_hidden_Hardware = b.Hardware
 	return m0
 }
 
@@ -1476,7 +1614,7 @@ type FileStat struct {
 
 func (x *FileStat) Reset() {
 	*x = FileStat{}
-	mi := &file_Local_proto_msgTypes[12]
+	mi := &file_Local_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1488,7 +1626,7 @@ func (x *FileStat) String() string {
 func (*FileStat) ProtoMessage() {}
 
 func (x *FileStat) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[12]
+	mi := &file_Local_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1575,7 +1713,7 @@ type StatRequest struct {
 
 func (x *StatRequest) Reset() {
 	*x = StatRequest{}
-	mi := &file_Local_proto_msgTypes[13]
+	mi := &file_Local_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1587,7 +1725,7 @@ func (x *StatRequest) String() string {
 func (*StatRequest) ProtoMessage() {}
 
 func (x *StatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[13]
+	mi := &file_Local_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1671,7 +1809,7 @@ type FileStats struct {
 
 func (x *FileStats) Reset() {
 	*x = FileStats{}
-	mi := &file_Local_proto_msgTypes[14]
+	mi := &file_Local_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1683,7 +1821,7 @@ func (x *FileStats) String() string {
 func (*FileStats) ProtoMessage() {}
 
 func (x *FileStats) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[14]
+	mi := &file_Local_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1730,7 +1868,7 @@ type GetRequest struct {
 
 func (x *GetRequest) Reset() {
 	*x = GetRequest{}
-	mi := &file_Local_proto_msgTypes[15]
+	mi := &file_Local_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1742,7 +1880,7 @@ func (x *GetRequest) String() string {
 func (*GetRequest) ProtoMessage() {}
 
 func (x *GetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[15]
+	mi := &file_Local_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1786,7 +1924,7 @@ type EmptyMessage struct {
 
 func (x *EmptyMessage) Reset() {
 	*x = EmptyMessage{}
-	mi := &file_Local_proto_msgTypes[16]
+	mi := &file_Local_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1798,7 +1936,7 @@ func (x *EmptyMessage) String() string {
 func (*EmptyMessage) ProtoMessage() {}
 
 func (x *EmptyMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[16]
+	mi := &file_Local_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1835,7 +1973,7 @@ type CopyOperation struct {
 
 func (x *CopyOperation) Reset() {
 	*x = CopyOperation{}
-	mi := &file_Local_proto_msgTypes[17]
+	mi := &file_Local_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1847,7 +1985,7 @@ func (x *CopyOperation) String() string {
 func (*CopyOperation) ProtoMessage() {}
 
 func (x *CopyOperation) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[17]
+	mi := &file_Local_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1958,7 +2096,7 @@ type CopyOperations struct {
 
 func (x *CopyOperations) Reset() {
 	*x = CopyOperations{}
-	mi := &file_Local_proto_msgTypes[18]
+	mi := &file_Local_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1970,7 +2108,7 @@ func (x *CopyOperations) String() string {
 func (*CopyOperations) ProtoMessage() {}
 
 func (x *CopyOperations) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[18]
+	mi := &file_Local_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2031,7 +2169,7 @@ type NamePair struct {
 
 func (x *NamePair) Reset() {
 	*x = NamePair{}
-	mi := &file_Local_proto_msgTypes[19]
+	mi := &file_Local_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2043,7 +2181,7 @@ func (x *NamePair) String() string {
 func (*NamePair) ProtoMessage() {}
 
 func (x *NamePair) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[19]
+	mi := &file_Local_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2102,7 +2240,7 @@ type RepeatedNamePairEntries struct {
 
 func (x *RepeatedNamePairEntries) Reset() {
 	*x = RepeatedNamePairEntries{}
-	mi := &file_Local_proto_msgTypes[20]
+	mi := &file_Local_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2114,7 +2252,7 @@ func (x *RepeatedNamePairEntries) String() string {
 func (*RepeatedNamePairEntries) ProtoMessage() {}
 
 func (x *RepeatedNamePairEntries) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[20]
+	mi := &file_Local_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2174,7 +2312,7 @@ type RepeatedStringEntries struct {
 
 func (x *RepeatedStringEntries) Reset() {
 	*x = RepeatedStringEntries{}
-	mi := &file_Local_proto_msgTypes[21]
+	mi := &file_Local_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2186,7 +2324,7 @@ func (x *RepeatedStringEntries) String() string {
 func (*RepeatedStringEntries) ProtoMessage() {}
 
 func (x *RepeatedStringEntries) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[21]
+	mi := &file_Local_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2233,7 +2371,7 @@ type LocalEnvironment_Variable struct {
 
 func (x *LocalEnvironment_Variable) Reset() {
 	*x = LocalEnvironment_Variable{}
-	mi := &file_Local_proto_msgTypes[22]
+	mi := &file_Local_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2245,7 +2383,7 @@ func (x *LocalEnvironment_Variable) String() string {
 func (*LocalEnvironment_Variable) ProtoMessage() {}
 
 func (x *LocalEnvironment_Variable) ProtoReflect() protoreflect.Message {
-	mi := &file_Local_proto_msgTypes[22]
+	mi := &file_Local_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2386,7 +2524,14 @@ const file_Local_proto_rawDesc = "" +
 	"\fcontester_id\x18\x01 \x01(\tR\vcontesterId\">\n" +
 	"\x10SandboxLocations\x12\x18\n" +
 	"\acompile\x18\x01 \x01(\tR\acompile\x12\x10\n" +
-	"\x03run\x18\x02 \x01(\tR\x03run\"\xb4\x02\n" +
+	"\x03run\x18\x02 \x01(\tR\x03run\"\xb2\x01\n" +
+	"\fHardwareInfo\x12\x1b\n" +
+	"\tcpu_model\x18\x01 \x01(\tR\bcpuModel\x12*\n" +
+	"\x11cpu_frequency_mhz\x18\x02 \x01(\rR\x0fcpuFrequencyMhz\x12\x1b\n" +
+	"\tcpu_cores\x18\x03 \x01(\rR\bcpuCores\x12\x1f\n" +
+	"\vcpu_threads\x18\x04 \x01(\rR\n" +
+	"cpuThreads\x12\x1b\n" +
+	"\tram_bytes\x18\x05 \x01(\x04R\bramBytes\"\xef\x02\n" +
 	"\x10IdentifyResponse\x12\x1d\n" +
 	"\n" +
 	"invoker_id\x18\x01 \x01(\tR\tinvokerId\x12?\n" +
@@ -2395,7 +2540,8 @@ const file_Local_proto_rawDesc = "" +
 	"\bplatform\x18\x04 \x01(\tR\bplatform\x12%\n" +
 	"\x0epath_separator\x18\x05 \x01(\tR\rpathSeparator\x12\x14\n" +
 	"\x05disks\x18\x06 \x03(\tR\x05disks\x12\"\n" +
-	"\fprogramFiles\x18\a \x03(\tR\fprogramFiles\"q\n" +
+	"\fprogramFiles\x18\a \x03(\tR\fprogramFiles\x129\n" +
+	"\bhardware\x18\b \x01(\v2\x1d.contester.proto.HardwareInfoR\bhardware\"q\n" +
 	"\bFileStat\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fis_directory\x18\x02 \x01(\bR\visDirectory\x12\x12\n" +
@@ -2437,7 +2583,7 @@ const file_Local_proto_rawDesc = "" +
 	"\x1corg.stingray.contester.protoZ+github.com/contester/runlib/contester_proto\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_Local_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_Local_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_Local_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_Local_proto_goTypes = []any{
 	(BinaryTypeResponse_Win32BinaryType)(0), // 0: contester.proto.BinaryTypeResponse.Win32BinaryType
 	(*LocalEnvironment)(nil),                // 1: contester.proto.LocalEnvironment
@@ -2451,35 +2597,36 @@ var file_Local_proto_goTypes = []any{
 	(*ClearSandboxRequest)(nil),             // 9: contester.proto.ClearSandboxRequest
 	(*IdentifyRequest)(nil),                 // 10: contester.proto.IdentifyRequest
 	(*SandboxLocations)(nil),                // 11: contester.proto.SandboxLocations
-	(*IdentifyResponse)(nil),                // 12: contester.proto.IdentifyResponse
-	(*FileStat)(nil),                        // 13: contester.proto.FileStat
-	(*StatRequest)(nil),                     // 14: contester.proto.StatRequest
-	(*FileStats)(nil),                       // 15: contester.proto.FileStats
-	(*GetRequest)(nil),                      // 16: contester.proto.GetRequest
-	(*EmptyMessage)(nil),                    // 17: contester.proto.EmptyMessage
-	(*CopyOperation)(nil),                   // 18: contester.proto.CopyOperation
-	(*CopyOperations)(nil),                  // 19: contester.proto.CopyOperations
-	(*NamePair)(nil),                        // 20: contester.proto.NamePair
-	(*RepeatedNamePairEntries)(nil),         // 21: contester.proto.RepeatedNamePairEntries
-	(*RepeatedStringEntries)(nil),           // 22: contester.proto.RepeatedStringEntries
-	(*LocalEnvironment_Variable)(nil),       // 23: contester.proto.LocalEnvironment.Variable
-	(*RedirectParameters)(nil),              // 24: contester.proto.RedirectParameters
-	(*ExecutionResultFlags)(nil),            // 25: contester.proto.ExecutionResultFlags
-	(*ExecutionResultTime)(nil),             // 26: contester.proto.ExecutionResultTime
-	(*Blob)(nil),                            // 27: contester.proto.Blob
+	(*HardwareInfo)(nil),                    // 12: contester.proto.HardwareInfo
+	(*IdentifyResponse)(nil),                // 13: contester.proto.IdentifyResponse
+	(*FileStat)(nil),                        // 14: contester.proto.FileStat
+	(*StatRequest)(nil),                     // 15: contester.proto.StatRequest
+	(*FileStats)(nil),                       // 16: contester.proto.FileStats
+	(*GetRequest)(nil),                      // 17: contester.proto.GetRequest
+	(*EmptyMessage)(nil),                    // 18: contester.proto.EmptyMessage
+	(*CopyOperation)(nil),                   // 19: contester.proto.CopyOperation
+	(*CopyOperations)(nil),                  // 20: contester.proto.CopyOperations
+	(*NamePair)(nil),                        // 21: contester.proto.NamePair
+	(*RepeatedNamePairEntries)(nil),         // 22: contester.proto.RepeatedNamePairEntries
+	(*RepeatedStringEntries)(nil),           // 23: contester.proto.RepeatedStringEntries
+	(*LocalEnvironment_Variable)(nil),       // 24: contester.proto.LocalEnvironment.Variable
+	(*RedirectParameters)(nil),              // 25: contester.proto.RedirectParameters
+	(*ExecutionResultFlags)(nil),            // 26: contester.proto.ExecutionResultFlags
+	(*ExecutionResultTime)(nil),             // 27: contester.proto.ExecutionResultTime
+	(*Blob)(nil),                            // 28: contester.proto.Blob
 }
 var file_Local_proto_depIdxs = []int32{
-	23, // 0: contester.proto.LocalEnvironment.variable:type_name -> contester.proto.LocalEnvironment.Variable
+	24, // 0: contester.proto.LocalEnvironment.variable:type_name -> contester.proto.LocalEnvironment.Variable
 	1,  // 1: contester.proto.LocalExecutionParameters.environment:type_name -> contester.proto.LocalEnvironment
-	24, // 2: contester.proto.LocalExecutionParameters.std_in:type_name -> contester.proto.RedirectParameters
-	24, // 3: contester.proto.LocalExecutionParameters.std_out:type_name -> contester.proto.RedirectParameters
-	24, // 4: contester.proto.LocalExecutionParameters.std_err:type_name -> contester.proto.RedirectParameters
+	25, // 2: contester.proto.LocalExecutionParameters.std_in:type_name -> contester.proto.RedirectParameters
+	25, // 3: contester.proto.LocalExecutionParameters.std_out:type_name -> contester.proto.RedirectParameters
+	25, // 4: contester.proto.LocalExecutionParameters.std_err:type_name -> contester.proto.RedirectParameters
 	2,  // 5: contester.proto.LocalExecuteConnected.first:type_name -> contester.proto.LocalExecutionParameters
 	2,  // 6: contester.proto.LocalExecuteConnected.second:type_name -> contester.proto.LocalExecutionParameters
-	25, // 7: contester.proto.LocalExecutionResult.flags:type_name -> contester.proto.ExecutionResultFlags
-	26, // 8: contester.proto.LocalExecutionResult.time:type_name -> contester.proto.ExecutionResultTime
-	27, // 9: contester.proto.LocalExecutionResult.std_out:type_name -> contester.proto.Blob
-	27, // 10: contester.proto.LocalExecutionResult.std_err:type_name -> contester.proto.Blob
+	26, // 7: contester.proto.LocalExecutionResult.flags:type_name -> contester.proto.ExecutionResultFlags
+	27, // 8: contester.proto.LocalExecutionResult.time:type_name -> contester.proto.ExecutionResultTime
+	28, // 9: contester.proto.LocalExecutionResult.std_out:type_name -> contester.proto.Blob
+	28, // 10: contester.proto.LocalExecutionResult.std_err:type_name -> contester.proto.Blob
 	4,  // 11: contester.proto.LocalExecuteConnectedResult.first:type_name -> contester.proto.LocalExecutionResult
 	4,  // 12: contester.proto.LocalExecuteConnectedResult.second:type_name -> contester.proto.LocalExecutionResult
 	2,  // 13: contester.proto.LocalExecution.parameters:type_name -> contester.proto.LocalExecutionParameters
@@ -2487,14 +2634,15 @@ var file_Local_proto_depIdxs = []int32{
 	0,  // 15: contester.proto.BinaryTypeResponse.result:type_name -> contester.proto.BinaryTypeResponse.Win32BinaryType
 	11, // 16: contester.proto.IdentifyResponse.sandboxes:type_name -> contester.proto.SandboxLocations
 	1,  // 17: contester.proto.IdentifyResponse.environment:type_name -> contester.proto.LocalEnvironment
-	13, // 18: contester.proto.FileStats.entries:type_name -> contester.proto.FileStat
-	18, // 19: contester.proto.CopyOperations.entries:type_name -> contester.proto.CopyOperation
-	20, // 20: contester.proto.RepeatedNamePairEntries.entries:type_name -> contester.proto.NamePair
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	12, // 18: contester.proto.IdentifyResponse.hardware:type_name -> contester.proto.HardwareInfo
+	14, // 19: contester.proto.FileStats.entries:type_name -> contester.proto.FileStat
+	19, // 20: contester.proto.CopyOperations.entries:type_name -> contester.proto.CopyOperation
+	21, // 21: contester.proto.RepeatedNamePairEntries.entries:type_name -> contester.proto.NamePair
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_Local_proto_init() }
@@ -2510,7 +2658,7 @@ func file_Local_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_Local_proto_rawDesc), len(file_Local_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   23,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

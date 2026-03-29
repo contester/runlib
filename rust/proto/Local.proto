@@ -112,6 +112,8 @@ message IdentifyResponse {
     repeated string programFiles = 7;
 };
 
+// Glob and Stat
+
 message FileStat {
     string name = 1;
     bool is_directory = 2;
@@ -130,11 +132,19 @@ message FileStats {
     repeated FileStat entries = 1;
 };
 
+// Direct put
+// Use FileBlob
+
+// Direct get
+
 message GetRequest {
     string name = 1;
 };
+// returns FileBlob
 
 message EmptyMessage {};
+
+// Gridfs foo
 
 message CopyOperation {
     string local_file_name = 1;

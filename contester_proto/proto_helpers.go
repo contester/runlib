@@ -78,13 +78,13 @@ func NewBlob(data []byte) (*Blob, error) {
 		if compressed != nil {
 			result.SetData(compressed)
 		} else {
-			result.ClearData()
+			result.SetData(nil)
 		}
 	} else {
 		if data != nil {
 			result.SetData(data)
 		} else {
-			result.ClearData()
+			result.SetData(nil)
 		}
 	}
 	return result, nil

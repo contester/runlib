@@ -83,3 +83,4 @@ _testmain.go
 
 ### Rust ###
 rust/target/
+.claude

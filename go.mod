@@ -1,17 +1,15 @@
 module github.com/contester/runlib
 
 require (
-	github.com/contester/rpc4 v0.0.0-20160817170317-4373f2a06237
-	github.com/sirupsen/logrus v1.9.1
-	golang.org/x/sys v0.5.0
+	github.com/contester/rpc4 v0.0.0-20240127130016-6b021191db33
+	github.com/sirupsen/logrus v1.9.4
+	golang.org/x/sys v0.42.0
 	google.golang.org/protobuf v1.36.11
 )
 
 require (
-	github.com/BurntSushi/toml v1.3.2
-	github.com/alecthomas/kong v0.8.1
-	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/stretchr/testify v1.8.2 // indirect
+	github.com/BurntSushi/toml v1.6.0
+	github.com/alecthomas/kong v1.14.0
 )
 
-go 1.23
+go 1.26.1

@@ -194,6 +194,7 @@ impl Contester {
             path_separator: std::path::MAIN_SEPARATOR.to_string(),
             disks: self.disks.clone(),
             program_files: self.program_files.clone(),
+            hardware: Some(get_hardware_info()),
         };
         Ok(response.encode_to_vec())
     }
@@ -618,6 +619,241 @@ fn platform_info() -> (String, Vec<String>, Vec<String>) {
 #[cfg(not(windows))]
 fn platform_info() -> (String, Vec<String>, Vec<String>) {
     ("linux".to_string(), vec!["/".to_string()], vec![])
+}
+
+// ── Hardware info ────────────────────────────────────────────────────────────
+
+#[cfg(windows)]
+fn get_hardware_info() -> HardwareInfo {
+    #[repr(C)]
+    struct MemoryStatusEx {
+        dw_length: u32,
+        dw_memory_load: u32,
+        ull_total_phys: u64,
+        ull_avail_phys: u64,
+        ull_total_page_file: u64,
+        ull_avail_page_file: u64,
+        ull_total_virtual: u64,
+        ull_avail_virtual: u64,
+        ull_avail_extended_virtual: u64,
+    }
+
+    unsafe extern "system" {
+        fn GlobalMemoryStatusEx(lp_buffer: *mut MemoryStatusEx) -> i32;
+    }
+
+    let mut mem_status: MemoryStatusEx = unsafe { std::mem::zeroed() };
+    mem_status.dw_length = std::mem::size_of::<MemoryStatusEx>() as u32;
+    unsafe { GlobalMemoryStatusEx(&mut mem_status) };
+
+    let cpu_model = cpuid_brand_string();
+    let cpu_mhz = nt_processor_mhz();
+    let (cores, threads) = logical_processor_counts();
+
+    HardwareInfo {
+        cpu_model,
+        cpu_frequency_mhz: cpu_mhz,
+        cpu_cores: cores,
+        cpu_threads: threads,
+        ram_bytes: mem_status.ull_total_phys,
+    }
+}
+
+/// Read the 48-byte processor brand string via CPUID leaves 0x80000002–0x80000004.
+#[cfg(windows)]
+fn cpuid_brand_string() -> String {
+    #[cfg(target_arch = "x86_64")]
+    use std::arch::x86_64::__cpuid;
+    #[cfg(target_arch = "x86")]
+    use std::arch::x86::__cpuid;
+
+    // Check extended CPUID support
+    let ext = unsafe { __cpuid(0x80000000) };
+    if ext.eax < 0x80000004 {
+        return String::new();
+    }
+
+    let mut brand = [0u8; 48];
+    for (i, leaf) in (0x80000002..=0x80000004).enumerate() {
+        let result = unsafe { __cpuid(leaf) };
+        let offset = i * 16;
+        brand[offset..offset + 4].copy_from_slice(&result.eax.to_le_bytes());
+        brand[offset + 4..offset + 8].copy_from_slice(&result.ebx.to_le_bytes());
+        brand[offset + 8..offset + 12].copy_from_slice(&result.ecx.to_le_bytes());
+        brand[offset + 12..offset + 16].copy_from_slice(&result.edx.to_le_bytes());
+    }
+
+    // Convert to string, trim nulls and whitespace
+    String::from_utf8_lossy(&brand)
+        .trim_end_matches('\0')
+        .trim()
+        .to_string()
+}
+
+/// Read max MHz via CallNtPowerInformation(ProcessorInformation).
+#[cfg(windows)]
+fn nt_processor_mhz() -> u32 {
+    #[repr(C)]
+    struct ProcessorPowerInformation {
+        number: u32,
+        max_mhz: u32,
+        current_mhz: u32,
+        mhz_limit: u32,
+        max_idle_state: u32,
+        current_idle_state: u32,
+    }
+
+    const PROCESSOR_INFORMATION: u32 = 11;
+
+    #[link(name = "powrprof")]
+    unsafe extern "system" {
+        fn CallNtPowerInformation(
+            information_level: u32,
+            input_buffer: *const std::ffi::c_void,
+            input_buffer_length: u32,
+            output_buffer: *mut std::ffi::c_void,
+            output_buffer_length: u32,
+        ) -> i32;
+    }
+
+    // Query for one processor — max_mhz is the same across all cores.
+    let mut info: ProcessorPowerInformation = unsafe { std::mem::zeroed() };
+    let status = unsafe {
+        CallNtPowerInformation(
+            PROCESSOR_INFORMATION,
+            std::ptr::null(),
+            0,
+            &mut info as *mut _ as *mut std::ffi::c_void,
+            std::mem::size_of::<ProcessorPowerInformation>() as u32,
+        )
+    };
+    if status == 0 {
+        info.max_mhz
+    } else {
+        0
+    }
+}
+
+/// Count physical cores and logical threads via GetLogicalProcessorInformationEx.
+#[cfg(windows)]
+fn logical_processor_counts() -> (u32, u32) {
+    // RelationProcessorCore = 0
+    const RELATION_PROCESSOR_CORE: u32 = 0;
+
+    unsafe extern "system" {
+        fn GetLogicalProcessorInformationEx(
+            relationship: u32,
+            buffer: *mut u8,
+            returned_length: *mut u32,
+        ) -> i32;
+    }
+
+    // First call: get required buffer size.
+    let mut len: u32 = 0;
+    unsafe { GetLogicalProcessorInformationEx(RELATION_PROCESSOR_CORE, std::ptr::null_mut(), &mut len) };
+    if len == 0 {
+        return (0, 0);
+    }
+
+    let mut buf = vec![0u8; len as usize];
+    let ok = unsafe {
+        GetLogicalProcessorInformationEx(RELATION_PROCESSOR_CORE, buf.as_mut_ptr(), &mut len)
+    };
+    if ok == 0 {
+        return (0, 0);
+    }
+
+    // Walk the variable-length entries. Each entry for RelationProcessorCore
+    // represents one physical core. The GROUP_AFFINITY mask bits give the
+    // logical threads on that core.
+    let mut cores: u32 = 0;
+    let mut threads: u32 = 0;
+    let mut offset: usize = 0;
+    while offset + 4 < len as usize {
+        // Entry layout: u32 Relationship (offset 0), u32 Size (offset 4), ...
+        let size = u32::from_le_bytes([
+            buf[offset + 4],
+            buf[offset + 5],
+            buf[offset + 6],
+            buf[offset + 7],
+        ]) as usize;
+        if size == 0 {
+            break;
+        }
+
+        cores += 1;
+
+        // PROCESSOR_RELATIONSHIP starts at offset+8:
+        //   u8 Flags, u8 EfficiencyClass, u8[20] Reserved, u16 GroupCount,
+        //   then GroupCount × GROUP_AFFINITY (each 12 bytes: u64 Mask + u16 Group + u16[3] Reserved)
+        // GROUP_AFFINITY.Mask is at offset+8+24 = offset+32
+        if offset + 40 <= len as usize {
+            let mask = u64::from_le_bytes([
+                buf[offset + 32],
+                buf[offset + 33],
+                buf[offset + 34],
+                buf[offset + 35],
+                buf[offset + 36],
+                buf[offset + 37],
+                buf[offset + 38],
+                buf[offset + 39],
+            ]);
+            threads += mask.count_ones();
+        }
+
+        offset += size;
+    }
+
+    (cores, threads)
+}
+
+#[cfg(not(windows))]
+fn get_hardware_info() -> HardwareInfo {
+    use std::fs;
+
+    // Parse /proc/cpuinfo for model and MHz
+    let mut cpu_model = String::new();
+    let mut cpu_mhz: u32 = 0;
+    let mut cpu_threads: u32 = 0;
+
+    if let Ok(cpuinfo) = fs::read_to_string("/proc/cpuinfo") {
+        for line in cpuinfo.lines() {
+            if cpu_model.is_empty() && line.starts_with("model name") {
+                if let Some(val) = line.split(':').nth(1) {
+                    cpu_model = val.trim().to_string();
+                }
+            }
+            if cpu_mhz == 0 && line.starts_with("cpu MHz") {
+                if let Some(val) = line.split(':').nth(1) {
+                    cpu_mhz = val.trim().parse::<f64>().unwrap_or(0.0) as u32;
+                }
+            }
+            if line.starts_with("processor") {
+                cpu_threads += 1;
+            }
+        }
+    }
+
+    // Total RAM from /proc/meminfo
+    let mut ram_bytes: u64 = 0;
+    if let Ok(meminfo) = fs::read_to_string("/proc/meminfo") {
+        for line in meminfo.lines() {
+            if line.starts_with("MemTotal:") {
+                if let Some(val) = line.split_whitespace().nth(1) {
+                    ram_bytes = val.parse::<u64>().unwrap_or(0) * 1024; // kB to bytes
+                }
+                break;
+            }
+        }
+    }
+
+    HardwareInfo {
+        cpu_model,
+        cpu_frequency_mhz: cpu_mhz,
+        cpu_cores: cpu_threads,
+        cpu_threads,
+        ram_bytes,
+    }
 }
 
 /// Wrapper to write pre-encoded bytes as a prost Message.

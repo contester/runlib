@@ -116,6 +116,14 @@ message SandboxLocations {
     string run = 2;
 }
 
+message HardwareInfo {
+    string cpu_model = 1;
+    uint32 cpu_frequency_mhz = 2;
+    uint32 cpu_cores = 3;
+    uint32 cpu_threads = 4;
+    uint64 ram_bytes = 5;
+}
+
 message IdentifyResponse {
     string invoker_id = 1;
     repeated SandboxLocations sandboxes = 2;
@@ -124,6 +132,7 @@ message IdentifyResponse {
     string path_separator = 5;
     repeated string disks = 6;
     repeated string programFiles = 7;
+    HardwareInfo hardware = 8;
 };
 
 // Glob and Stat

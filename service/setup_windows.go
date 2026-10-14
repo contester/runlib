@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"hash/fnv"
 	"math/rand"
 	"os/exec"
@@ -18,8 +19,15 @@ var PLATFORM_DISKS = []string{"C:\\"}
 var PLATFORM_PFILES = []string{"C:\\Program Files", "C:\\Program Files (x86)"}
 
 func setAcl(path, username string) error {
-	cmd := exec.Command("subinacl.exe", "/file", path, "/grant="+username+"=RWC")
-	cmd.Run()
+	// Grant the sandbox user Modify on its sandbox dir, inheritable so the
+	// files the invoker drops in (solution binary, input.txt) and the ones the
+	// solution writes (output.txt) carry the grant. icacls ships with every
+	// Windows; subinacl.exe did not, and its failure was swallowed — leaving
+	// restricted sandboxes with no ACE for the tester user.
+	out, err := exec.Command("icacls", path, "/grant", username+":(OI)(CI)M").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("icacls grant %s on %q: %w: %s", username, path, err, out)
+	}
 	return nil
 }
 

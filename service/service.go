@@ -155,17 +155,17 @@ type contesterConfig struct {
 	// %USERPROFILE%/%TEMP% fall back to the default profile, which some
 	// runtimes depend on.
 	NoUserProfile bool `toml:"no_user_profile"`
-	// UseHandleList, when set, makes privileged (CreateProcessAsUser) launches
-	// inherit stdio through an explicit STARTUPINFOEX handle list instead of
-	// the global inheritable-handle set, so they no longer serialize on
-	// syscall.ForkLock. Off by default; effective only where CreateProcessAsUser
-	// is in use (the privilege is held). See subprocess.Subprocess.UseHandleList.
-	UseHandleList bool `toml:"use_handle_list"`
-	// NoLogonInherit drops the inherit-marking and ForkLock from the
-	// CreateProcessWithLogonW path (unprivileged launches); see
-	// subprocess.Subprocess.NoLogonInherit. Off by default; verify stdio still
-	// reaches WithLogonW children before enabling.
-	NoLogonInherit bool `toml:"no_logon_inherit"`
+	// UseHandleList makes privileged (CreateProcessAsUser) launches inherit stdio
+	// through an explicit STARTUPINFOEX handle list instead of the global
+	// inheritable-handle set, so they no longer serialize on syscall.ForkLock.
+	// Default on; set use_handle_list = false to disable. Effective only where
+	// CreateProcessAsUser is in use. See subprocess.Subprocess.UseHandleList.
+	UseHandleList *bool `toml:"use_handle_list"`
+	// NoLogonInherit drops the inherit-marking and ForkLock from the seclogon
+	// launch paths (CreateProcessWithLogonW / CreateProcessWithTokenW); see
+	// subprocess.Subprocess.NoLogonInherit. Default on; set no_logon_inherit =
+	// false to restore the inherit-mark + lock on those paths.
+	NoLogonInherit *bool `toml:"no_logon_inherit"`
 	// DisableCreateProcessWithToken turns off the CreateProcessWithTokenW
 	// fallback (used when the SeAssignPrimaryToken privilege for
 	// CreateProcessAsUser is absent but SeImpersonate is held). Off by default,
@@ -177,6 +177,15 @@ type contesterConfig struct {
 	// Off by default; bind to localhost or a trusted network — it exposes
 	// profiling endpoints. See runner main.
 	DebugAddress string `toml:"debug_address"`
+}
+
+// boolWithDefault resolves an optional config bool: the configured value when
+// the key is present, else def.
+func boolWithDefault(p *bool, def bool) bool {
+	if p != nil {
+		return *p
+	}
+	return def
 }
 
 func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
@@ -205,8 +214,8 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 		ProgramFiles:   PLATFORM_PFILES,
 		DebugAddress:   config.DebugAddress,
 		NoUserProfile:  config.NoUserProfile,
-		UseHandleList:  config.UseHandleList,
-		NoLogonInherit: config.NoLogonInherit,
+		UseHandleList:  boolWithDefault(config.UseHandleList, true),
+		NoLogonInherit: boolWithDefault(config.NoLogonInherit, true),
 		UseAsUser:      useAsUser,
 		UseWithToken:   useWithToken,
 		GData:          gData,

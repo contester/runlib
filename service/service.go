@@ -24,6 +24,9 @@ type Contester struct {
 	Disks        []string
 	ProgramFiles []string
 
+	// DebugAddress mirrors contesterConfig.DebugAddress; see its doc.
+	DebugAddress string
+
 	// NoUserProfile mirrors contesterConfig.NoUserProfile; see its doc.
 	NoUserProfile bool
 
@@ -169,6 +172,11 @@ type contesterConfig struct {
 	// so an admin box automatically uses the no-logon token path. See
 	// subprocess.Subprocess.UseWithToken.
 	DisableCreateProcessWithToken bool `toml:"disable_create_process_with_token"`
+	// DebugAddress, when set (e.g. "127.0.0.1:6060"), starts a net/http/pprof
+	// server there for profiling (/debug/pprof/goroutine, /mutex, /block).
+	// Off by default; bind to localhost or a trusted network — it exposes
+	// profiling endpoints. See runner main.
+	DebugAddress string `toml:"debug_address"`
 }
 
 func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
@@ -195,6 +203,7 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 		Platform:       PLATFORM_ID,
 		Disks:          PLATFORM_DISKS,
 		ProgramFiles:   PLATFORM_PFILES,
+		DebugAddress:   config.DebugAddress,
 		NoUserProfile:  config.NoUserProfile,
 		UseHandleList:  config.UseHandleList,
 		NoLogonInherit: config.NoLogonInherit,

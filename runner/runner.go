@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"net/rpc"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -42,6 +45,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 		return
+	}
+
+	if c.DebugAddress != "" {
+		// Capture every mutex/block contention event so /debug/pprof/mutex and
+		// /debug/pprof/block show where launches serialize; /debug/pprof/goroutine
+		// shows where goroutines are parked right now.
+		runtime.SetMutexProfileFraction(1)
+		runtime.SetBlockProfileRate(1)
+		go func() {
+			log.Infof("debug/pprof server listening on %s", c.DebugAddress)
+			if err := http.ListenAndServe(c.DebugAddress, nil); err != nil {
+				log.Errorf("debug/pprof server: %v", err)
+			}
+		}()
 	}
 
 	rpc.Register(c)

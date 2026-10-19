@@ -166,19 +166,24 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	// solutions and NoJob testers/checkers alike — goes through
 	// CreateProcessAsUser, keeping NoJob executes off the slow per-execute
 	// seclogon path. Without it, NoJob and Win8+ both require the logon path.
-	useCreateProcessWithLogonW := useLogonLaunch(sub.NoJob, win32.IsWindows8OrGreater(), sub.UseAsUser)
+	// Launch path priority: CreateProcessAsUser (needs SeAssignPrimaryToken, the
+	// fast direct path) > CreateProcessWithTokenW (needs only SeImpersonate,
+	// launches from the cached token with no per-execute logon) >
+	// CreateProcessWithLogonW (a per-execute interactive logon, last resort).
+	useWithToken := sub.UseWithToken && !sub.UseAsUser
+	useCreateProcessWithLogonW := useLogonLaunch(sub.NoJob, win32.IsWindows8OrGreater(), sub.UseAsUser) && !useWithToken
 	// useHandleList inherits stdio through a per-child STARTUPINFOEX handle
 	// list instead of the process-global inheritable set, so the launch needs
 	// no ForkLock and concurrent sandboxes run in parallel. Only valid on the
-	// CreateProcessAsUser / CreateProcess paths (CreateProcessWithLogonW cannot
-	// take an attribute list), hence gated on !useCreateProcessWithLogonW.
+	// direct CreateProcessAsUser / CreateProcess paths (the seclogon launchers
+	// cannot take an attribute list), hence gated on UseAsUser.
 	useHandleList := sub.UseHandleList && sub.UseAsUser && !useCreateProcessWithLogonW
-	// logonNoInherit: on the CreateProcessWithLogonW path the secondary logon
-	// service passes stdio to the child itself, so (where the OS allows it) we
-	// can skip marking the handles inheritable and skip ForkLock. See
-	// Subprocess.NoLogonInherit. Mutually exclusive with useHandleList, which
-	// is gated on !useCreateProcessWithLogonW.
-	logonNoInherit := useCreateProcessWithLogonW && sub.NoLogonInherit
+	// viaSeclogon: CreateProcessWithTokenW and CreateProcessWithLogonW both
+	// create the child through the secondary logon service, which duplicates the
+	// std handles into it itself. So (where the OS allows it) they can skip
+	// marking handles inheritable and skip ForkLock. See Subprocess.NoLogonInherit.
+	viaSeclogon := useCreateProcessWithLogonW || useWithToken
+	logonNoInherit := viaSeclogon && sub.NoLogonInherit
 	// lockFree: a launch that touches no process-global inheritable state and
 	// thus needs no ForkLock.
 	lockFree := useHandleList || logonNoInherit
@@ -192,7 +197,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		// contester desktop. The UseAsUser path deliberately leaves si.Desktop
 		// unset so the child inherits the invoker's visible winsta0\default
 		// (console stays visible); access there is granted at startup.
-		if !useCreateProcessWithLogonW && !sub.UseAsUser {
+		if !useCreateProcessWithLogonW && !useWithToken && !sub.UseAsUser {
 			desktopName, err := sub.Options.Environment.GetDesktopName()
 			if err != nil {
 				return nil, err
@@ -234,6 +239,25 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				".",
 				sub.Login.Password,
 				logonFlags,
+				sub.Cmd.ApplicationName,
+				sub.Cmd.CommandLine,
+				win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT,
+				win32.ProcessEnvironmentOptions{
+					NoInherit: sub.NoInheritEnvironment,
+					Env:       sub.Environment,
+				},
+				sub.CurrentDirectory,
+				&si,
+				&pi)
+		} else if useWithToken {
+			// CreateProcessWithTokenW launches from the cached token through
+			// seclogon with no per-execute logon. dwLogonFlags=0: the profile was
+			// already loaded at startup, so we must not reload it per execute.
+			// Mirrors the WithLogonW flag set (no job/console/breakaway flags,
+			// which this API rejects).
+			e = win32.CreateProcessWithTokenW(
+				sub.Login.HUser,
+				0,
 				sub.Cmd.ApplicationName,
 				sub.Cmd.CommandLine,
 				win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT,

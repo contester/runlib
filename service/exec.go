@@ -111,6 +111,7 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 	sub.NoJob = request.GetNoJob()
 	sub.NoProfile = s.NoUserProfile
 	sub.UseAsUser = s.UseAsUser
+	sub.UseWithToken = s.UseWithToken
 	sub.UseHandleList = s.UseHandleList
 	sub.NoLogonInherit = s.NoLogonInherit
 

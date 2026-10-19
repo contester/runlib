@@ -38,6 +38,12 @@ type Contester struct {
 	// token, avoiding a per-execute CreateProcessWithLogonW. See tryEnableAsUser.
 	UseAsUser bool
 
+	// UseWithToken is set at startup when UseAsUser is unavailable but the
+	// invoker holds SeImpersonatePrivilege, so restricted runs can use
+	// CreateProcessWithTokenW from the cached token (no per-execute logon).
+	// See tryEnableWithToken.
+	UseWithToken bool
+
 	GData *platform.GlobalData
 }
 
@@ -157,6 +163,12 @@ type contesterConfig struct {
 	// subprocess.Subprocess.NoLogonInherit. Off by default; verify stdio still
 	// reaches WithLogonW children before enabling.
 	NoLogonInherit bool `toml:"no_logon_inherit"`
+	// DisableCreateProcessWithToken turns off the CreateProcessWithTokenW
+	// fallback (used when the SeAssignPrimaryToken privilege for
+	// CreateProcessAsUser is absent but SeImpersonate is held). Off by default,
+	// so an admin box automatically uses the no-logon token path. See
+	// subprocess.Subprocess.UseWithToken.
+	DisableCreateProcessWithToken bool `toml:"disable_create_process_with_token"`
 }
 
 func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
@@ -166,6 +178,15 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	}
 
 	log.Infof("Loaded contester config %+v", &config)
+
+	// Choose the restricted-launch path once, by privilege: CreateProcessAsUser
+	// if SeAssignPrimaryToken is held, else CreateProcessWithTokenW if
+	// SeImpersonate is held (and not disabled), else CreateProcessWithLogonW.
+	useAsUser := tryEnableAsUser()
+	useWithToken := false
+	if !useAsUser {
+		useWithToken = tryEnableWithToken(config.DisableCreateProcessWithToken)
+	}
 
 	result := Contester{
 		InvokerId:      getHostname(),
@@ -177,7 +198,8 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 		NoUserProfile:  config.NoUserProfile,
 		UseHandleList:  config.UseHandleList,
 		NoLogonInherit: config.NoLogonInherit,
-		UseAsUser:      tryEnableAsUser(),
+		UseAsUser:      useAsUser,
+		UseWithToken:   useWithToken,
 		GData:          gData,
 	}
 

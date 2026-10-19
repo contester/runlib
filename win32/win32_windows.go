@@ -18,6 +18,7 @@ var (
 	user32   = windows.NewLazySystemDLL("user32.dll")
 
 	procCreateProcessWithLogonW   = advapi32.NewProc("CreateProcessWithLogonW")
+	procCreateProcessWithTokenW   = advapi32.NewProc("CreateProcessWithTokenW")
 	procCreateProcessAsUserW      = advapi32.NewProc("CreateProcessAsUserW")
 	procResumeThread              = kernel32.NewProc("ResumeThread")
 	procGetProcessMemoryInfo      = psapi.NewProc("GetProcessMemoryInfo")
@@ -247,6 +248,62 @@ func CreateProcessWithLogonW(
 	runtime.KeepAlive(processInformation)
 	if int(r1) == 0 {
 		return os.NewSyscallError("CreateProcessWithLogonW", e1)
+	}
+	return nil
+}
+
+// CreateProcessWithTokenW launches a process from an existing primary token
+// (no logon). It requires the caller to hold SeImpersonatePrivilege and, like
+// CreateProcessWithLogonW, has no bInheritHandles parameter: the secondary
+// logon service creates the child and passes the STARTF_USESTDHANDLES handles.
+func CreateProcessWithTokenW(
+	token syscall.Handle,
+	logonFlags uint32,
+	applicationName,
+	commandLine string,
+	creationFlags uint32,
+	environment ProcessEnvironmentOptions,
+	currentDirectory string,
+	startupInfo *syscall.StartupInfo,
+	processInformation *syscall.ProcessInformation) error {
+	pApplicationName, err := UTF16PtrFromStringOrNil(applicationName)
+	if err != nil {
+		return err
+	}
+	pCommandLine, err := UTF16PtrFromStringOrNil(commandLine)
+	if err != nil {
+		return err
+	}
+	pCurrentDirectory, err := UTF16PtrFromStringOrNil(currentDirectory)
+	if err != nil {
+		return err
+	}
+	var pEnvironment *uint16
+	if environment.NoInherit {
+		pEnvironment, err = ListToEnvironmentBlock(environment.Env)
+		if err != nil {
+			return err
+		}
+	}
+
+	r1, _, e1 := procCreateProcessWithTokenW.Call(
+		uintptr(token),
+		uintptr(logonFlags),
+		uintptr(unsafe.Pointer(pApplicationName)),
+		uintptr(unsafe.Pointer(pCommandLine)),
+		uintptr(creationFlags),
+		uintptr(unsafe.Pointer(pEnvironment)),
+		uintptr(unsafe.Pointer(pCurrentDirectory)),
+		uintptr(unsafe.Pointer(startupInfo)),
+		uintptr(unsafe.Pointer(processInformation)))
+	runtime.KeepAlive(pApplicationName)
+	runtime.KeepAlive(pCommandLine)
+	runtime.KeepAlive(pEnvironment)
+	runtime.KeepAlive(pCurrentDirectory)
+	runtime.KeepAlive(startupInfo)
+	runtime.KeepAlive(processInformation)
+	if int(r1) == 0 {
+		return os.NewSyscallError("CreateProcessWithTokenW", e1)
 	}
 	return nil
 }

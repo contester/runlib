@@ -29,6 +29,9 @@ var procAdjustTokenPrivileges = windows.NewLazySystemDLL("advapi32.dll").NewProc
 const (
 	seAssignPrimaryTokenPrivilege = "SeAssignPrimaryTokenPrivilege"
 	seIncreaseQuotaPrivilege      = "SeIncreaseQuotaPrivilege"
+	// seImpersonatePrivilege is all CreateProcessWithTokenW needs; administrators
+	// hold it by default, so the token path works without any policy change.
+	seImpersonatePrivilege = "SeImpersonatePrivilege"
 )
 
 // enablePrivilege enables a named privilege in the current process token.
@@ -112,6 +115,29 @@ func tryEnableAsUser() bool {
 		return false
 	}
 	log.Info("CreateProcessAsUser enabled for restricted runs: token privileges held, desktop access granted")
+	return true
+}
+
+// tryEnableWithToken enables SeImpersonatePrivilege (held by administrators by
+// default) and grants sandbox users desktop access, so restricted runs can use
+// CreateProcessWithTokenW from the cached token without a per-execute logon. It
+// is the fallback when CreateProcessAsUser is unavailable; returns false (and
+// the invoker keeps CreateProcessWithLogonW) if disabled by config, the
+// privilege is absent, or the desktop grant fails.
+func tryEnableWithToken(disabled bool) bool {
+	if disabled {
+		log.Info("CreateProcessWithTokenW disabled by config (disable_create_process_with_token)")
+		return false
+	}
+	if err := enablePrivilege(seImpersonatePrivilege); err != nil {
+		log.Infof("CreateProcessWithTokenW disabled: %s not held (%v); using CreateProcessWithLogonW", seImpersonatePrivilege, err)
+		return false
+	}
+	if err := grantEveryoneCurrentDesktop(); err != nil {
+		log.Errorf("CreateProcessWithTokenW disabled: desktop grant failed (%v); using CreateProcessWithLogonW", err)
+		return false
+	}
+	log.Info("CreateProcessWithTokenW enabled for restricted runs: SeImpersonate held, desktop access granted")
 	return true
 }
 

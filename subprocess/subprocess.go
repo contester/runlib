@@ -89,6 +89,11 @@ type Subprocess struct {
 	// per-execute logon. Requires the caller to hold SeAssignPrimaryToken /
 	// SeIncreaseQuota and the sandbox user to have desktop access (Windows).
 	UseAsUser bool
+	// UseWithToken launches restricted runs via CreateProcessWithTokenW from the
+	// cached logon token, skipping the per-execute logon, when UseAsUser is not
+	// available. Requires the caller to hold SeImpersonatePrivilege (held by
+	// administrators by default). Ignored when UseAsUser is set. Windows only.
+	UseWithToken bool
 	// UseHandleList, when set together with UseAsUser, launches via
 	// STARTUPINFOEX with an explicit PROC_THREAD_ATTRIBUTE_HANDLE_LIST so the
 	// child inherits only its own stdio handles. That makes handle inheritance

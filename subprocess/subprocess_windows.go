@@ -114,6 +114,28 @@ func wSetInherit(si *syscall.StartupInfo) {
 	// TODO: errors
 }
 
+// inheritHandleList returns the distinct, valid stdio handles the child should
+// inherit, for the STARTUPINFOEX PROC_THREAD_ATTRIBUTE_HANDLE_LIST path. StdErr
+// often aliases StdOutput (joined output), so duplicates are dropped.
+func inheritHandleList(si *syscall.StartupInfo) []syscall.Handle {
+	var out []syscall.Handle
+	add := func(h syscall.Handle) {
+		if h == syscall.InvalidHandle || h == 0 {
+			return
+		}
+		for _, e := range out {
+			if e == h {
+				return
+			}
+		}
+		out = append(out, h)
+	}
+	add(si.StdInput)
+	add(si.StdOutput)
+	add(si.StdErr)
+	return out
+}
+
 func terminateProcessLoop(process syscall.Handle) error {
 	for waitResult := uint32(syscall.WAIT_TIMEOUT); waitResult == syscall.WAIT_TIMEOUT; {
 		syscall.TerminateProcess(process, 0)
@@ -145,6 +167,12 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	// CreateProcessAsUser, keeping NoJob executes off the slow per-execute
 	// seclogon path. Without it, NoJob and Win8+ both require the logon path.
 	useCreateProcessWithLogonW := useLogonLaunch(sub.NoJob, win32.IsWindows8OrGreater(), sub.UseAsUser)
+	// useHandleList inherits stdio through a per-child STARTUPINFOEX handle
+	// list instead of the process-global inheritable set, so the launch needs
+	// no ForkLock and concurrent sandboxes run in parallel. Only valid on the
+	// CreateProcessAsUser / CreateProcess paths (CreateProcessWithLogonW cannot
+	// take an attribute list), hence gated on !useCreateProcessWithLogonW.
+	useHandleList := sub.UseHandleList && sub.UseAsUser && !useCreateProcessWithLogonW
 
 	if sub.Options != nil && sub.Options.Environment != nil {
 		if err := d.initArchDependentData(sub); err != nil {
@@ -172,7 +200,11 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 	var pi syscall.ProcessInformation
 
-	syscall.ForkLock.Lock()
+	// A per-child handle list scopes inheritance, so the global ForkLock that
+	// otherwise guards the inherit-mark -> CreateProcess window is unneeded.
+	if !useHandleList {
+		syscall.ForkLock.Lock()
+	}
 	wSetInherit(&si)
 
 	if sub.Login != nil {
@@ -199,6 +231,21 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				sub.CurrentDirectory,
 				&si,
 				&pi)
+		} else if useHandleList {
+			e = win32.CreateProcessAsUserInheritList(
+				sub.Login.HUser,
+				sub.Cmd.ApplicationName,
+				sub.Cmd.CommandLine,
+				inheritHandleList(&si),
+				win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|
+					syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
+				win32.ProcessEnvironmentOptions{
+					NoInherit: sub.NoInheritEnvironment,
+					Env:       sub.Environment,
+				},
+				sub.CurrentDirectory,
+				&si,
+				&pi)
 		} else {
 			e = win32.CreateProcessAsUser(
 				sub.Login.HUser,
@@ -217,6 +264,20 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 				&si,
 				&pi)
 		}
+	} else if useHandleList {
+		e = win32.CreateProcessInheritList(
+			sub.Cmd.ApplicationName,
+			sub.Cmd.CommandLine,
+			inheritHandleList(&si),
+			win32.CREATE_NEW_PROCESS_GROUP|win32.CREATE_NEW_CONSOLE|win32.CREATE_SUSPENDED|
+				syscall.CREATE_UNICODE_ENVIRONMENT|win32.CREATE_BREAKAWAY_FROM_JOB,
+			win32.ProcessEnvironmentOptions{
+				NoInherit: sub.NoInheritEnvironment,
+				Env:       sub.Environment,
+			},
+			sub.CurrentDirectory,
+			&si,
+			&pi)
 	} else {
 		e = win32.CreateProcess(
 			sub.Cmd.ApplicationName,
@@ -236,7 +297,9 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	}
 
 	closeDescriptors(d.closeAfterStart)
-	syscall.ForkLock.Unlock()
+	if !useHandleList {
+		syscall.ForkLock.Unlock()
+	}
 
 	if e != nil {
 		if errno, ok := extractErrno(e); ok && errno == 136 {

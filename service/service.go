@@ -27,6 +27,9 @@ type Contester struct {
 	// NoUserProfile mirrors contesterConfig.NoUserProfile; see its doc.
 	NoUserProfile bool
 
+	// UseHandleList mirrors contesterConfig.UseHandleList; see its doc.
+	UseHandleList bool
+
 	// UseAsUser is set at startup when the invoker holds the privileges to
 	// launch restricted runs via CreateProcessAsUser with the cached logon
 	// token, avoiding a per-execute CreateProcessWithLogonW. See tryEnableAsUser.
@@ -140,6 +143,12 @@ type contesterConfig struct {
 	// %USERPROFILE%/%TEMP% fall back to the default profile, which some
 	// runtimes depend on.
 	NoUserProfile bool `toml:"no_user_profile"`
+	// UseHandleList, when set, makes privileged (CreateProcessAsUser) launches
+	// inherit stdio through an explicit STARTUPINFOEX handle list instead of
+	// the global inheritable-handle set, so they no longer serialize on
+	// syscall.ForkLock. Off by default; effective only where CreateProcessAsUser
+	// is in use (the privilege is held). See subprocess.Subprocess.UseHandleList.
+	UseHandleList bool `toml:"use_handle_list"`
 }
 
 func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
@@ -158,6 +167,7 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 		Disks:         PLATFORM_DISKS,
 		ProgramFiles:  PLATFORM_PFILES,
 		NoUserProfile: config.NoUserProfile,
+		UseHandleList: config.UseHandleList,
 		UseAsUser:     tryEnableAsUser(),
 		GData:         gData,
 	}

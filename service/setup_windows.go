@@ -9,12 +9,18 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"unsafe"
 
 	"github.com/contester/runlib/win32"
 	"golang.org/x/sys/windows"
 
 	log "github.com/sirupsen/logrus"
 )
+
+// procAdjustTokenPrivileges is called directly (rather than via
+// windows.AdjustTokenPrivileges) so enablePrivilege can read the errno that the
+// call captures atomically; the x/sys wrapper discards it on success.
+var procAdjustTokenPrivileges = windows.NewLazySystemDLL("advapi32.dll").NewProc("AdjustTokenPrivileges")
 
 // Privileges CreateProcessAsUser requires in the caller. Administrators hold
 // SeIncreaseQuotaPrivilege by default but NOT SeAssignPrimaryTokenPrivilege;
@@ -47,11 +53,18 @@ func enablePrivilege(name string) error {
 	}
 	tp := windows.Tokenprivileges{PrivilegeCount: 1}
 	tp.Privileges[0] = windows.LUIDAndAttributes{Luid: luid, Attributes: windows.SE_PRIVILEGE_ENABLED}
-	if err := windows.AdjustTokenPrivileges(token, false, &tp, 0, nil, nil); err != nil {
-		return err
+
+	// AdjustTokenPrivileges succeeds (r1 != 0) even when the token does not hold
+	// the privilege; it only signals that via ERROR_NOT_ALL_ASSIGNED in the
+	// last error. proc.Call captures that errno atomically with the call (e1),
+	// which a separate windows.GetLastError() cannot do reliably.
+	r1, _, e1 := procAdjustTokenPrivileges.Call(
+		uintptr(token), 0, uintptr(unsafe.Pointer(&tp)), 0, 0, 0)
+	if r1 == 0 {
+		return fmt.Errorf("AdjustTokenPrivileges(%s): %w", name, e1)
 	}
-	if err := windows.GetLastError(); errors.Is(err, windows.ERROR_NOT_ALL_ASSIGNED) {
-		return err
+	if errors.Is(e1, windows.ERROR_NOT_ALL_ASSIGNED) {
+		return fmt.Errorf("%s not held by the account: %w", name, e1)
 	}
 	return nil
 }

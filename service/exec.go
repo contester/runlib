@@ -112,6 +112,7 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 	sub.NoProfile = s.NoUserProfile
 	sub.UseAsUser = s.UseAsUser
 	sub.UseHandleList = s.UseHandleList
+	sub.NoLogonInherit = s.NoLogonInherit
 
 	sub.Environment, sub.NoInheritEnvironment = fillEnv(request.Environment)
 

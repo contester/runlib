@@ -30,6 +30,9 @@ type Contester struct {
 	// UseHandleList mirrors contesterConfig.UseHandleList; see its doc.
 	UseHandleList bool
 
+	// NoLogonInherit mirrors contesterConfig.NoLogonInherit; see its doc.
+	NoLogonInherit bool
+
 	// UseAsUser is set at startup when the invoker holds the privileges to
 	// launch restricted runs via CreateProcessAsUser with the cached logon
 	// token, avoiding a per-execute CreateProcessWithLogonW. See tryEnableAsUser.
@@ -149,6 +152,11 @@ type contesterConfig struct {
 	// syscall.ForkLock. Off by default; effective only where CreateProcessAsUser
 	// is in use (the privilege is held). See subprocess.Subprocess.UseHandleList.
 	UseHandleList bool `toml:"use_handle_list"`
+	// NoLogonInherit drops the inherit-marking and ForkLock from the
+	// CreateProcessWithLogonW path (unprivileged launches); see
+	// subprocess.Subprocess.NoLogonInherit. Off by default; verify stdio still
+	// reaches WithLogonW children before enabling.
+	NoLogonInherit bool `toml:"no_logon_inherit"`
 }
 
 func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
@@ -160,16 +168,17 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	log.Infof("Loaded contester config %+v", &config)
 
 	result := Contester{
-		InvokerId:     getHostname(),
-		Env:           getLocalEnvironment(),
-		ServerAddress: config.Server,
-		Platform:      PLATFORM_ID,
-		Disks:         PLATFORM_DISKS,
-		ProgramFiles:  PLATFORM_PFILES,
-		NoUserProfile: config.NoUserProfile,
-		UseHandleList: config.UseHandleList,
-		UseAsUser:     tryEnableAsUser(),
-		GData:         gData,
+		InvokerId:      getHostname(),
+		Env:            getLocalEnvironment(),
+		ServerAddress:  config.Server,
+		Platform:       PLATFORM_ID,
+		Disks:          PLATFORM_DISKS,
+		ProgramFiles:   PLATFORM_PFILES,
+		NoUserProfile:  config.NoUserProfile,
+		UseHandleList:  config.UseHandleList,
+		NoLogonInherit: config.NoLogonInherit,
+		UseAsUser:      tryEnableAsUser(),
+		GData:          gData,
 	}
 
 	var err error

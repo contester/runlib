@@ -173,6 +173,15 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	// CreateProcessAsUser / CreateProcess paths (CreateProcessWithLogonW cannot
 	// take an attribute list), hence gated on !useCreateProcessWithLogonW.
 	useHandleList := sub.UseHandleList && sub.UseAsUser && !useCreateProcessWithLogonW
+	// logonNoInherit: on the CreateProcessWithLogonW path the secondary logon
+	// service passes stdio to the child itself, so (where the OS allows it) we
+	// can skip marking the handles inheritable and skip ForkLock. See
+	// Subprocess.NoLogonInherit. Mutually exclusive with useHandleList, which
+	// is gated on !useCreateProcessWithLogonW.
+	logonNoInherit := useCreateProcessWithLogonW && sub.NoLogonInherit
+	// lockFree: a launch that touches no process-global inheritable state and
+	// thus needs no ForkLock.
+	lockFree := useHandleList || logonNoInherit
 
 	if sub.Options != nil && sub.Options.Environment != nil {
 		if err := d.initArchDependentData(sub); err != nil {
@@ -200,12 +209,16 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 	var pi syscall.ProcessInformation
 
-	// A per-child handle list scopes inheritance, so the global ForkLock that
-	// otherwise guards the inherit-mark -> CreateProcess window is unneeded.
-	if !useHandleList {
+	// A per-child handle list (useHandleList) scopes inheritance, and the
+	// WithLogonW no-inherit path (logonNoInherit) marks nothing and lets
+	// seclogon pass stdio; either way the global ForkLock that guards the
+	// inherit-mark -> CreateProcess window is unneeded.
+	if !lockFree {
 		syscall.ForkLock.Lock()
 	}
-	wSetInherit(&si)
+	if !logonNoInherit {
+		wSetInherit(&si)
+	}
 
 	if sub.Login != nil {
 		if useCreateProcessWithLogonW {
@@ -297,7 +310,7 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	}
 
 	closeDescriptors(d.closeAfterStart)
-	if !useHandleList {
+	if !lockFree {
 		syscall.ForkLock.Unlock()
 	}
 

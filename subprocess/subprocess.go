@@ -96,6 +96,14 @@ type Subprocess struct {
 	// sandboxes launch in parallel. Ignored without UseAsUser (the
 	// CreateProcessWithLogonW fallback cannot take a handle list). Windows only.
 	UseHandleList bool
+	// NoLogonInherit, when set, skips marking stdio handles inheritable on the
+	// CreateProcessWithLogonW path and drops its ForkLock. The secondary logon
+	// service duplicates the STARTF_USESTDHANDLES handles into the child
+	// itself, so (on Windows versions where that does not require the inherit
+	// flag) WithLogonW needs neither the inherit mark nor the lock and can run
+	// concurrently with other launches. If the OS does require the flag the
+	// child gets no stdio, so verify before enabling. Windows only.
+	NoLogonInherit bool
 
 	TimeLimit       time.Duration
 	KernelTimeLimit time.Duration

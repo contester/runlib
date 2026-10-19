@@ -80,6 +80,10 @@ type Subprocess struct {
 	RestrictUi               bool
 	ProcessLimit             uint32
 	FailOnJobCreationFailure bool
+	// NoProfile skips loading the user profile when launching via
+	// CreateProcessWithLogonW (Windows): dwLogonFlags=0 instead of
+	// LOGON_WITH_PROFILE. No effect on other launch paths or platforms.
+	NoProfile bool
 
 	TimeLimit       time.Duration
 	KernelTimeLimit time.Duration

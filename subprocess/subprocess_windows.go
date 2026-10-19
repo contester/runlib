@@ -168,11 +168,18 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 
 	if sub.Login != nil {
 		if useCreateProcessWithLogonW {
+			// LOGON_WITH_PROFILE loads the user's profile hive from disk on
+			// every call; NoProfile drops it (dwLogonFlags=0) to skip that
+			// per-execute cost.
+			logonFlags := uint32(win32.LOGON_WITH_PROFILE)
+			if sub.NoProfile {
+				logonFlags = 0
+			}
 			e = win32.CreateProcessWithLogonW(
 				sub.Login.Username,
 				".",
 				sub.Login.Password,
-				win32.LOGON_WITH_PROFILE,
+				logonFlags,
 				sub.Cmd.ApplicationName,
 				sub.Cmd.CommandLine,
 				win32.CREATE_SUSPENDED|syscall.CREATE_UNICODE_ENVIRONMENT,

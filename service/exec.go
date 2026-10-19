@@ -109,6 +109,7 @@ func (s *Contester) setupSubprocess(request *contester_proto.LocalExecutionParam
 	sub.CheckIdleness = request.GetCheckIdleness()
 	sub.RestrictUi = request.GetRestrictUi()
 	sub.NoJob = request.GetNoJob()
+	sub.NoProfile = s.NoUserProfile
 
 	sub.Environment, sub.NoInheritEnvironment = fillEnv(request.Environment)
 

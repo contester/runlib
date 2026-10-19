@@ -24,6 +24,9 @@ type Contester struct {
 	Disks        []string
 	ProgramFiles []string
 
+	// NoUserProfile mirrors contesterConfig.NoUserProfile; see its doc.
+	NoUserProfile bool
+
 	GData *platform.GlobalData
 }
 
@@ -125,6 +128,13 @@ func checkSandbox(path string) error {
 type contesterConfig struct {
 	Server, Passwords, Path string
 	SandboxCount            int
+	// NoUserProfile, when set, runs restricted solutions through
+	// CreateProcessWithLogonW with dwLogonFlags=0 instead of
+	// LOGON_WITH_PROFILE, skipping the per-execute user-profile hive load.
+	// Off by default: without a profile the solution's HKCU and
+	// %USERPROFILE%/%TEMP% fall back to the default profile, which some
+	// runtimes depend on.
+	NoUserProfile bool `toml:"no_user_profile"`
 }
 
 func NewContester(configFile string, gData *platform.GlobalData) (*Contester, error) {
@@ -142,6 +152,7 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 		Platform:      PLATFORM_ID,
 		Disks:         PLATFORM_DISKS,
 		ProgramFiles:  PLATFORM_PFILES,
+		NoUserProfile: config.NoUserProfile,
 		GData:         gData,
 	}
 

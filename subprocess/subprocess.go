@@ -110,6 +110,23 @@ type Subprocess struct {
 	Options *PlatformOptions
 }
 
+// useLogonLaunch reports whether CreateFrozen must launch the child through
+// the per-execute CreateProcessWithLogonW logon (Windows) rather than
+// CreateProcessAsUser with the cached token.
+//
+// When useAsUser is set the invoker holds a cached primary token for the
+// sandbox user (profile already loaded at startup), so every launch — jobbed
+// solutions AND NoJob testers/checkers — goes through CreateProcessAsUser.
+// That is what keeps NoJob executes off the slow seclogon path, so one slow
+// logon under the process-global ForkLock no longer stalls the others.
+// Without useAsUser, NoJob and Win8+ both still require the logon path.
+func useLogonLaunch(noJob, windows8OrGreater, useAsUser bool) bool {
+	if useAsUser {
+		return false
+	}
+	return noJob || windows8OrGreater
+}
+
 type outputRedirectCheck struct {
 	n       string
 	f       *os.File

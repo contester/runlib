@@ -139,10 +139,12 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		ShowWindow: syscall.SW_SHOWMINNOACTIVE,
 	}
 	si.Cb = uint32(unsafe.Sizeof(si))
-	// On Win8+ the default is CreateProcessWithLogonW (a per-execute logon),
-	// unless UseAsUser is set — then launch via CreateProcessAsUser with the
-	// cached token below. NoJob still forces the logon path regardless.
-	useCreateProcessWithLogonW := sub.NoJob || (win32.IsWindows8OrGreater() && !sub.UseAsUser)
+	// Pick the launch path. With UseAsUser the invoker has the sandbox user's
+	// token cached (profile loaded at startup), so every launch — jobbed
+	// solutions and NoJob testers/checkers alike — goes through
+	// CreateProcessAsUser, keeping NoJob executes off the slow per-execute
+	// seclogon path. Without it, NoJob and Win8+ both require the logon path.
+	useCreateProcessWithLogonW := useLogonLaunch(sub.NoJob, win32.IsWindows8OrGreater(), sub.UseAsUser)
 
 	if sub.Options != nil && sub.Options.Environment != nil {
 		if err := d.initArchDependentData(sub); err != nil {

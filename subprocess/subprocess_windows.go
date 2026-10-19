@@ -139,14 +139,21 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		ShowWindow: syscall.SW_SHOWMINNOACTIVE,
 	}
 	si.Cb = uint32(unsafe.Sizeof(si))
-	useCreateProcessWithLogonW := sub.NoJob || win32.IsWindows8OrGreater()
+	// On Win8+ the default is CreateProcessWithLogonW (a per-execute logon),
+	// unless UseAsUser is set — then launch via CreateProcessAsUser with the
+	// cached token below. NoJob still forces the logon path regardless.
+	useCreateProcessWithLogonW := sub.NoJob || (win32.IsWindows8OrGreater() && !sub.UseAsUser)
 
 	if sub.Options != nil && sub.Options.Environment != nil {
 		if err := d.initArchDependentData(sub); err != nil {
 			return nil, err
 		}
 
-		if !useCreateProcessWithLogonW {
+		// The legacy (pre-Win8) CreateProcessAsUser path runs on the dedicated
+		// contester desktop. The UseAsUser path deliberately leaves si.Desktop
+		// unset so the child inherits the invoker's visible winsta0\default
+		// (console stays visible); access there is granted at startup.
+		if !useCreateProcessWithLogonW && !sub.UseAsUser {
 			desktopName, err := sub.Options.Environment.GetDesktopName()
 			if err != nil {
 				return nil, err

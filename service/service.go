@@ -27,6 +27,11 @@ type Contester struct {
 	// NoUserProfile mirrors contesterConfig.NoUserProfile; see its doc.
 	NoUserProfile bool
 
+	// UseAsUser is set at startup when the invoker holds the privileges to
+	// launch restricted runs via CreateProcessAsUser with the cached logon
+	// token, avoiding a per-execute CreateProcessWithLogonW. See tryEnableAsUser.
+	UseAsUser bool
+
 	GData *platform.GlobalData
 }
 
@@ -153,6 +158,7 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 		Disks:         PLATFORM_DISKS,
 		ProgramFiles:  PLATFORM_PFILES,
 		NoUserProfile: config.NoUserProfile,
+		UseAsUser:     tryEnableAsUser(),
 		GData:         gData,
 	}
 

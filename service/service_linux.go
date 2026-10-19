@@ -16,6 +16,9 @@ func OnOsCreateError(err error) (bool, error) {
 	return false, err
 }
 
+// tryEnableAsUser is Windows-only; Linux keeps its existing launch path.
+func tryEnableAsUser() bool { return false }
+
 func getPasswords(c *contesterConfig) []string {
 	result := make([]string, c.Default.SandboxCount)
 	for i := range result {

@@ -84,6 +84,11 @@ type Subprocess struct {
 	// CreateProcessWithLogonW (Windows): dwLogonFlags=0 instead of
 	// LOGON_WITH_PROFILE. No effect on other launch paths or platforms.
 	NoProfile bool
+	// UseAsUser launches via CreateProcessAsUser with the cached logon token
+	// (Login.HUser) instead of CreateProcessWithLogonW on Win8+, skipping the
+	// per-execute logon. Requires the caller to hold SeAssignPrimaryToken /
+	// SeIncreaseQuota and the sandbox user to have desktop access (Windows).
+	UseAsUser bool
 
 	TimeLimit       time.Duration
 	KernelTimeLimit time.Duration

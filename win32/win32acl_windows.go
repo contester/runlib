@@ -108,6 +108,53 @@ func AddAceToWindowStation(winsta Hwinsta, sid *syscall.SID) error {
 	return SetAclTo(syscall.Handle(winsta), acl)
 }
 
+// grantPreserving rebuilds obj's DACL as the ACEs build adds, followed by
+// every ACE already present, then writes it back. Unlike SetAclTo on a
+// freshly built allow-ACL (which replaces the DACL outright), this only adds
+// access — safe to run against a live, shared object like winsta0\default
+// whose existing ACEs (SYSTEM, the interactive user) must be kept.
+func grantPreserving(obj syscall.Handle, build func(*Acl) error) error {
+	sd, err := GetUserObjectSecurity(obj, DACL_SECURITY_INFORMATION)
+	if err != nil {
+		return err
+	}
+	_, existing, _, err := GetSecurityDescriptorDacl(sd)
+	if err != nil {
+		return err
+	}
+	acl, err := CreateNewAcl(8192)
+	if err != nil {
+		return err
+	}
+	if err = build(acl); err != nil {
+		return err
+	}
+	if err = CopyAllAce(acl, existing); err != nil {
+		return err
+	}
+	return SetAclTo(obj, acl)
+}
+
+// AddAceToWindowStationKeep grants sid access to winsta while preserving the
+// window station's existing ACEs (see grantPreserving).
+func AddAceToWindowStationKeep(winsta Hwinsta, sid *syscall.SID) error {
+	return grantPreserving(syscall.Handle(winsta), func(acl *Acl) error {
+		if err := AddAccessAllowedAceEx(acl, ACL_REVISION,
+			CONTAINER_INHERIT_ACE|INHERIT_ONLY_ACE|OBJECT_INHERIT_ACE, syscall.GENERIC_ALL, sid); err != nil {
+			return err
+		}
+		return AddAccessAllowedAceEx(acl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE, WINSTA_ALL, sid)
+	})
+}
+
+// AddAceToDesktopKeep grants sid access to desk while preserving the desktop's
+// existing ACEs (see grantPreserving).
+func AddAceToDesktopKeep(desk Hdesk, sid *syscall.SID) error {
+	return grantPreserving(syscall.Handle(desk), func(acl *Acl) error {
+		return AddAccessAllowedAce(acl, ACL_REVISION, DESKTOP_ALL, sid)
+	})
+}
+
 func CopyAllAce(dest, source *Acl) error {
 	if source == nil {
 		return nil

@@ -438,7 +438,6 @@ func CreateJob(s *Subprocess, d *SubprocessData) error {
 	}
 
 	if hardTimeLimit > 0 {
-		log.Debugf("Setting hard limits on time: %s", hardTimeLimit)
 		nsLimit := uint64(hardTimeLimit.Nanoseconds() / 100)
 		einfo.BasicLimitInformation.PerJobUserTimeLimit = nsLimit
 		einfo.BasicLimitInformation.PerProcessUserTimeLimit = nsLimit

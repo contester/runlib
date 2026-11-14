@@ -5,11 +5,13 @@ require (
 	github.com/sirupsen/logrus v1.10.2
 	golang.org/x/sys v0.49.0
 	google.golang.org/protobuf v1.36.12
+	lukechampine.com/blake3 v1.4.1
 )
 
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/alecthomas/kong v1.16.1
+	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
 )
 
 go 1.26.1

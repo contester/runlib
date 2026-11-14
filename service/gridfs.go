@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/contester/runlib/contester_proto"
@@ -33,7 +34,7 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 		resolved, _, err := resolvePath(s.Sandboxes, item.GetLocalFileName(), false)
 		if err != nil {
 			log.Errorf("path resolve error: %v", err)
-			continue // TODO
+			return fmt.Errorf("gridfs copy resolve %q: %w", item.GetLocalFileName(), err)
 		}
 
 		stat, err := storage.FilerCopy(ctx, resolved, item.GetRemoteLocation(), item.GetUpload(),
@@ -41,14 +42,14 @@ func (s *Contester) GridfsCopy(request *contester_proto.CopyOperations, response
 
 		if err != nil {
 			log.Errorf("gridfs copy error: %+v", err)
-			continue
+			return fmt.Errorf("gridfs copy %q -> %q: %w", item.GetLocalFileName(), item.GetRemoteLocation(), err)
 		}
 
 		if !item.GetUpload() && sandbox != nil {
 			err = sandbox.Own(resolved)
 			if err != nil {
 				log.Errorf("sandbox.Own error: %+v", err)
-				continue
+				return fmt.Errorf("gridfs copy own %q: %w", item.GetLocalFileName(), err)
 			}
 		}
 

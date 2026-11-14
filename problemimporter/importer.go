@@ -277,8 +277,7 @@ func withRemoteFile(ctx context.Context, remote string, f func(rf *storage.Remot
 }
 
 func exportProblem(ctx context.Context, w localProblemWriter, manifest storage.ProblemManifest, baseURL string) error {
-	gridprefix := manifest.GetGridPrefix()
-	probprefix := baseURL + gridprefix
+	probprefix := manifest.ObjectPrefixURL(baseURL)
 	if manifest.TesterName != "" {
 		if err := withRemoteFile(ctx, probprefix+"checker", func(rf *storage.RemoteFile) error {
 			return w.WriteChecker(manifest.TesterName, rf)
@@ -423,18 +422,24 @@ func main() {
 		return
 	}
 
-	stor, err := storage.NewBackend(*storageUrl)
-	if err != nil {
-		log.Fatal(err)
+	var stor storage.Backend
+	var err error
+	if *authToken != "" && (strings.HasPrefix(*storageUrl, "http:") || strings.HasPrefix(*storageUrl, "https:")) {
+		stor = storage.NewWeedWithToken(*storageUrl, *authToken)
+	} else {
+		stor, err = storage.NewBackend(*storageUrl)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	backend := stor.(storage.ProblemStore)
 
 	switch *mode {
 	case "import":
-		err = importProblems(context.Background(), flag.Arg(0), backend, *storageUrl+"fs/")
+		err = importProblems(context.Background(), flag.Arg(0), backend, *storageUrl)
 	case "export":
-		err = exportProblems(context.Background(), backend, *storageUrl+"fs/", flag.Arg(0))
+		err = exportProblems(context.Background(), backend, *storageUrl, flag.Arg(0))
 	case "fixMemoryLimit":
 		var newMl int64
 		if newMl, err = strconv.ParseInt(flag.Arg(0), 10, 64); newMl > 0 {

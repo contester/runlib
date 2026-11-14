@@ -40,7 +40,7 @@ func (s statelessBackend) Copy(ctx context.Context, localName, remoteName string
 }
 
 func NewBackend(url string) (Backend, error) {
-	if strings.HasPrefix(url, "http:") {
+	if strings.HasPrefix(url, "http:") || strings.HasPrefix(url, "https:") {
 		return NewWeed(url), nil
 	}
 	return statelessBackendSingleton, nil

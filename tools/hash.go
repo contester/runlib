@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"lukechampine.com/blake3"
 )
 
 func HashFileString(name string) (string, error) {
@@ -31,4 +33,23 @@ func HashFile(name string) ([]byte, error) {
 	}
 
 	return destination.Sum(nil), nil
+}
+
+// Blake3File computes the 32-byte BLAKE3 digest and byte size of filename.
+func Blake3File(filename string) ([32]byte, uint64, error) {
+	var zero [32]byte
+	source, err := os.Open(filename)
+	if err != nil {
+		return zero, 0, fmt.Errorf("Open(%q): %w", filename, err)
+	}
+	defer source.Close()
+
+	hasher := blake3.New(32, nil)
+	n, err := io.Copy(hasher, source)
+	if err != nil {
+		return zero, 0, fmt.Errorf("io.Copy: %w", err)
+	}
+	var sum [32]byte
+	copy(sum[:], hasher.Sum(nil))
+	return sum, uint64(n), nil
 }

@@ -9,52 +9,28 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4.0.0
+    - uses: actions/checkout@v7
 
     - name: Set up Go
-      uses: actions/setup-go@v4.1.0
+      uses: actions/setup-go@v7
       with:
-        go-version: 1.26.1
+        go-version-file: go.mod
 
-    - name: Get current date and time
-      id: date
-      run: echo "DATETIME=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
-      
-    - name: Build runexe-amd64
-      env:
-        GOOS: windows
-        GOARCH: amd64
-      run: go build -o runexe.exe -a -ldflags "-X main.version=${{ env.DATETIME }}-${{ github.sha }} -X main.buildid=${{github.run_number}}" ./runexe
-
-    - name: Build runner-amd64
-      env:
-        GOOS: windows
-        GOARCH: amd64
-      run: go build -o runner.exe -a -ldflags "-X main.version=${{ env.DATETIME }}-${{ github.sha }} -X main.buildid=${{github.run_number}}" ./runner
+    - name: Build runexe.exe and runner.exe
+      run: make BUILDID=${{ github.run_number }}
 
     - name: Upload runexe
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
-        # Artifact name
         name: runexe.exe
-        # A file, directory or wildcard pattern that describes what to upload
         path: runexe.exe
-        # The desired behavior if no files are found using the provided path.
         if-no-files-found: error
 
     - name: Upload runner
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
-        # Artifact name
         name: runner.exe
-        # A file, directory or wildcard pattern that describes what to upload
         path: runner.exe
-        # The desired behavior if no files are found using the provided path.
         if-no-files-found: error

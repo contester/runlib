@@ -3,8 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"hash/fnv"
-	"math/rand"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -159,18 +157,9 @@ func setAcl(path, username string) error {
 	return nil
 }
 
-func pwgen1(src *rand.Rand, n int) string {
-	const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	result := make([]byte, n)
-	for i := range result {
-		result[i] = alphabet[src.Intn(len(alphabet))]
-	}
-	return string(result)
-}
-
 func getPasswords(c *contesterConfig) []string {
 	if c.Passwords != "" {
-		strings.Split(c.Passwords, " ")
+		return strings.Split(c.Passwords, " ")
 	}
 	cores := c.SandboxCount
 	if cores == 0 {
@@ -180,16 +169,7 @@ func getPasswords(c *contesterConfig) []string {
 	if cores < 1 {
 		cores = 1
 	}
-	result := make([]string, cores)
-
-	mh := fnv.New64()
-	mh.Write([]byte(getHostname()))
-	src := rand.New(rand.NewSource(int64(mh.Sum64())))
-
-	for i := range result {
-		result[i] = pwgen1(src, 8)
-	}
-	return result
+	return generatePasswords(getHostname(), cores)
 }
 
 func ensureRestrictedUser(username, password string) error {

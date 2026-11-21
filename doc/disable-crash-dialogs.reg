@@ -1,0 +1,26 @@
+Windows Registry Editor Version 5.00
+
+; Suppress Windows Error Reporting (WerFault.exe) crash dialogs and report overhead
+; for both 64-bit and 32-bit (WOW64) processes.
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\Windows Error Reporting]
+"DontShowUI"=dword:00000001
+"Disabled"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\Windows Error Reporting]
+"DontShowUI"=dword:00000001
+"Disabled"=dword:00000001
+
+; Suppress csrss.exe system-wide hard-error dialogs (missing DLL, application error).
+; Takes effect after reboot.
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Windows]
+"ErrorMode"=dword:00000002
+
+; Disable Just-In-Time (AeDebug) debugger prompts ("Click OK to terminate /
+; Click CANCEL to debug") for both 64-bit and 32-bit (WOW64) processes.
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug]
+"Auto"="0"
+"Debugger"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\AeDebug]
+"Auto"="0"
+"Debugger"=-

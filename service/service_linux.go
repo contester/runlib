@@ -22,6 +22,9 @@ func tryEnableAsUser() bool { return false }
 // tryEnableWithToken is Windows-only; Linux keeps its existing launch path.
 func tryEnableWithToken(disabled bool) bool { return false }
 
+// configureCrashDialogSuppression is Windows-only.
+func configureCrashDialogSuppression(disabled bool) {}
+
 func getPasswords(c *contesterConfig) []string {
 	result := make([]string, c.Default.SandboxCount)
 	for i := range result {

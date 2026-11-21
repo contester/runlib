@@ -177,6 +177,10 @@ type contesterConfig struct {
 	// Off by default; bind to localhost or a trusted network — it exposes
 	// profiling endpoints. See runner main.
 	DebugAddress string `toml:"debug_address"`
+	// DisableCrashDialogRegistrySetup skips updating HKLM crash-dialog
+	// suppression registry keys (WER, ErrorMode, AeDebug) at runner startup.
+	// Off by default so invoker hosts are configured automatically. Windows only.
+	DisableCrashDialogRegistrySetup bool `toml:"disable_crash_dialog_registry_setup"`
 }
 
 // boolWithDefault resolves an optional config bool: the configured value when
@@ -204,6 +208,7 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	if !useAsUser {
 		useWithToken = tryEnableWithToken(config.DisableCreateProcessWithToken)
 	}
+	configureCrashDialogSuppression(config.DisableCrashDialogRegistrySetup)
 
 	result := Contester{
 		InvokerId:      getHostname(),

@@ -351,6 +351,11 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 	d.platformData.hThread = pi.Thread
 	d.platformData.hJob = syscall.InvalidHandle
 
+	if sub.Options != nil && len(sub.Options.InjectDLL) > 0 {
+		// Suppress error popups before InjectDLL runs CreateRemoteThread/LoadLibraryW.
+		suppressErrorDialogs(d.platformData.hProcess)
+	}
+
 	for _, dll := range sub.Options.InjectDLL {
 		if e = InjectDll(&d, sub.Options.Environment, dll); e != nil {
 			break
@@ -396,7 +401,19 @@ func (sub *Subprocess) CreateFrozen() (*SubprocessData, error) {
 		}
 	}
 
+	// Set (or re-assert after AssignProcessToJobObject) the full error-mode mask
+	// on the suspended child so seclogon and NoJob launches never show popups.
+	suppressErrorDialogs(d.platformData.hProcess)
+
 	return &d, nil
+}
+
+// suppressErrorDialogs disables Windows critical-error, GPF/WER, and
+// missing-file dialogs on a suspended child process.
+func suppressErrorDialogs(hProcess syscall.Handle) {
+	if err := win32.SetProcessErrorMode(hProcess, win32.SuppressErrorDialogsMask); err != nil {
+		log.Errorf("CreateFrozen/SetProcessErrorMode: %v", err)
+	}
 }
 
 func CreateJob(s *Subprocess, d *SubprocessData) error {

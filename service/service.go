@@ -15,10 +15,12 @@ import (
 )
 
 type Contester struct {
-	InvokerId     string
-	Sandboxes     []SandboxPair
-	Env           []*contester_proto.LocalEnvironment_Variable
-	ServerAddress string
+	InvokerId       string
+	InvokerLanguage string
+	InvokerVersion  string
+	Sandboxes       []SandboxPair
+	Env             []*contester_proto.LocalEnvironment_Variable
+	ServerAddress   string
 
 	Platform     string
 	Disks        []string
@@ -211,8 +213,10 @@ func NewContester(configFile string, gData *platform.GlobalData) (*Contester, er
 	configureCrashDialogSuppression(config.DisableCrashDialogRegistrySetup)
 
 	result := Contester{
-		InvokerId:      getHostname(),
-		Env:            getLocalEnvironment(),
+		InvokerId:       getHostname(),
+		InvokerLanguage: InvokerLanguage,
+		InvokerVersion:  DefaultInvokerVersion(),
+		Env:             getLocalEnvironment(),
 		ServerAddress:  config.Server,
 		Platform:       PLATFORM_ID,
 		Disks:          PLATFORM_DISKS,
@@ -249,6 +253,17 @@ func (s *Contester) Identify(request *contester_proto.IdentifyRequest, response 
 	response.PathSeparator = string(os.PathSeparator)
 	response.Disks = s.Disks
 	response.ProgramFiles = s.ProgramFiles
+
+	lang := s.InvokerLanguage
+	if lang == "" {
+		lang = InvokerLanguage
+	}
+	ver := s.InvokerVersion
+	if ver == "" {
+		ver = DefaultInvokerVersion()
+	}
+	response.SetInvokerLanguage(lang)
+	response.SetInvokerVersion(ver)
 
 	return nil
 }

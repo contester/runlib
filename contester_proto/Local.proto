@@ -133,6 +133,8 @@ message IdentifyResponse {
     repeated string disks = 6;
     repeated string programFiles = 7;
     HardwareInfo hardware = 8;
+    string invoker_language = 9;
+    string invoker_version = 10;
 };
 
 // Glob and Stat

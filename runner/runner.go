@@ -18,6 +18,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var version string
+var buildid string
+
 var CLI struct {
 	Logfile    string `short:"l" long:"logfile" description:"Log file" env:"RUNNER_LOGFILE" default:"server.log"`
 	ConfigFile string `short:"c" long:"config" description:"Config file" env:"RUNNER_CONFIG" default:"server.toml" type:"existingfile"`
@@ -46,6 +49,8 @@ func main() {
 		log.Fatal(err)
 		return
 	}
+	c.InvokerVersion = service.FormatBuildVersion(version, buildid)
+	log.Infof("Starting %s runner version %s", c.InvokerLanguage, c.InvokerVersion)
 
 	if c.DebugAddress != "" {
 		// Capture every mutex/block contention event so /debug/pprof/mutex and

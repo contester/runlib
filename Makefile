@@ -3,9 +3,10 @@ GOOS ?= windows
 GOARCH ?= amd64
 CGO_ENABLED ?= 0
 
-DATETIME := $(shell date +'%Y%m%d-%H%M%S')
-COMMIT := $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
-VERSION ?= $(DATETIME)-$(COMMIT)
+DATETIME := $(shell date -u +'%Y%m%d-%H%M%S')
+COMMIT := $(shell git rev-parse --short=7 HEAD 2>/dev/null || echo unknown)
+DIRTY := $(if $(shell git status --porcelain --untracked-files=no 2>/dev/null),-dirty,)
+VERSION ?= $(DATETIME)-$(COMMIT)$(DIRTY)
 BUILDID ?= local
 
 LDFLAGS := -X main.version=$(VERSION) -X main.buildid=$(BUILDID)
